@@ -1,0 +1,3 @@
+# zalohy pred vydanim - do repozitare nepatri, historii drzi git
+*.bak-v*
+__pycache__/

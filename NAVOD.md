@@ -1,0 +1,209 @@
+# GeoGame — verze 88
+
+## Co nahrát na hosting
+
+Všech osm souborů do kořene repozitáře, vedle sebe (ne do složky):
+
+| Soubor | K čemu |
+|---|---|
+| `index.html` | hra |
+| `sw.js` | offline režim |
+| `manifest.webmanifest` | jméno, ikony, celá obrazovka |
+| `icon-192.png`, `icon-512.png` | Android a Google Play |
+| `icon-512-maskable.png` | adaptivní tvar ikony |
+| `apple-touch-icon-180.png` | ikona pro iOS plochu |
+| `icon.svg` | vektorová záloha |
+
+**GitHub → repozitář → Add file → Upload files → vybrat všech osm → Commit changes.**
+Poté Settings → Pages → větev `main`, složka `/ (root)` → Save.
+Za minutu poběží na `https://tvoje-jmeno.github.io/nazev-repa/`.
+V Chromu pak tři tečky → **Přidat na plochu**.
+
+## Aktualizace
+
+Nahraj nový `index.html` a `sw.js` se stejnými názvy. Nová verze se stáhne při dalším
+spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
+**Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
+a v hlavičce Nastavení.
+
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=88;` v `index.html`.
+Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
+
+## Bez hostingu
+
+`geogame-v88-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+Funguje offline, jen se sám neaktualizuje.
+
+Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
+ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš prostým zkopírováním
+a není co udržovat dvakrát:
+
+```
+copy index.html geogame-v88-jediny-soubor.html
+```
+
+## Záloha postupu
+
+**Nastavení → Záloha postupu → ZKOPÍROVAT**, v cílové verzi **Obnovit ze zálohy**.
+Potřeba při přechodu mezi staženým souborem a hostovanou adresou nebo mezi zařízeními.
+
+Od verze 82 si hra sama drží záchrannou kopii postupu:
+
+- Když se hlavní uložení poškodí, hra ho **nepřepíše** — načte kopii a v Nastavení
+  nabídne, co dál (**Nečitelný uložený postup**).
+- Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
+  místo tichého selhání.
+- Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 88
+
+Oprava nálezů z prohlídky verze 87. Nic nového se nepřidávalo, jen se spravilo,
+co bylo rozbité — včetně dvou věcí, které braly hráči postup.
+
+- **Uložený postup už se při druhém spuštění nevynuluje.** Kontrola uložení
+  přidávaná ve verzi 85 brála úrovně přístrojů, úrovně příslušenství a bestiář
+  jako číslo a jako seznam, ačkoli to jsou seznamy dvojic. Při každém dalším
+  otevření hry je proto smazala a uložila prázdné. Změřeno před a po:
+  `lvl` bylo po restartu `0`, teď zůstává `{theo:3, nivel:2, tape:1}`.
+- **POKRAČOVAT vrátí hrdinu celého.** Uložený bod si nesl jen klíč přístroje,
+  ne velikost, takže se hrdina po načtení rozehrané hry scvrkl na jedno pole,
+  měřil z rohu místo ze středu a tři pole se uvolnila ke stavbě.
+- **Zamrznutí:** chyba v kroku hry už nezastaví kreslení (dosud se přeskočil
+  celý zbytek snímku včetně `draw()`, takže obraz zatuhl, i když smyčka běžela),
+  naplánování dalšího snímku je nově ve `finally` a pád při startu už nenechá
+  hru bez smyčky. Chyby **mimo snímek** (kliknutí, odpočty, sliby) se teď také
+  zapisují do **Nastavení → Zaseknutí a chyby** a hláška se ukáže i v menu,
+  ne jen v rozehraném měření.
+- **Úspěch Kompletní výbava** chtěl 21 přístrojů, ale po přesunu tří hrdinů
+  mimo běžnou nabídku jich je 20 — nedal se splnit, a s ním ani 25/25 úspěchů.
+- **Trofejní cesta za 660 pohárů** slíbila fotogrammetrický dron, který je
+  teď hrdina a ve sbírce by se nikdy neukázal. Místo něj dává karty a výzkum.
+- **Počet stanovisek** v tipu a v řádku Síla sestavy už nepočítá hrdinu, který
+  kapacitu nezabírá — sedí to s HUDem.
+- Efekt **ZKUŠENOST** se hrdinovi kreslil do levého horního rohu místo do středu.
+
+### Co zůstává na příště
+
+- Na třech územích z dvanácti (Městská zástavba, Železniční koridor, Mostní
+  konstrukce) není na desce volný čtverec 2×2, takže se tam hrdina nemá kam
+  postavit. Oprava znamená nové pravidlo pro odkrývání polí, ne jednu řádku.
+- Poslední řada dronu dává vylepšení `markperm`, které kvůli druhu přístroje
+  nikdo nečte — dron o jednu schopnost přichází.
+- Náhled dosahu při stavění hrdiny se kreslí o půl pole vedle.
+- Dvě území mají v popisu, že tam dron neletí, ačkoli zákaz už neplatí.
+
+## Co je nového ve verzi 87
+
+- **Hrdinové.** Do měření si bereš právě jednoho: **fotogrammetrický dron**
+  (máš ho od začátku), **rotační laser** (od 400 pohárů) nebo **měřický stůl**
+  (od 1150). Postavíš ho zdarma hned v první etapě, zabírá **čtyři pole**
+  a **nedá se sloučit ani prodat** — roste jen vylepšením za rozpočet
+  (tři placená vylepšení: dron 60 → 150 → 340, rotační laser 65 → 165 → 370,
+  měřický stůl 70 → 175 → 395) a s každou řadou mu přibude schopnost, ne jen číslo:
+  dron rozšíří roj a nakonec i bombarduje, laser přidá druhý paprsek a brzdu,
+  stůl zdvojnásobí výdělek a začne platit paušál za etapu.
+- Tyhle tři přístroje proto **zmizely z běžné nabídky**. Nasbírané karty
+  a úrovně se jednorázově přepočetly na výzkum, takže se nic neztratilo.
+- **Pentagonální hranol** — nový přístroj, který měří **výhradně v pravém úhlu**:
+  po své řadě nebo po svém sloupci, a rána projde celou přímkou a zasáhne
+  všechno na ní. Šikmo nevidí vůbec nic. Odemyká se na Rašeliništi.
+- **Gravimetr** — v místě zásahu vyrobí tíhovou anomálii, která vlivy **táhne
+  zpátky po trase**, brzdí je a průběžně ubírá. Odemyká se na Železničním koridoru.
+- **Hra už nezamrzne.** Jediná chyba uvnitř snímku dřív zabila celou kreslicí
+  smyčku — obraz zamrzl, tlačítka přestala reagovat a hru šlo jen vypnout
+  a zapnout. Teď se chyba zapíše do **Nastavení → Zaseknutí a chyby** a hraje
+  se dál. Stejně tak se sám zavře panel, který zůstal viset a držel stránku
+  zamčenou.
+- **Dole na displeji už nesvítí modrý pruh.** V hlavičce byly dvě značky
+  `theme-color`; prohlížeč bral tu první (`#0b1030`), zatímco hra přepínala
+  tu druhou, kterou nikdo nečetl. Zbyla jedna a sedí s pozadím hry.
+- **Ovládání je nižší, deska vyšší.** Změřeno na 390×844: políčko 38 → 41 px,
+  deska zabírá 59 → 63 % výšky obrazovky, ovládání ubralo 208 → 176 px.
+- **Nouzová oprava přesnosti jde koupit až po skončení etapy.** Uprostřed vlny
+  z ní byl ventil, kterým se dal každý průnik hned zaplatit.
+- **Kratší dostřel** u všech přístrojů (zhruba o 12 %) a **strop na to, kolik
+  se dá dosah vynásobit dohromady**. Karta Rozhledny, síť, hranol, GNSS a strom
+  se dřív násobily bez omezení až na trojnásobek základu, což na desce 9×13
+  znamená „vidím všude" a umístění přestane rozhodovat.
+- **Karty po etapě dávají míň**: poškození +12 → +9 %, dosah +10 → +7 %,
+  rychlost +10 → +8 %, dvojnásobná rána +12 → +8 %, bonusy proti druhům vlivů
+  o čtvrtinu až třetinu dolů. Naměřeno robotem: 10 z 12 území dohraných
+  před i po, ale zbylá přesnost se rozprostřela (dřív šestkrát 100 %,
+  teď 44 až 100 %) a ukazatel přesnosti se hne v 14 % etap místo 9 %.
+
+## Co je nového ve verzi 86
+
+- **Hrací deska je velká.** Nápověda tutoriálu a lišta vybraného stanoviska
+  si ukrajovaly z výšky desky a políčko kvůli nim spadlo ze 42 na 25 px.
+  Nápověda teď desku překrývá stejně jako panel a pruh pro lištu se drží,
+  jen když ta lišta opravdu je.
+- **Terč na konci trasy má popisek NULOVÝ BOD**, začátek trasy **ODSUD**.
+  Byla to jediná věc na desce, o kterou jde prohra, a neměla vysvětlení.
+- **Měřická čísla stanic z cesty zmizela.** Byla to ozdoba, ale hráč je četl
+  jako údaj; jedno padalo těsně vedle terče a vypadalo jako odznak na něm.
+- **Výběr měřické metody ukáže všech sedm.** Dřív jen ty, které hráč umí —
+  o zbylých pěti se nedalo dozvědět, že existují. Zamčené jsou šedé a je
+  u nich napsáno, ve které oblasti a za kolik pohárů se odemknou.
+- **Okno území zhublo.** Mělo čtyři vždy otevřené sekce a pět velkých tlačítek
+  pod sebou; hlavní akce byla až čtvrtá. Teď je nahoře sestava a hned pod ní
+  start, zadání a cíle se rozbalují jedním řádkem a další režimy mají
+  vlastní blok.
+
+## Co je nového ve verzi 85
+
+- **Mezníky** — druhá měna. Nedá se koupit ani nepadá z beden: dostaneš ji za tři
+  hvězdy na území, za splněné denní úkoly, za zkoušku na plný počet a se 6% šancí
+  ji najdeš po dokončeném měření. Kupuje **čas a vzhled, nikdy sílu** — síla se dál
+  platí výzkumem, jinak by se ekonomika Laborky rozpadla.
+- **Vzhledy přístrojů**: šest materiálů (tovární, terénní oranžová, noční šedá,
+  muzejní mosaz, karbon, kamenný mezník). Mění barvu těla, obrysu i lesku — proto
+  vypadají jako jiný odlitek, ne jako přebarvená ikona. Žádný obrázek navíc.
+- V obchodě je záložka **Za mezníky**: balíček 200 výzkumu za 40, nejvýš jednou denně.
+- **Sbírka je rovnou na stránce Vybavení**, hned pod sestavou. Samostatná obrazovka
+  i tlačítko, které ji otvíralo, zmizely.
+- **Stránky se jmenují podle toho, proč tam chodíš**: Obchod · Vybavení · Terén ·
+  Laborka · Kariéra. Trvalá vylepšení se přestěhovala do Laborky.
+- **Mapa světa je první věc na Terénu.**
+- **Profil ožil** — medaile, hodnost a tři údaje v pilulkách místo jednoho řádku.
+- Velikost písma jde zvětšit o 15 nebo 30 %, deska má tři opravdové stupně velikosti
+  a na notebooku se ovládání složí vedle desky.
+
+## Co je nového ve verzi 84
+
+- **Tmavý povrch místo světlého.** Změřeno: syté barvy zabíraly 53 % obrazovky
+  a na jedné stránce jich soupeřilo šest až sedm. Teď je světlých ploch 16 % a barva
+  zbyla tam, kam patří — na tlačítko, na měnu a na vzácnost.
+- **Spodní lišta**: ikony měly kontrast 2,6 : 1 (v kontrastním motivu 1,7 : 1), protože
+  dvě pravidla se stejnou specificitou si přebíjela barvu. Vybraná záložka teď vystoupí
+  nad lištu.
+- **Mapa světa** je o dvě třetiny větší, jde ke krajům a je v soumraku. Zamčená území
+  byla dřív světlejší než okolí, takže oko tahalo tam, kam se klepnout nedá. Jméno se
+  ukazuje jen u území, kam se dá jít — dvanáct cedulek se nevešlo a překrývaly se.
+- **Karty v obchodě**: ikona přístroje ležela na pozadí téže barvy, tedy kontrast
+  1,00 : 1. Teď svítí z tmavého kotouče.
+- **Bedny jsou jen ve Skladu** a odpočet u nich běží (dřív se překresloval jen ten
+  na stránce Bitva, proto ve Skladu stál).
+- Ukončit měření se přesunulo z křížku do nabídky pod ☰; z hrací plochy zmizely
+  souřadnice a nápis, které v ní ležely.
+- Obtížnost: přesnost klesá plynule podle toho, kolik vlny projde, vlny nerostou
+  na konci tak strmě a v Nastavení přibylo **Omezit pohyb**.
+
+## Co je nového ve verzi 83
+
+- **Stavět jde na každé pole, které sousedí s trasou** — i rohem. Konec náhodného
+  odkrývání: místo šesti políček jich je podle území 28 až 69 a vytyčený pás je
+  na desce vidět (oranžová přerušovaná hranice, mezníky).
+- Slučování a terénní služby už neotvírají pole, ale posilují **četu** (+1 stanovisko).
+  V HUDu je proto jedno číslo: `5/12 stanovisek`.
+- Nový vzhled: všechno je odlité z plastu, pozadí je měřická deska, nadpisy mají
+  ražený obrys, značky přístrojů se kreslí ve třech průchodech.
+- Čitelnost: 47 míst mělo text v barvě s kontrastem pod mezí (rozpočet 1,4 : 1).
+  Teď je pod mezí nula, měřeno na skutečně vykreslené hře ve všech třech motivech.
+
+## Co je ve hře
+
+12 území s vlastními bossy · 20 přístrojů + 3 hrdinové · pátá mistrovská řada · 13 druhů vlivů,
+elity a pravidla vln · vývojový strom 3 patra × 8 cest s možností přeladit ·
+6 režimů · obchod s denní nabídkou · sezónní cesta · trofejní cesta · 25 úspěchů ·
+sbírka karet · laboratoř · příslušenství · encyklopedie · zkouška z geodézie
+(36 otázek) · zakázka dne · terénní služby · offline provoz

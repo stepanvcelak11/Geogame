@@ -1,0 +1,20 @@
+{
+  "id": "/geogame/",
+  "name": "GeoGame — geodetická tower defense",
+  "short_name": "GeoGame",
+  "description": "Merge tower defense z geodézie: 12 území, 20 měřických přístrojů a 3 hrdinové, sbírka karet a sezónní cesta.",
+  "lang": "cs",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0a0f2e",
+  "theme_color": "#0a0f2e",
+  "categories": ["games"],
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}
