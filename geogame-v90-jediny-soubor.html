@@ -9162,7 +9162,7 @@ const NEWTIPS=[
  {k:'tier5',  c:s2=>s2&&s2.towers.some(t=>t.l>=3),
   m:'<b>Čtvrtá řada není strop.</b> Dva přístroje čtvrté řady jdou sloučit na mistrovskou variantu — je skoro dvakrát silnější.'},
  {k:'spend',  c:s2=>s2&&s2.cr>=250&&s2.wave>=6,
-  m:'<b>Rozpočet se dá utratit i jinak.</b> V panelu ☰ jsou Terénní služby: obnova přesnosti a příprava nového stanoviště.'},
+  m:'<b>Rozpočet se dá utratit i jinak.</b> V panelu ☰ posílíš četu o další stanovisko a v záložce Síť koupíš vylepšení celé sítě — přesnost, dosah, příjem, kapacitu.'},
  {k:'finalb', c:s2=>s2&&s2.wave===lastWaveOf()-1,
   m:'<b>Příští etapa je finále území.</b> Přijdou dva bossové naráz — nech si náboje metod.'}
 ];
@@ -11233,6 +11233,15 @@ function useAbil(i){
  S.ammo=S.ammo||{};
  if(S.ammo[a.id]===undefined)S.ammo[a.id]=abilMax(a.id);
  if(S.ammo[a.id]<=0)return toast('Došly náboje. Doplní se na konci etapy.');
+ // Naboj se nesmi spalit za nic. Ctyri metody pusobi na vlivy na trase
+ // a Nivelacni porad zvedá presnost - kdyz neni na co, drzeni se vraci
+ // a hlaska rekne proc. Dosud se naboj odecetl a hra jeste oznamila zasah,
+ // ktery se nekonal.
+ if(['adjust','freeze','stop','stake'].indexOf(a.id)>=0
+    && !S.enemies.some(e=>!e.dead))
+   return toast(a.n+': na trase není žádný vliv. Náboj zůstává.');
+ if(a.id==='repair'&&S.acc>=100)
+   return toast(a.n+': přesnost je na 100 %. Náboj zůstává.');
  S.ammo[a.id]--;S.abilUses++;
  if(SAVE.tut===5){SAVE.tut=6;save();toast('Tutoriál hotový. Hodně štěstí v terénu!');}snd('abil');vib(25);
  if(a.id==='adjust'){
@@ -11469,6 +11478,15 @@ function pickCond(w){
  if(Math.random()>chance)return null;
  return COND[(Math.random()*COND.length)|0].id;
 }
+// Slozeni pristi vlny pro nahled PRISTI. Bere v uvahu to, co je jiste dopredu
+// (uzemi se dvema trasami posila mensi vlny), ne to, co se losuje az pri startu
+// (podminka etapy - tu nahled hlasi zvlast jako "mozne podminky"). Nahled na
+// Rozcesti siti dosud lhal ve VSECH etapach: sliboval 11 vlivu a prislo 7.
+function dveTrasy(comp){
+ if(!(S&&MAPS[S.map]&&MAPS[S.map].twin))return comp;
+ return comp.map(x=>[x[0],Math.max(1,Math.round(x[1]*.62)),x[2]]);
+}
+function nahledVlny(w){ return dveTrasy(waveComp(w)); }
 function startWave(){
  if(S.phase!=='build'||S.over)return;
  // bonus za rychlé zahájení: čím dřív po předchozí vlně, tím víc
@@ -11485,7 +11503,7 @@ function startWave(){
  const rl=ruleOf();
  let comp=waveComp(S.wave);
  if(rl&&rl.f)comp=rl.f(comp);
- if(MAPS[S.map].twin)comp=comp.map(x=>[x[0],Math.max(1,Math.round(x[1]*.62)),x[2]]);
+ comp=dveTrasy(comp);   // tatáž úprava, jakou ukazuje náhled PŘÍŠTÍ
  let off=0;
  comp.forEach(([k,n,gap])=>{
    for(let i=0;i<n;i++)S.queue.push({k,t:off+i*gap,pi:PATHS.length>1?(i%PATHS.length):0});
@@ -12788,7 +12806,7 @@ function ui(){
      d.innerHTML='<i style="background:var(--dim)"></i>možné podmínky';
      box.appendChild(d);
    }
-   waveComp(nw).forEach(([k,n])=>{
+   nahledVlny(nw).forEach(([k,n])=>{
      const d=document.createElement('div');d.className='wp'+(k==='boss'?' boss':'');
      d.innerHTML='<i style="background:'+E[k].c+'"></i><b>'+n+'×</b> '+E[k].n;
      d.onclick=()=>{snd('ui');showEnemyCard(k);};
@@ -15589,7 +15607,7 @@ function renderOpts(){
   {id:'snd',n:'Zvuk',d:'Efekty přístrojů a vln'},
   {id:'vol',n:'Hlasitost',d:'Síla zvuků a hudby',cycle:[0,1,2,3],
    labels:['Ticho','Tichá','Střední','Hlasitá']},
-  {id:'mus',n:'Hudba v menu',d:'Klidná smyčka mimo měření'},
+  {id:'mus',n:'Hudba',d:'Klidná smyčka v menu, hnanější při měření'},
   {id:'auto',n:'Automatické etapy',d:'Další vlna se spustí sama po 4 s'},
   {id:'fs',n:'Velikost písma',d:'Větší popisky v nabídkách i ve hře',cycle:[0,1,2],
    labels:['Normální','Větší','Největší']},
@@ -15598,7 +15616,7 @@ function renderOpts(){
    labels:['Malá','Střední','Velká']},
   {id:'vib',n:'Vibrace',d:'Odezva při sloučení a průniku'},
   {id:'lowmo',n:'Omezit pohyb',d:'Vypne třes obrazovky, záblesky a odletující částice'},
-  {id:'spd',n:'Výchozí rychlost',d:'Rychlost na začátku etapy',cycle:[1,2,3,4]},
+  {id:'spd',n:'Rychlost měření',d:'Drží se i mezi územími — mění ji i tlačítko 1× ve hře',cycle:[1,2,3,4]},
   {id:'offline',n:'Offline režim',d:'Stav uložení hry do zařízení',act:'offline'},
   {id:'news',n:'Co je nového',d:'Přehled změn v této verzi',act:'news'},
   {id:'upd',n:'Zkontrolovat aktualizaci',d:'Načte nejnovější verzi ze serveru',act:'upd'},
@@ -15679,6 +15697,17 @@ function renderOpts(){
            '• Tlačítko u Co je nového a u Zaseknutí a chyby říkalo VLOŽIT\n'+
            '• Důlní dílo a Letecká plocha tvrdily, že tam nelétá dron. Ten zákaz\n'+
            '  ve hře není — na Důlním díle je zakázané jen GNSS\n'+
+           '• MĚŘICKÁ METODA UŽ NESPÁLÍ NÁBOJ ZA NIC. Protínání vpřed, Polygonový\n'+
+           '  pořad, Uzávěr pořadu a Vytyčení bodů se daly použít na prázdnou trasu\n'+
+           '  a Nivelační pořad při stoprocentní přesnosti — náboj byl pryč a hra\n'+
+           '  ještě ohlásila zásah, který se nekonal. Teď náboj zůstává\n'+
+           '• RYCHLOST SI HRA PAMATUJE. Tlačítko 1× / 2× / 3× / 4× psalo volbu jen\n'+
+           '  do rozehraného měření, takže na dalším území byla zase jednička\n'+
+           '• Náhled PŘÍŠTÍ na Rozcestí sítí lhal ve všech etapách — území se dvěma\n'+
+           '  trasami posílá menší vlny, ale náhled o tom nevěděl (sliboval 11\n'+
+           '  vlivů a přišlo 7)\n'+
+           '• Tip o rozpočtu sliboval v panelu ☰ obnovu přesnosti, která tam není\n'+
+           '• Nastavení: Hudba hraje i při měření, popisek tvrdil, že jen v menu\n'+
            '\n'+
            'CO SE ZMĚNILO PROTI 88\n'+
            '• NOVÝ VZHLED CELÉ HRY. Karty místo barevných ploten, tmavá deska,\n'+
@@ -16200,7 +16229,11 @@ $('auto').onclick=()=>{
  if(!SAVE.opts.auto&&S)S.autoT=0;
  ui();};
 $('spd').onclick=e=>{const b=e.currentTarget;
- S.speed=S.speed===1?2:S.speed===2?3:S.speed===3?4:1;b.textContent=S.speed+'×';b.classList.toggle('on',S.speed>1);};
+ S.speed=S.speed===1?2:S.speed===2?3:S.speed===3?4:1;b.textContent=S.speed+'×';b.classList.toggle('on',S.speed>1);
+ // Volba rychlosti se drzi i do dalsiho mereni. Dosud se pisela jen do behu,
+ // takze si ji hrac musel na kazdem uzemi naklikat znovu.
+ SAVE.opts.spd=S.speed;save();
+ if(typeof renderOpts==='function'&&$('opts')&&$('opts').classList.contains('on'))renderOpts();};
 let TAB='net',DOCK=false;
 const QUICK_H=46;   // vyska rychle listy nad deskou
 function placeQuick(){

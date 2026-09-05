@@ -36,6 +36,21 @@ Sedm oprav, každá ověřená spuštěním a A/B proti v89 (podrobně v `NAVOD.
 6. Popisky tlačítek u **Co je nového** a **Zaseknutí a chyby**: VLOŽIT → UKÁZAT.
 7. Texty **Důlního díla** a **Letecké plochy** tvrdily zákaz dronu, který ve hře
    není.
+8. **Metody nespálí náboj za nic** (`useAbil`): čtyři metody působící na vlivy
+   šlo použít na prázdnou trasu, Nivelační pořad při 100 % přesnosti — a hra
+   ještě ohlásila zásah. Změřeno: náboje 2→1 před, 2→2 po.
+9. **Rychlost 1×/2×/3×/4× se drží mezi měřeními** (`$('spd').onclick` zapisuje
+   do `SAVE.opts.spd`). Dosud se volba psala jen do běhu.
+10. **Náhled PŘÍŠTÍ na Rozcestí sítí** neuměl úpravu pro území se dvěma trasami
+    a lhal v 12 z 12 etap. Nová `dveTrasy()` slouží náhledu i `startWave()`.
+11. Tip o rozpočtu sliboval v ☰ obnovu přesnosti, která tam není.
+12. Popisek **Hudba v menu** → **Hudba** (hraje i při měření).
+13. Popisek **Výchozí rychlost** → **Rychlost měření**.
+
+**Ověřeno bez nálezu** (ať to nikdo nehledá znovu): uložení a obnova
+rozehraného měření (0 rozdílů ve 12 sledovaných hodnotách), strop nábojů,
+vrácení stanoviska, ceny vylepšení hrdiny, výměna nabídky během tutoriálu,
+počítadla všech dvanácti denních úkolů.
 
 ### Čeho se session H NEDOTKLA (patří vzhledové session)
 

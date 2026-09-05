@@ -57,9 +57,10 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 
 ## Co je nového ve verzi 90
 
-Opravné vydání. Nic nového se nepřidávalo, jen se spravilo, co bylo rozbité —
-včetně věci, která na třech územích brala hráči celého hrdinu. **Vzhledu se
-tahle verze nedotýká**, ten řeší jiná session.
+Opravné vydání, **třináct oprav**. Nic nového se nepřidávalo, jen se spravilo,
+co bylo rozbité — včetně věci, která na třech územích brala hráči celého
+hrdinu, a čtyř metod, které se daly spálit za nic. **Vzhledu se tahle verze
+nedotýká**, ten řeší jiná session.
 
 - **Hrdina se už vejde na každé území.** Na Městské zástavbě, Železničním
   koridoru a Mostní konstrukci nebyl ve vytyčeném pásu ani jeden volný
@@ -87,6 +88,35 @@ tahle verze nedotýká**, ten řeší jiná session.
   dědilo se z poslední větve popisků. Teď říká UKÁZAT.
 - **Důlní dílo** a **Letecká plocha** měly v popisu, že tam nelétá dron.
   Ten zákaz ve hře není; na Důlním díle je zakázané jen GNSS.
+- **Měřická metoda už nespálí náboj za nic.** Protínání vpřed, Polygonový
+  pořad, Uzávěr pořadu a Vytyčení bodů šlo použít na **prázdnou trasu**
+  a Nivelační pořad při **stoprocentní přesnosti** — náboj se odečetl a hra
+  ještě oznámila zásah, který se nekonal („Protínání vpřed · zásah 45" bez
+  jediného vlivu na desce). Změřeno: náboje **2 → 1** před, **2 → 2** po.
+  Metoda teď řekne proč a náboj zůstane.
+- **Rychlost si hra pamatuje.** Tlačítko 1× / 2× / 3× / 4× zapisovalo volbu
+  jen do rozehraného měření, takže na dalším území byla zase jednička.
+  Změřeno: po klepnutí `SAVE.opts.spd` **1 → 2** a další měření startuje
+  na 2×. Nastavení proto říká **Rychlost měření**, ne „Výchozí rychlost".
+- **Náhled PŘÍŠTÍ na Rozcestí sítí lhal ve všech dvanácti měřených etapách.**
+  Území se dvěma trasami posílá menší vlny (×0,62), ale náhled o tom nevěděl:
+  sliboval 11 vlivů a přišlo 7. Náhled i skutečná vlna teď počítají touž
+  funkcí `dveTrasy()`. Změřeno: neshod **12/12 → 1/12**, a ta zbylá je
+  vylosovaná podmínka etapy, kterou náhled hlásí zvlášť jako „možné podmínky".
+- **Tip o rozpočtu** sliboval, že v panelu ☰ je „obnova přesnosti" — ta tam
+  není, jsou tam jen Terénní služby (posílení čety) a vylepšení v záložce Síť.
+- Nastavení: **Hudba** hraje i při měření (a u bosse zrychlí), popisek přitom
+  tvrdil, že jen v menu.
+
+### Ověřeno bez nálezu
+
+Tyhle věci prošly zkouškou v pořádku, ať je nikdo nehledá znovu: uložení
+a obnova rozehraného měření (mapa, etapa, přesnost, rozpočet, stanoviska,
+hrdina včetně velikosti, odkrytá pole, síť, náboje, kapacita — **0 rozdílů**),
+doplňování nábojů na konci etapy respektuje strop, vrácení stanoviska vrátí
+rozpočet i kapacitu, ceny vylepšení hrdiny 60/150/340 a pak MAX, výměna
+nabídky je během tutoriálu zdarma a popisek to říká, a všech dvanáct druhů
+denních úkolů má funkční počítadlo.
 
 ### Co zůstává na příště
 
