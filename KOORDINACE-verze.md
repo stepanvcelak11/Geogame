@@ -6,7 +6,70 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VYDÁNA VERZE 88 (5. 9. ráno, session D) — A REPO JE KONEČNĚ GIT
+## AKTUÁLNÍ STAV: VYDÁNA VERZE 89 (5. 9. večer, session G) — PŘESTAVBA SESAZENA
+
+**Číslo 89 je vydané, další si berte 90.** Session G (tahle) dodělala práci,
+kterou po sobě nechaly session E a F, a vydala ji.
+
+### Co se dodělávalo
+
+**Session E** (vizuální přestavba, dopoledne) rozdělila práci na deset záplat
+a deset CSS bloků v dočasné složce, všechny je dopsala — a **nikdy je nesesadila
+ani nespustila**. `sestaveno.html` byla jen nedotčená kopie zdroje.
+**Session F** mezitím zapsala do `index.html` opravy kontrastu a taky je
+nevydala. Obě práce se musely nejdřív složit dohromady:
+
+- dvě kotvy záplat (`40-teren`, `50-laborka`) mířily na text, který session F
+  mezitím přepsala (`opacity:.6` → `.8`, `opacity:.75` → `.9`);
+- záplata `25-skiny.py` měla **utržený řádek** — `zlato: {n:'Zlatá', col:'#ffd busted`
+  — který lámal **celý JS hry**: `window.__G` nebylo vůbec definované a hra se
+  nespustila. Doplněno z ověřeného mezivýstupu té session (`work/25/out.html`).
+
+### Jak se to ověřovalo
+
+Workflow: sedm oblastí (lišta a titulka, obchod, vzhledy přístrojů, vybavení,
+terén, laborka + kariéra, hra + okna), na každou kontrolor a nad ním skeptik,
+který má nálezy **vyvracet**. Kontroloři směli opravovat **jen ve vlastním CSS
+bloku** (`blocks/9NN-oprava.css`), aby si navzájem nepřepsali práci; zásahy do
+JS a HTML museli popsat kotvou a nechat hlavní session. 10 agentů ze 13 doběhlo,
+tři spadly na limit session — jejich měření ale zůstalo ve scratchpadu a dalo
+se dočíst.
+
+**Ze skeptiků vzešly dvě opravy měřidel, ne hry:** kontrast počítaný z vrstev
+CSS hlásil 4,39:1 tam, kde diferenční měření dvěma snímky dává 4,92:1, a jedna
+oprava kontrastu si vyrobila **regresi** (popisek pruhu postupu na legendární
+kartě spadl z 8,71 na 1,95:1), kterou původní měřidlo nemohlo vidět — `<span>`
+je sourozenec výplně, ne její potomek.
+
+### Co je v `index.html` navíc proti bloku session E
+
+Jedna nová záplata `90-opravy.py` (jen JS a HTML, každá kotva ověřená spuštěním):
+obnova záložky Za mezníky v `renderShop()`, vzhledy jen k odemčeným přístrojům,
+zdvojené „Nasazeno", dvojnásobné míchání barvy rodiny s barvou přístroje,
+zmenšený prstenec v mapě světa, filtr Vše u úspěchů, sladěná `theme-color`
+s pozadím a text Co je nového.
+
+Sesazecí sada (záplaty a CSS bloky) byla **jen pracovní** a v repozitáři není —
+`index.html` je od téhle chvíle zase jediný zdroj pravdy a další úpravy patří
+přímo do něj.
+
+### Čím je vydání podložené
+
+- 9 kombinací (320/390/1440 × den/noc/kontrastní) × **dvě spuštění** téhož
+  profilu: **0 chyb v konzoli**, 0 vodorovných přetoků.
+- Robot `mereni/ab.py`: **222 odehraných etap, 9 vyhraných území z 12** proti
+  8 z 12 ve verzi 88 — obtížnost se přestavbou neposunula.
+- Políčko desky 42 px na 390×844, stejně jako v 88.
+
+### Co zůstává nedodělané
+
+Sepsáno v `NAVOD.md`, oddíl **Co zůstává na příště**. Nejdůležitější:
+**oblast „hra a okna" nemá druhé čtení** — skeptik se k ní kvůli limitu session
+nedostal, takže tři tamní opravy stojí jen na měření kontrolora.
+
+---
+
+## PŘEDCHOZÍ STAV: VYDÁNA VERZE 88 (5. 9. ráno, session D) — A REPO JE KONEČNĚ GIT
 
 **Číslo 88 si vzala session D.** Je to čistě opravné vydání nad verzí 87:
 žádná nová mechanika, jen nálezy z prohlídky. `index.html`,

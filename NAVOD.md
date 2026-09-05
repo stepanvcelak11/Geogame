@@ -1,4 +1,4 @@
-# GeoGame — verze 88
+# GeoGame — verze 89
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=88;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=89;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v88-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v89-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v88-jediny-soubor.html
+copy index.html geogame-v89-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -54,6 +54,68 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 89
+
+Velká vizuální přestavba do podoby moderní mobilní hry. Herní pravidla se
+nezměnila (robot dohraje stejně jako v 88: 9 vyhraných území z 12 proti 8),
+změnilo se, jak hra vypadá a jak se v ní hledá.
+
+- **Nový výtvarný systém.** Karty místo barevných ploten, tmavá deska, jedna
+  stupnice odsazení a zaoblení a jeden barevný akcent na kartu. Popis systému
+  je v hlavičce stylu (blok `00 - VYTVARNY SYSTEM`); kdo bude přidávat další
+  obrazovku, má se ho držet, jinak se to zase rozpadne do duhy.
+- **Terén je poskládaný do čtyř zastávek** — mapa světa, profil, úkoly a režimy
+  ve vodorovném pásu — místo jedenácti bloků pod sebou.
+- **Vzhledy přístrojů zvlášť na každý přístroj.** Dosud byl jeden vzhled
+  globálně pro všech dvacet. Teď má každý přístroj tři vlastní, dohromady 69,
+  a barva rodiny se míchá s barvou přístroje. Míchání bylo tak slabé, že svůj
+  účel neplnilo (163 z 278 dvojic přístrojů v téže rodině mělo odstup barvy
+  pod 12 v RGB, nejtěsnější 3) — zdvojnásobilo se, teď je takových dvojic 52
+  a rodina zůstává poznat.
+- **Co jsi měl koupené pro všechny přístroje najednou, máš dál.** Starý vzhled
+  se převede na všechny přístroje; kde ta rodina není, dostaneš vzhled ze stejné
+  cenové police. Vedlejší účinek: kdo měl koupené všech pět starých rodin, má
+  rovnou všech 69 nových a v obchodě už nemá co kupovat. Je to vědomé
+  rozhodnutí — hráč nemá přijít o to, co si zaplatil.
+- **Vzhled se dá koupit jen k přístroji, který už máš.** Na čerstvém profilu
+  nabízela karuselka všech 23 přístrojů, ačkoli hráč jich má 7, a vzhled šlo
+  opravdu koupit za 80 mezníků k přístroji, který nikdy neviděl.
+- **Spodní lišta a tlačítko HRÁT se už nepřekrývají** (dřív o 16 px).
+- **Trofejní i sezónní cesta se rozklikne** a odměny jsou pilulky, ne holý text.
+- **Čitelnost.** Desítky míst, kde bylo světlé písmo na světlé ploše — nejhorší
+  poměry 1,0–2,5:1, měřeno proti skutečně vykresleným pixelům. Nejvíc jich bylo
+  v kontrastním motivu: tlačítko panelu v bitvě mělo v něm poměr 1,00 (černý
+  glyf na černé ploše), pilulka postupu sezónní cesty rovněž 1,00.
+- **Dotykové cíle** mají všude aspoň 44 px (jen na stránce Vybavení jich bylo
+  26 menších).
+- **Obchod → Za mezníky** ukazuje po návratu na stránku skutečný zůstatek
+  (dřív dvě různá čísla téhož účtu na jedné obrazovce) a tlačítko, na které
+  hráč nemá, je vypnuté — dosud šlo klepnout a nestalo se vůbec nic.
+- **Kariéra → Úspěchy: filtr Vše** konečně ukáže i hotové úspěchy. Dosud dělal
+  přesně totéž co Nesplněné.
+- **Prstenec kolem území, kam se právě jde**, není useknutý okrajem mapy —
+  týkalo se to prvního území, které vidí každý nový hráč.
+- Hrací deska zůstala stejně velká jako v 88 (políčko 42 px na 390×844).
+
+### Co zůstává na příště
+
+- **Oblast „hra a okna" nemá druhé čtení.** Kontrolor ji proměřil a tři nálezy
+  opravil, ale skeptik, který má nálezy vyvracet, se k ní už nedostal. Sama
+  bitva je proto ověřená jen spuštěním (222 odehraných etap, 0 chyb v konzoli),
+  ne prohlídkou.
+- Na záložce **Za mezníky** jsou v DOM pořád dva „hlavní" prvky proti pravidlu
+  systému; ztlumil se jen ten druhý.
+- **Odměny za hvězdy** v Kariéře zůstávají holým textem. Pilulky by blok
+  natáhly ze 455 na 804 px, takže to chce dřív užší pilulky nebo dva sloupce.
+- Ve filtru **Vše** u úspěchů zabere strop osmi karet hotové úspěchy, jakmile
+  jich bude většina.
+- Na šířce **320 px** se do horní lišty pořád nevejde jméno delší než sedm
+  znaků a denní zakázka není celá vidět ani po dorolování.
+- Jedno pravidlo v obchodě stojí na CSS `:has()`; na iPhonu se systémem starším
+  než iOS 15.4 se zahodí a patní poznámka tam zůstane viset.
+- Tlačítko u řádku **Co je nového** v Nastavení má popisek VLOŽIT (dědí se
+  z v88).
 
 ## Co je nového ve verzi 88
 
