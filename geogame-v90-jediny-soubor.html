@@ -7298,6 +7298,46 @@ function canBuild(k,c,r){
  if(d.build==='water')return WATEROK.indexOf(k)>=0;
  return true;
 }
+// Na trech uzemich (Mestska zastavba, Zeleznicni koridor, Mostni konstrukce)
+// nevznikl ve vytycenem pasu ani jeden volny ctverec 2x2, takze hrdina nemel
+// kam a hrac o nej pro cele uzemi prisel. Kdyz zadne misto neni, odkryjeme
+// nejmensi pocet policek, ktery jedno vyrobi. Deterministicke - stejna mapa
+// dopadne vzdy stejne.
+function zajistiMistoProHrdinu(){
+ if(!S||!S.open||!S.hrd)return 0;
+ const k=S.hrd, z=(T[k]&&T[k].sz)||2;
+ if(banned(k))return 0;
+ for(let c=0;c+z<=COLS;c++)for(let r=0;r+z<=ROWS;r++)
+   if(hrdVejde(k,c,r))return 0;          // misto uz je, nic se neodkryva
+ // Terenni podminka bez ohledu na to, jestli je policko odkryte.
+ const lzeTam=(c,r)=>{
+   const t=terAt(c,r); if(!t)return true;
+   const d=TER[t];
+   if(d.build===false)return false;
+   if(d.build==='water')return WATEROK.indexOf(k)>=0;
+   return true;
+ };
+ let best=null;
+ for(let c=0;c+z<=COLS;c++)for(let r=0;r+z<=ROWS;r++){
+   const chybi=[]; let lze=true;
+   for(let i=0;i<z&&lze;i++)for(let j=0;j<z&&lze;j++){
+     const cc=c+i, rr=r+j, key=cc+','+rr;
+     if(ONPATH.has(key)||!lzeTam(cc,rr)){lze=false;break;}
+     if(S.open.has(key))continue;
+     // nove policko smi vzniknout jen u trasy - stejny strop jako openNewSpotForce
+     let dp=99;
+     PATHS.forEach(pp=>pp.forEach(q=>{const dd=Math.abs(q[0]-cc)+Math.abs(q[1]-rr);if(dd<dp)dp=dd;}));
+     if(dp>3){lze=false;break;}
+     chybi.push(key);
+   }
+   if(!lze)continue;
+   if(!best||chybi.length<best.length)best=chybi;
+ }
+ if(!best)return 0;
+ best.forEach(key=>S.open.add(key));
+ rebuildOcc();
+ return best.length;
+}
 function terRng(t){ const d=TER[terAt(t.c,t.r)]; return d&&d.rng?1+d.rng:1; }
 
 const MAPS=[
@@ -7358,7 +7398,7 @@ const MAPS=[
 {n:'Důlní dílo',
    node:[0.32, 0.7], boss:{"n": "Zával chodby", "d": "Důlní dílo se sesypalo. Silný pancíř."},
    brief:"Důlní měřictví. Bez signálu družic se orientuješ jen podle optiky a gyroskopu.",
-  pal:'night',d:'Podzemní chodby. Bez signálu družic — GNSS ani dron tu nefungují.',
+  pal:'night',d:'Podzemní chodby. Bez signálu družic — GNSS tu nefunguje.',
   waves:20,hp:0.85,ban:['gnss'],
   p:[[0,6],[1,6],[1,5],[1,4],[2,4],[3,4],[4,4],[4,3],[4,2],[5,2],[6,2],[7,2],[7,3],[7,4],[7,5],
      [6,5],[5,5],[5,6],[5,7],[6,7],[7,7],[7,8],[7,9],[6,9],[5,9],[4,9],[3,9],[3,10],[3,11],
@@ -7370,8 +7410,8 @@ const MAPS=[
        ['hill',2,7],['hill',3,7],['hill',6,3],['hill',6,4]]},
  {n:'Letecká plocha',
    node:[0.46, 0.82], boss:{"n": "Turbulentní vzduch", "d": "Nad plochou to nese. Rychlý a odolný."},
-   brief:"Provozní letiště. Vzdušný prostor je uzavřený, dron nevzlétne. Zato je odsud vidět daleko.",
-  d:'Provozní letiště. Vzdušný prostor je uzavřený, drony ne.',
+   brief:"Provozní letiště. Rovina bez překážek — je odsud vidět daleko.",
+  d:'Provozní letiště. Rovina, dlouhé záměry.',
   waves:21,hp:1.00,ban:[],
   p:[[0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[8,3],[8,4],
      [7,4],[6,4],[5,4],[4,4],[3,4],[2,4],[1,4],[0,4],[0,5],[0,6],[0,7],
@@ -9094,6 +9134,7 @@ function newRun(mi,endless,chal,hard){
    if(td&&td.build===false)continue;
    if(chebToPath(c,r)<=1)S.open.add(key);
  }
+ zajistiMistoProHrdinu();
  if(chal){
    if(chal.mods.some(m=>m.id==='poor'))S.cr=Math.round(S.cr/2);
    if(chal.mods.some(m=>m.id==='trio'))S.deck=S.deck.slice(0,3);
@@ -9437,7 +9478,10 @@ function updateDrones(t,dt){
        const w=pathPos(e.p,e.pi);
        if(Math.hypot(w.x-q.x,w.y-q.y)<=rad){hits++;
          hurt(e,D*(hasPerk(t,'bomb')?1.3:1),0,0,t);
-         e.mark=Math.max(e.mark||0,mk);e.markPow=Math.max(e.markPow||0,hasPerk(t,'dronemark')?.45:.25);hit=true;}
+         // Trvale vytyceni z posledni rady dronu se dosud cetlo jen u multistanice,
+         // takze hrdinovi ta schopnost nic nedelala.
+         e.mark=Math.max(e.mark||0,hasPerk(t,'markperm')?999:mk);
+         e.markPow=Math.max(e.markPow||0,hasPerk(t,'dronemark')?.45:.25);hit=true;}
      });
      if(hit){ dr.cd=1/(T.photo.rate[t.l]*(S.rush>0?1.6:1)); dr.flash=.18; snd('shoot');
        S.fx.push({type:'ring',x:q.x,y:q.y,r:rad,c:T.photo.c,t:.22,d:.22}); }
@@ -10491,6 +10535,7 @@ function draw(){
        ctx.fillRect(OX+c*CS+2,OY+r*CS+2,CS-4,CS-4);
        ctx.strokeRect(OX+c*CS+2.5,OY+r*CS+2.5,CS-5,CS-5);}
  }
+ kresliMistaProHrdinu(ctx);
  // Pentagonalni hranol nemeri do kruhu, ale jen po rade a po sloupci.
  // Kruh dosahu by u nej lhal, proto se kresli kriz sirokych pasu.
  if(S.sel&&T[S.sel.k].kind==='ortho'){
@@ -10771,6 +10816,50 @@ function draw(){
    W/2,OY+ROWS*CS/2,Math.max(W,H)*.72);
  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.22)');
  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+// Pri stavbe hrdiny se dosud nekreslilo nic: hrac dostal pokyn "klepni na desku"
+// a mel na desce 9x13 najit ctverec 2x2, ktery se nikde neoznacoval. Na dvou
+// uzemich je pritom takove misto jedine. Tohle ukaze vsechny a pod prstem
+// i dosah. Ciste zobrazovaci - do herniho stavu to nesaha.
+function kresliMistaProHrdinu(g){
+ if(!S||!S.stavimHrdinu||!S.hrd||S.hrdT)return;
+ const k=S.hrd, z=(T[k]&&T[k].sz)||2;
+ const a=.40+.30*Math.sin(tAnim*5);
+ g.save();
+ let mist=0;
+ for(let c=0;c+z<=COLS;c++)for(let r=0;r+z<=ROWS;r++){
+   if(!hrdVejde(k,c,r))continue;
+   mist++;
+   const x=OX+c*CS, y=OY+r*CS, w=z*CS;
+   g.fillStyle='rgba(0,230,192,'+(a*.28).toFixed(3)+')';
+   g.fillRect(x+2,y+2,w-4,w-4);
+   g.lineWidth=2.5;g.strokeStyle='rgba(0,230,192,'+a.toFixed(3)+')';
+   if(g.roundRect){g.beginPath();g.roundRect(x+2.5,y+2.5,w-5,w-5,8);g.stroke();}
+   else g.strokeRect(x+2.5,y+2.5,w-5,w-5);
+ }
+ // Kam presne dosedne, kdyz hrac klepne tam, kde ma prst. Stejne rohy jako
+ // pri skutecnem umisteni (r. "roh" v kliku), aby nahled nelhal o pul pole.
+ if(S.hoverCell){
+   const [hc,hr]=S.hoverCell;
+   const dotX=S.hoverPx?S.hoverPx[0]:cx(hc), dotY=S.hoverPx?S.hoverPx[1]:cy(hr);
+   const roh=[[hc,hr],[hc-1,hr],[hc,hr-1],[hc-1,hr-1]]
+     .filter(p=>hrdVejde(k,p[0],p[1]))
+     .sort((p,q)=>Math.hypot(cx(p[0]+(z-1)/2)-dotX,cy(p[1]+(z-1)/2)-dotY)
+                 -Math.hypot(cx(q[0]+(z-1)/2)-dotX,cy(q[1]+(z-1)/2)-dotY))[0];
+   if(roh){
+     const x=OX+roh[0]*CS, y=OY+roh[1]*CS, w=z*CS;
+     g.globalAlpha=1;
+     g.fillStyle='rgba(0,230,192,.22)';g.fillRect(x+2,y+2,w-4,w-4);
+     g.lineWidth=3;g.strokeStyle=T[k].c;
+     if(g.roundRect){g.beginPath();g.roundRect(x+2.5,y+2.5,w-5,w-5,8);g.stroke();}
+     else g.strokeRect(x+2.5,y+2.5,w-5,w-5);
+     g.globalAlpha=.9;
+     glyph(g,k,x+w/2,y+w/2,CS*.60,0,T[k].c);
+   }
+ }
+ g.restore();
+ if(!mist&&!S.__hrdVaruj){S.__hrdVaruj=1;
+   toast('Tady se hrdina nikam nevejde — uvolni čtyři sousední pole.');}
 }
 function drawCondition(g,W,H){
  const c=condOf(); if(!c)return;
@@ -13144,7 +13233,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=89;
+const VERZE=90;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -15069,6 +15158,10 @@ function renderAch(){
    if(af==='ready')return achReady(a);
    return true;
  }).sort((a,b)=>{
+   // Ve filtru Vse maji hotove uspechy postup 100 %, takze se drive radily
+   // nahoru a strop osmi karet jimi cely zabraly - nesplnene uz se nevesly.
+   const da=SAVE.ach[a.id]?1:0, db=SAVE.ach[b.id]?1:0;
+   if(da!==db)return da-db;
    const ra=achReady(a)?0:1, rb=achReady(b)?0:1;
    if(ra!==rb)return ra-rb;
    return (achProg(b)/b.g)-(achProg(a)/a.g);
@@ -15493,7 +15586,6 @@ function renderOpts(){
  const b=$('optBody');b.innerHTML='';
  const items=[
   {id:'theme',n:'Vzhled',d:'Denní, noční nebo vysoký kontrast',theme:1},
-  {id:'testAll',n:'Testovací režim',d:'Odemkne všech 20 přístrojů, 3 hrdiny a 7 metod bez sbírání karet'},
   {id:'snd',n:'Zvuk',d:'Efekty přístrojů a vln'},
   {id:'vol',n:'Hlasitost',d:'Síla zvuků a hudby',cycle:[0,1,2,3],
    labels:['Ticho','Tichá','Střední','Hlasitá']},
@@ -15512,7 +15604,9 @@ function renderOpts(){
   {id:'upd',n:'Zkontrolovat aktualizaci',d:'Načte nejnovější verzi ze serveru',act:'upd'},
   {id:'intro',n:'Úvodní průvodce',d:'Znovu si projít, jak se hra hraje',act:'intro'},
   {id:'backup',n:'Záloha postupu',d:'Zkopíruj kód a vlož ho v nové verzi hry',act:'backup'},
-  {id:'restore',n:'Obnovit ze zálohy',d:'Vlož kód z jiné verze nebo zařízení',act:'restore'}
+  {id:'restore',n:'Obnovit ze zálohy',d:'Vlož kód z jiné verze nebo zařízení',act:'restore'},
+  // Vyvojarsky prepinac patri na konec, ne mezi prvni veci, ktere hrac vidi.
+  {id:'testAll',n:'Testovací režim',d:'Odemkne všech 20 přístrojů, 3 hrdiny a 7 metod bez sbírání karet'}
  ];
  // Zachranne polozky se ukazuji jen tehdy, kdyz je co zachranovat.
  if(typeof CHYBY!=='undefined'&&CHYBY.length)
@@ -15525,9 +15619,11 @@ function renderOpts(){
    t.innerHTML=it.n+'<s>'+it.d+'</s>';
    const btn=document.createElement('button');
    if(it.act){
+     // Radky, ktere nic nevkladaji, dedily popisek VLOZIT z posledni vetve.
      btn.textContent=it.act==='backup'?'ZKOPÍROVAT':it.act==='intro'?'SPUSTIT':
        it.act==='offline'?'STAV':it.act==='upd'?'HLEDAT':
-       it.act==='undo'?'VRÁTIT':it.act==='rescue'?'ZACHRÁNIT':'VLOŽIT';
+       it.act==='undo'?'VRÁTIT':it.act==='rescue'?'ZACHRÁNIT':
+       it.act==='news'?'UKÁZAT':it.act==='chyby'?'UKÁZAT':'VLOŽIT';
      btn.onclick=()=>{
        if(it.act==='undo'){
          const z=parseSave(lsGet(PKEY));
@@ -15566,6 +15662,24 @@ function renderOpts(){
        if(it.act==='news'){
          showHint(
            'GeoGame '+VERZE+'\n\n'+
+           'CO SE ZMĚNILO PROTI 89\n'+
+           '• HRDINA SE UŽ VEJDE NA KAŽDÉ ÚZEMÍ. Na Městské zástavbě, Železničním\n'+
+           '  koridoru a Mostní konstrukci nebyl ve vytyčeném pásu ani jeden volný\n'+
+           '  čtverec 2×2, takže tam hrdina nešel postavit vůbec. Když místo chybí,\n'+
+           '  odkryje se nejmenší počet políček, který jedno vyrobí — na těch třech\n'+
+           '  územích přesně jedno navíc, jinde se nezměnilo nic\n'+
+           '• PŘI STAVBĚ HRDINY JE VIDĚT, KAM SE VEJDE. Dosud se nekreslilo nic\n'+
+           '  a hráč měl na desce 9×13 najít čtverec 2×2, kterých je na dvou územích\n'+
+           '  jediný. Teď svítí všechna možná místa a pod prstem i to, kam dosedne\n'+
+           '• Trvalé vytyčení z poslední řady dronu konečně funguje. Četlo se jen\n'+
+           '  u multistanice, takže hrdina o celou schopnost přicházel\n'+
+           '• Kariéra → Úspěchy, filtr Vše: hotové úspěchy měly postup 100 %, řadily\n'+
+           '  se nahoru a strop osmi karet zabraly celý — nesplněné se nevešly\n'+
+           '• Testovací režim se přesunul na konec Nastavení. Byl druhý odshora\n'+
+           '• Tlačítko u Co je nového a u Zaseknutí a chyby říkalo VLOŽIT\n'+
+           '• Důlní dílo a Letecká plocha tvrdily, že tam nelétá dron. Ten zákaz\n'+
+           '  ve hře není — na Důlním díle je zakázané jen GNSS\n'+
+           '\n'+
            'CO SE ZMĚNILO PROTI 88\n'+
            '• NOVÝ VZHLED CELÉ HRY. Karty místo barevných ploten, tmavá deska,\n'+
            '  jedna stupnice odsazení a zaoblení a jeden barevný akcent na kartu.\n'+
@@ -16061,14 +16175,17 @@ tc=$('tCanvas');tg=tc.getContext('2d');
 cv.addEventListener('pointerdown',boardTap);
 const hoverFrom=e=>{
  if(!S)return;
- if(S.placing===null&&!S.moving){S.hoverCell=null;return;}
+ // Hrdina sem pribyl: pri jeho stavbe se dosud nesledovalo, kde je prst,
+ // takze nesel ukazat nahled ctverce 2x2.
+ if(S.placing===null&&!S.moving&&!S.stavimHrdinu){S.hoverCell=null;S.hoverPx=null;return;}
  const r=cv.getBoundingClientRect();
  const c=Math.floor((e.clientX-r.left-OX)/CS), rw=Math.floor((e.clientY-r.top-OY)/CS);
  S.hoverCell=(c>=0&&c<COLS&&rw>=0&&rw<ROWS)?[c,rw]:null;
+ S.hoverPx=S.hoverCell?[e.clientX-r.left,e.clientY-r.top]:null;
 };
 cv.addEventListener('pointermove',hoverFrom);
 cv.addEventListener('pointerdown',hoverFrom);
-cv.addEventListener('pointerleave',()=>{ if(S)S.hoverCell=null; });
+cv.addEventListener('pointerleave',()=>{ if(S){S.hoverCell=null;S.hoverPx=null;} });
 document.addEventListener('pointerdown',()=>{ac();musicSync();},{once:true});
 $('go').onclick=()=>{ musicSync();
  if(window.__goLock&&performance.now()-window.__goLock<450)return;

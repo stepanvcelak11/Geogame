@@ -6,7 +6,53 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VYDÁNA VERZE 89 (5. 9. večer, session G) — PŘESTAVBA SESAZENA
+## AKTUÁLNÍ STAV: ČÍSLO 90 SI VZALA SESSION H (5. 9. pozdě večer) — OPRAVY, NE VZHLED
+
+**Číslo 90 je zabrané, další si berte 91.** Session H udělala prohlídku hry
+(report `Desktop\geogame-hodnoceni-v89.md`, známka 7,5/10) a pak opravila to,
+co jde opravit **bez sáhnutí na vzhled** — vzhled si podle zadání uživatele
+řeší jiná session.
+
+Práce leží na větvi **`opravy-v90`**, na `main` zatím ne, právě proto, že
+souběžně někdo přestavuje vzhled ve stejném souboru.
+
+### Co je v 90
+
+Sedm oprav, každá ověřená spuštěním a A/B proti v89 (podrobně v `NAVOD.md`):
+
+1. **Hrdina se vejde na každé území.** Na mapách 4, 7 a 10 nebyl volný čtverec
+   2×2 → hrdina tam nešel postavit vůbec. Nová `zajistiMistoProHrdinu()`
+   v `newRun()` odkryje **nejmenší počet políček**, který jedno místo vyrobí.
+   Změřeno: na těch třech mapách přesně **+1 políčko** (37→38, 34→35, 28→29),
+   na zbylých devíti **beze změny**.
+2. **Náhled při stavbě hrdiny** (`kresliMistaProHrdinu()`, volaná z `draw()`).
+   Dosud se nekreslilo nic. Jde o **jednu volací řádku v `draw()`** a jednu
+   samostatnou funkci — schválně tak, aby se to při přestavbě vzhledu dalo
+   snadno přenést nebo přepsat.
+3. `markperm` u dronu se četl jen u multistanice. Změřeno: značka **5 → 999**.
+4. Filtr **Vše** u úspěchů: hotové vytlačovaly nesplněné ze stropu osmi karet.
+   Změřeno při 13/25 hotových: **4 → 8** nesplněných vidět.
+5. **Testovací režim** z druhého řádku Nastavení na konec.
+6. Popisky tlačítek u **Co je nového** a **Zaseknutí a chyby**: VLOŽIT → UKÁZAT.
+7. Texty **Důlního díla** a **Letecké plochy** tvrdily zákaz dronu, který ve hře
+   není.
+
+### Čeho se session H NEDOTKLA (patří vzhledové session)
+
+Paleta desky (`PALS`, `theme:'day'`), kreslení stanovisek a vlivů, draft karet,
+výsledková obrazovka a konfety, CSS (ani jedno pravidlo), rozložení pro užší
+displeje. **V CSS bloku není jediná změna** — kdo dělá vzhled, může merge brát
+bez obav o styl.
+
+### Kde se to potká
+
+`index.html`: `newRun()`, `draw()` (jedna volací řádka), `updateDrones()`,
+`renderOpts()`, `renderAch()`, `hoverFrom()`, dvě položky v `MAPS`, `const VERZE`
+a text „Co je nového". Nic z toho není v CSS.
+
+---
+
+## PŘEDCHOZÍ STAV: VYDÁNA VERZE 89 (5. 9. večer, session G) — PŘESTAVBA SESAZENA
 
 **Číslo 89 je vydané, další si berte 90.** Session G (tahle) dodělala práci,
 kterou po sobě nechaly session E a F, a vydala ji.

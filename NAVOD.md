@@ -1,4 +1,4 @@
-# GeoGame — verze 89
+# GeoGame — verze 90
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=89;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=90;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v89-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v90-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v89-jediny-soubor.html
+copy index.html geogame-v90-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -54,6 +54,46 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 90
+
+Opravné vydání. Nic nového se nepřidávalo, jen se spravilo, co bylo rozbité —
+včetně věci, která na třech územích brala hráči celého hrdinu. **Vzhledu se
+tahle verze nedotýká**, ten řeší jiná session.
+
+- **Hrdina se už vejde na každé území.** Na Městské zástavbě, Železničním
+  koridoru a Mostní konstrukci nebyl ve vytyčeném pásu ani jeden volný
+  čtverec 2×2, takže tam hrdina nešel postavit vůbec a hráč o něj pro celé
+  území přišel. Když místo chybí, odkryje se **nejmenší počet políček, který
+  jedno vyrobí**, a jen u trasy (stejný strop jako u ostatního odkrývání).
+  Změřeno: na těch třech územích **přesně jedno políčko navíc**
+  (37→38, 34→35, 28→29), na zbylých devíti se nezměnilo nic. Platí pro toho
+  hrdinu, kterého má hráč nasazeného — ověřeno pro všechny tři.
+- **Při stavbě hrdiny je vidět, kam se vejde.** Dosud se nekreslilo nic:
+  hráč dostal pokyn „klepni na desku" a měl na desce 9×13 najít čtverec 2×2,
+  který se nikde neoznačoval — a na Železničním koridoru i na Mostní
+  konstrukci je takové místo **jediné**. Teď svítí všechna možná místa a pod
+  prstem se ukáže přesně ten čtverec, kam hrdina dosedne. Náhled používá
+  **stejné pravidlo rohu jako skutečné klepnutí**, takže nelže o půl pole.
+- **Trvalé vytyčení z poslední řady dronu funguje.** Četlo se jen v obsluze
+  multistanice, takže hrdinovi ta schopnost nedělala nic. Změřeno na živém
+  vlivu: značka **5 → 999**.
+- **Kariéra → Úspěchy, filtr Vše** ukáže i nesplněné úspěchy. Hotové mají
+  postup 100 %, řadily se proto nahoru a strop osmi karet zabraly celý.
+  Změřeno při 13 z 25 hotových: z osmi vidět **4 nesplněné → 8**.
+- **Testovací režim** (odemkne všechno) se přesunul na konec Nastavení.
+  Byl druhá položka odshora, hned pod Vzhledem.
+- Tlačítko u řádku **Co je nového** a **Zaseknutí a chyby** říkalo VLOŽIT —
+  dědilo se z poslední větve popisků. Teď říká UKÁZAT.
+- **Důlní dílo** a **Letecká plocha** měly v popisu, že tam nelétá dron.
+  Ten zákaz ve hře není; na Důlním díle je zakázané jen GNSS.
+
+### Co zůstává na příště
+
+Čtyři největší nálezy z prohlídky 5. 9. večer jsou vizuální a tahle verze se
+jich nedotkla — deska vypadá jako z jiné hry než menu, draft karet vypadá jako
+seznam, konfety se na výsledku kreslí přes text a deska se scvrkává na
+telefonech užších než 390 px. Rozepsané jsou v `Desktop\geogame-hodnoceni-v89.md`.
 
 ## Co je nového ve verzi 89
 
@@ -108,14 +148,10 @@ změnilo se, jak hra vypadá a jak se v ní hledá.
   systému; ztlumil se jen ten druhý.
 - **Odměny za hvězdy** v Kariéře zůstávají holým textem. Pilulky by blok
   natáhly ze 455 na 804 px, takže to chce dřív užší pilulky nebo dva sloupce.
-- Ve filtru **Vše** u úspěchů zabere strop osmi karet hotové úspěchy, jakmile
-  jich bude většina.
 - Na šířce **320 px** se do horní lišty pořád nevejde jméno delší než sedm
   znaků a denní zakázka není celá vidět ani po dorolování.
 - Jedno pravidlo v obchodě stojí na CSS `:has()`; na iPhonu se systémem starším
   než iOS 15.4 se zahodí a patní poznámka tam zůstane viset.
-- Tlačítko u řádku **Co je nového** v Nastavení má popisek VLOŽIT (dědí se
-  z v88).
 
 ## Co je nového ve verzi 88
 
@@ -146,13 +182,9 @@ co bylo rozbité — včetně dvou věcí, které braly hráči postup.
 
 ### Co zůstává na příště
 
-- Na třech územích z dvanácti (Městská zástavba, Železniční koridor, Mostní
-  konstrukce) není na desce volný čtverec 2×2, takže se tam hrdina nemá kam
-  postavit. Oprava znamená nové pravidlo pro odkrývání polí, ne jednu řádku.
-- Poslední řada dronu dává vylepšení `markperm`, které kvůli druhu přístroje
-  nikdo nečte — dron o jednu schopnost přichází.
-- Náhled dosahu při stavění hrdiny se kreslí o půl pole vedle.
-- Dvě území mají v popisu, že tam dron neletí, ačkoli zákaz už neplatí.
+- ~~Na třech územích není volný čtverec 2×2 pro hrdinu; `markperm` u dronu
+  nikdo nečte; náhled při stavbě hrdiny; dvě území lžou o zákazu dronu.~~
+  **Všechno opraveno ve verzi 90.**
 
 ## Co je nového ve verzi 87
 
