@@ -47,10 +47,26 @@ Sedm oprav, každá ověřená spuštěním a A/B proti v89 (podrobně v `NAVOD.
 12. Popisek **Hudba v menu** → **Hudba** (hraje i při měření).
 13. Popisek **Výchozí rychlost** → **Rychlost měření**.
 
+14. **Epická karta „Objížďka" nedělala nic** — jediný čtenář byl `S.detour`,
+    který se nikde nenastavoval. Nabízela se v 2,4 % karet od 8. etapy a šla
+    vzít dvakrát. Odstraněna z `CARDS`, dokud pro ni nebude poctivý účinek.
+15. **Odměny za hvězdy 6 a 33 slibovaly HRDINU jako přístroj do sbírky**
+    (`STARREW`, `tower:'mensula'` a `'rotlaser'`). Hrdinové nejsou v `ORD`,
+    takže se ve sbírce ani v nabídce nikdy neobjeví — hráč dostal hlášku
+    „nový přístroj" a nic. Nahrazeno kartami, stejně jako u trofejní cesty v 88.
+16. **Pojistka v `applyReward()`**: odměna `tower`, která není v `ORD`, už
+    nevypíše prázdný slib, ale dá karty. Kdyby to někdo zase napsal, projeví
+    se to jako menší odměna, ne jako tichý podvod na hráči.
+
 **Ověřeno bez nálezu** (ať to nikdo nehledá znovu): uložení a obnova
 rozehraného měření (0 rozdílů ve 12 sledovaných hodnotách), strop nábojů,
 vrácení stanoviska, ceny vylepšení hrdiny, výměna nabídky během tutoriálu,
-počítadla všech dvanácti denních úkolů.
+počítadla všech dvanácti denních úkolů, **všech 78 vylepšení** přístrojů
+i hrdinů (u hrdinů i to, že se čtou ve větvi jejich druhu — tam selhával
+`markperm`), 5 vylepšení sítě, 7 metod, 10 účinků příslušenství, **6 trvalých
+vylepšení**, dosažitelnost všech 20 přístrojů, **36 otázek kvízu**, obsah čtyř
+druhů beden a **83 prokliknutých ovládacích prvků** v menu na plně odemčeném
+profilu.
 
 ### Čeho se session H NEDOTKLA (patří vzhledové session)
 

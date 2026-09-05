@@ -57,7 +57,7 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 
 ## Co je nového ve verzi 90
 
-Opravné vydání, **třináct oprav**. Nic nového se nepřidávalo, jen se spravilo,
+Opravné vydání, **šestnáct oprav**. Nic nového se nepřidávalo, jen se spravilo,
 co bylo rozbité — včetně věci, která na třech územích brala hráči celého
 hrdinu, a čtyř metod, které se daly spálit za nic. **Vzhledu se tahle verze
 nedotýká**, ten řeší jiná session.
@@ -107,16 +107,48 @@ nedotýká**, ten řeší jiná session.
   není, jsou tam jen Terénní služby (posílení čety) a vylepšení v záložce Síť.
 - Nastavení: **Hudba** hraje i při měření (a u bosse zrychlí), popisek přitom
   tvrdil, že jen v menu.
+- **Epická karta Objížďka nedělala nic.** Jediné, co ji četlo, byl `S.detour`,
+  který se nikde nenastavoval. Změřeno: nabízela se v **2,4 % karet** od osmé
+  etapy (29 z 1200 vylosovaných), byla epická a šla vzít dvakrát — pokaždé
+  hráč přišel o jeden ze tří výběrů. Navíc slibovala, že vlivy startují **blíž**
+  nulovému bodu, což je postih, ne odměna. Z nabídky zmizela, dokud pro ni
+  nebude poctivý účinek.
+- **Odměny za hvězdy slibovaly hrdiny.** Za 6 hvězd hra oznámila „nový přístroj:
+  Měřický stůl" a za 33 hvězd „Rotační laser" — jenže hrdinové nejsou ve sbírce
+  ani v nabídce a odemykají se pohárem (400 a 1150), ne hvězdami. Hráč tedy
+  dostal hlášku a nic. Dvě karty, které se k tomu přidávaly, byly rovněž
+  k ničemu. Nově dávají karty: **6 hvězd 120 výzkumu + 8 karet**, **33 hvězd
+  Etalonový sejf + 600 výzkumu + 16 karet**. Šest hvězd má hráč po dvou
+  územích na tři hvězdy, takže na tuhle vadu narazil skoro každý.
+  Aby se to nemohlo tiše vrátit, `applyReward()` nově pozná odměnu mimo sbírku
+  a místo prázdného slibu dá karty.
 
 ### Ověřeno bez nálezu
 
-Tyhle věci prošly zkouškou v pořádku, ať je nikdo nehledá znovu: uložení
-a obnova rozehraného měření (mapa, etapa, přesnost, rozpočet, stanoviska,
-hrdina včetně velikosti, odkrytá pole, síť, náboje, kapacita — **0 rozdílů**),
-doplňování nábojů na konci etapy respektuje strop, vrácení stanoviska vrátí
-rozpočet i kapacitu, ceny vylepšení hrdiny 60/150/340 a pak MAX, výměna
-nabídky je během tutoriálu zdarma a popisek to říká, a všech dvanáct druhů
-denních úkolů má funkční počítadlo.
+Tyhle věci prošly zkouškou v pořádku, ať je nikdo nehledá znovu:
+
+- Uložení a obnova rozehraného měření — mapa, etapa, přesnost, rozpočet,
+  stanoviska, hrdina včetně velikosti, odkrytá pole, síť, náboje, kapacita:
+  **0 rozdílů**.
+- Doplňování nábojů na konci etapy respektuje strop; vrácení stanoviska vrátí
+  rozpočet i kapacitu; ceny vylepšení hrdiny 60/150/340 a pak MAX; výměna
+  nabídky je během tutoriálu zdarma a popisek to říká.
+- Všech dvanáct druhů denních úkolů má funkční počítadlo.
+- **Všech 78 vylepšení** přístrojů i hrdinů se opravdu čte — a u hrdinů navíc
+  v té větvi kódu, která k jejich druhu patří (přesně tam selhávalo
+  `markperm`). Stejně tak 5 vylepšení sítě, 7 měřických metod a 10 účinků
+  příslušenství.
+- **Všech 6 trvalých vylepšení** (Provozní záloha, Stálý tým, Etalon,
+  Rychlonabíjení, Vlastní dílna, Grantové oddělení) se skutečně promítá do hry,
+  ne jen do popisku.
+- Každý ze 20 přístrojů ve sbírce jde získat a žádná odměna už neslibuje nic,
+  co ve sbírce není. Každý druh přístroje má vývojový strom.
+- **36 otázek kvízu**: platný index správné odpovědi, žádná se neopakuje,
+  žádné dvě stejné možnosti, všechny mají vysvětlení.
+- Čtyři druhy beden dávají rozumně odstupňovaný obsah (10 karet / 26 výzkumu
+  až 59 karet / 320 výzkumu).
+- **83 ovládacích prvků** ve všech pěti stránkách menu proklikáno na plně
+  odemčeném profilu — **0 chyb**.
 
 ### Co zůstává na příště
 

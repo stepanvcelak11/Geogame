@@ -7649,7 +7649,12 @@ const CARDS=[
  {id:'markall', n:'Průběžné vytyčení',  d:'Cíle jsou trvale označené (+10 %)',max:2,r:'e'},
  {id:'fwd',w:4,     n:'Předsunuté stanoviště',d:'Hned uvolní dvě místa u trasy',max:2,r:'r'},
  {id:'dblmerge',w:8,n:'Dvojí sloučení',    d:'Sloučení dá rovnou i kalibraci',max:1,r:'e'},
- {id:'detour',w:8,  n:'Objížďka',          d:'Vlivy startují o kus dál po trase',max:2,r:'e'},
+ // Karta 'Objizdka' byla MRTVA: jedina vec, ktera ji cetla, byl `S.detour`,
+ // ktery se nikde nenastavoval (nabidka zapisuje do S.mods.detour). Nabizela
+ // se v 2,4 % karet od 8. etapy, byla epicka a hrac ji mohl vzit dvakrat -
+ // pokazde prisel o vyber. Navic slibovala, ze vlivy startuji BLIZ nulovemu
+ // bodu, coz je postih, ne odmena. Nez pro ni nekdo vymysli poctivy ucinek,
+ // do nabidky nepatri.
  {id:'service',w:4, n:'Servis v terénu',   d:'Na konci etapy opraví 3 % přesnosti',max:3,r:'r'},
  {id:'depot',w:5,   n:'Polní sklad',       d:'+1 karta v nabídce přístrojů',max:1,r:'r'},
  {id:'crew',w:7,    n:'Druhá četa',        d:'+1 kapacita stanovisek',max:2,r:'e'},
@@ -8374,13 +8379,19 @@ function claimSeason(i,pro){
  renderSeason();renderTitle();
 }
 
+// Odmeny za hvezdy. Dve z nich slibovaly HRDINU jako pristroj do sbirky
+// (mensula za 6 hvezd, rotlaser za 33) - hra ohlasila "novy pristroj:
+// Merický stul", ale hrdinove nejsou v ORD, takze se ve sbirce ani v nabidce
+// nikdy neobjevi a dve karty k nim byly taky k nicemu. Hrdinu odemykaji
+// pohary (400 a 1150), ne hvezdy. Misto slibu, ktery se neda splnit, davaji
+// karty - stejne reseni jako u trofejni cesty ve verzi 88.
 const STARREW=[
- {n:6, r:{res:120,cards:3,tower:'mensula'}},
+ {n:6, r:{res:120,cards:8}},
  {n:12,r:{crate:'rare',res:150,tower:'compass'}},
  {n:18,r:{cards:8,res:220,tower:'prism'}},
  {n:24,r:{crate:'epic',res:300,tower:'thermal'}},
  {n:30,r:{cards:14,res:400,tower:'sonar'}},
- {n:33,r:{crate:'legend',res:600,tower:'rotlaser'}}
+ {n:33,r:{crate:'legend',res:600,cards:16}}
 ];
 function starsTotal(){ return (SAVE.stars||[]).reduce((a,b)=>a+b,0); }
 // ---- VZHLEDY (skiny) ----
@@ -12149,9 +12160,18 @@ function applyReward(r){
  const out=[];
  if(r.res){SAVE.res+=r.res;out.push('+'+r.res+' výzkumu');}
  if(r.tower&&SAVE.types.indexOf(r.tower)<0){
-   SAVE.types.push(r.tower);
-   SAVE.cards[r.tower]=(SAVE.cards[r.tower]||0)+2;
-   out.push('nový přístroj: '+T[r.tower].n[0]);
+   // Pojistka proti prazdnemu slibu: co neni v ORD (hrdinove), se ve sbirce
+   // ani v nabidce nikdy neukaze. Misto hlasky "novy pristroj", za kterou nic
+   // neni, dej karty. Kdyz nekdo takovou odmenu zase napise, projevi se to
+   // jako mensi odmena, ne jako tichy podvod na hraci.
+   if(ORD.indexOf(r.tower)<0){
+     const g=grantCards(4);
+     out.push('4 karet: '+Object.keys(g).map(k=>SHORT[k]+' ×'+g[k]).join(', '));
+   } else {
+     SAVE.types.push(r.tower);
+     SAVE.cards[r.tower]=(SAVE.cards[r.tower]||0)+2;
+     out.push('nový přístroj: '+T[r.tower].n[0]);
+   }
  }
  if(r.abil&&SAVE.abils.indexOf(r.abil)<0){
    SAVE.abils.push(r.abil);
@@ -15708,6 +15728,13 @@ function renderOpts(){
            '  vlivů a přišlo 7)\n'+
            '• Tip o rozpočtu sliboval v panelu ☰ obnovu přesnosti, která tam není\n'+
            '• Nastavení: Hudba hraje i při měření, popisek tvrdil, že jen v menu\n'+
+           '• EPICKÁ KARTA OBJÍŽĎKA NEDĚLALA NIC. Nabízela se v 2,4 % karet od\n'+
+           '  osmé etapy a šla vzít dvakrát — pokaždé jsi přišel o jeden výběr.\n'+
+           '  Než pro ni bude poctivý účinek, z nabídky zmizela\n'+
+           '• ODMĚNY ZA HVĚZDY SLIBOVALY HRDINY. Za 6 hvězd hra hlásila „nový\n'+
+           '  přístroj: Měřický stůl" a za 33 „Rotační laser" — jenže hrdinové\n'+
+           '  nejsou ve sbírce a v nabídce se nikdy neobjeví. Hrdiny odemykají\n'+
+           '  poháry (400 a 1150). Místo prázdného slibu teď dávají karty\n'+
            '\n'+
            'CO SE ZMĚNILO PROTI 88\n'+
            '• NOVÝ VZHLED CELÉ HRY. Karty místo barevných ploten, tmavá deska,\n'+
