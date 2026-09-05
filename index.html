@@ -7635,7 +7635,7 @@ const CARDS=[
  {id:'lidar_spl',n:'Širší zorné pole',  d:'Skenery +30 % plošného záběru',max:3,r:'r'},
  {id:'nivel_dur',n:'Delší záměry',      d:'Zpomalení trvá +50 %',max:3,r:'r'},
  {id:'gnss_inc',n:'Servisní smlouva',   d:'Každá GNSS stanice +6 rozpočtu za etapu',max:3,r:'r'},
- {id:'photo_fly',n:'Výkonné baterie',   d:'Drony +25 % doletu a rychlosti',max:3,r:'r'},
+ {id:'photo_fly',n:'Výkonné baterie',   d:'Drony +25 % doletu a +15 % rychlosti',max:3,r:'r'},
  {id:'pierce',  n:'Odrazné fólie',      d:'Dálkoměry prorazí 3 body pancíře',max:3,r:'r'},
  {id:'armor',   n:'Kalibrovaná měřidla',d:'Všechny cíle mají o 2 nižší pancíř',max:4,r:'r'},
  {id:'ability_cd',n:'Záložní akumulátory',d:'Každá metoda unese o 1 náboj víc',max:3,r:'r'},
@@ -8628,29 +8628,34 @@ const SPEC={
 function specHas(k,id){ return (SAVE.spec&&SAVE.spec[k]||[]).indexOf(id)>=0; }
 
 const ACC=[
- {id:'atr',  t:'theo',   n:'Automatické cílení ATR', d:'+6 % šance na dvojnásobnou ránu za úroveň',
+ {id:'atr',  t:'theo',   n:'Automatické cílení ATR', d:'+3 % šance na dvojnásobnou ránu za úroveň',
   max:3,cost:l=>72+l*54,eff:{crit:0.033}},
- {id:'libela',t:'theo',  n:'Přesná libela',          d:'+8 % poškození teodolitové řady',
+ {id:'libela',t:'theo',  n:'Přesná libela',          d:'+4 % poškození teodolitové řady za úroveň',
   max:3,cost:l=>61+l*47,eff:{dmg:0.044}},
+ // Retez dalkomeru se pocita cyklem `for(j=0;j<=jumps;j++)`, takze zlomek pod
+ // jednickou se ztrati: pri 0,55 za uroven nedelala PRVNI uroven za 99 vyzkumu
+ // vubec nic (3 zasahy pred i po, zmereno) a odraz pribyl az u druhe. Jedna
+ // uroven za tutez celkovou cenu (99+180) dava tentyz vysledek bez slepe
+ // urovne, na kterou se dal vyhodit vyzkum.
  {id:'prism',t:'edm',    n:'Hranol 360°',            d:'+1 odraz dálkoměrů',
-  max:2,cost:l=>99+l*81,eff:{chain:0.55}},
- {id:'motor',t:'lidar',  n:'Rotační hlava',          d:'+12 % plošného záběru skenerů',
+  max:1,cost:l=>279,eff:{chain:1}},
+ {id:'motor',t:'lidar',  n:'Rotační hlava',          d:'+6 % plošného záběru skenerů za úroveň',
   max:3,cost:l=>68+l*50,eff:{spl:0.066}},
- {id:'invar',t:'nivel',  n:'Invarová lať',           d:'+15 % délky zpomalení',
+ {id:'invar',t:'nivel',  n:'Invarová lať',           d:'+8 % délky zpomalení za úroveň',
   max:3,cost:l=>58+l*43,eff:{sdur:0.083}},
- {id:'tilt', t:'gnss',   n:'Naklápěcí senzor',       d:'+15 % dosahu aury GNSS',
+ {id:'tilt', t:'gnss',   n:'Naklápěcí senzor',       d:'+8 % dosahu aury GNSS za úroveň',
   max:3,cost:l=>76+l*58,eff:{rng:0.083}},
- {id:'radio',t:'gnss',   n:'Radiomodem',             d:'+4 dotace za etapu na stanici',
+ {id:'radio',t:'gnss',   n:'Radiomodem',             d:'+2,2 dotace za etapu na stanici za úroveň',
   max:3,cost:l=>65+l*50,eff:{inc:2.2}},
- {id:'rtk',  t:'photo',  n:'RTK modul dronu',        d:'+12 % doletu a rychlosti dronů',
+ {id:'rtk',  t:'photo',  n:'RTK modul dronu',        d:'+6 % doletu a rychlosti dronů za úroveň',
   max:3,cost:l=>72+l*54,eff:{fly:0.066}},
- {id:'thermo',t:'photo', n:'Termokamera',            d:'+10 % poškození dronů',
+ {id:'thermo',t:'photo', n:'Termokamera',            d:'+5 % poškození dronů za úroveň',
   max:3,cost:l=>65+l*50,eff:{dmg:0.055}},
- {id:'mprism',t:'machine',n:'Prizma na stroji',      d:'+25 % rychlosti rozběhu naváděcí TS',
+ {id:'mprism',t:'machine',n:'Prizma na stroji',      d:'+13 % rychlosti rozběhu naváděcí TS za úroveň',
   max:3,cost:l=>79+l*58,eff:{ramp:0.138}},
- {id:'freq', t:'gpr',    n:'Vyšší frekvence',        d:'+12 % poškození georadaru',
+ {id:'freq', t:'gpr',    n:'Vyšší frekvence',        d:'+6 % poškození georadaru za úroveň',
   max:3,cost:l=>68+l*50,eff:{dmg:0.066}},
- {id:'atrp', t:'multi',  n:'ATRplus',                d:'+25 % podílu z odolnosti cíle',
+ {id:'atrp', t:'multi',  n:'ATRplus',                d:'+13 % podílu z odolnosti cíle za úroveň',
   max:3,cost:l=>90+l*68,eff:{pct:0.138}}
 ];
 function accEff(type,key){
@@ -9059,16 +9064,16 @@ function vib(ms){ if(SAVE.opts.vib&&navigator.vibrate){ try{navigator.vibrate(ms
 let S=null, PATH=[], PATHS=[[]], ONPATH=new Set(), cv, ctx, CS=40, DPR=1, lastT=0, tAnim=0, dtLast=1/60;
 
 const SYN=[
- {a:'theo',b:'prism',    n:'Záměra na hranol',    d:'+25 % dosah a +15 % poškození',eff:{r:0.138,d:.15}},
- {a:'edm', b:'meteo',    n:'Atmosférická korekce',d:'+25 % poškození dálkoměru',    eff:{d:0.138}},
- {a:'machine',b:'gnss',  n:'Strojní navádění',    d:'+20 % poškození a rychlosti',  eff:{d:0.11,t:.20}},
- {a:'photo',b:'thermal', n:'Fúze dat',            d:'+30 % poškození dronů',        eff:{d:0.165}},
- {a:'sonar',b:'gpr',     n:'Podpovrchový průzkum',d:'+20 % poškození obou',         eff:{d:0.11}},
- {a:'quadrant',b:'compass',n:'Astronomická orientace',d:'+25 % dosah kvadrantu',    eff:{r:0.138}},
- {a:'lidar',b:'backpack',n:'Mračno bodů',         d:'+20 % poškození a dosahu',     eff:{d:0.11,r:.20}},
- {a:'tape',b:'mensula',  n:'Klasické mapování',   d:'+35 % rychlosti měření',       eff:{t:0.193}},
- {a:'nivel',b:'multi',   n:'Monitoring posunů',   d:'+25 % poškození a +15 % dosah',eff:{d:0.138,r:.15}},
- {a:'rotlaser',b:'theo', n:'Vytyčovací rovina',   d:'+20 % rychlosti obou',         eff:{t:0.11}}
+ {a:'theo',b:'prism',    n:'Záměra na hranol',    d:'+13 % dosah a +15 % poškození',eff:{r:0.138,d:.15}},
+ {a:'edm', b:'meteo',    n:'Atmosférická korekce',d:'+13 % poškození dálkoměru',    eff:{d:0.138}},
+ {a:'machine',b:'gnss',  n:'Strojní navádění',    d:'+11 % poškození a +20 % rychlosti',  eff:{d:0.11,t:.20}},
+ {a:'photo',b:'thermal', n:'Fúze dat',            d:'+16 % poškození dronů',        eff:{d:0.165}},
+ {a:'sonar',b:'gpr',     n:'Podpovrchový průzkum',d:'+11 % poškození obou',         eff:{d:0.11}},
+ {a:'quadrant',b:'compass',n:'Astronomická orientace',d:'+13 % dosah kvadrantu',    eff:{r:0.138}},
+ {a:'lidar',b:'backpack',n:'Mračno bodů',         d:'+11 % poškození a +20 % dosahu',     eff:{d:0.11,r:.20}},
+ {a:'tape',b:'mensula',  n:'Klasické mapování',   d:'+19 % rychlosti měření',       eff:{t:0.193}},
+ {a:'nivel',b:'multi',   n:'Monitoring posunů',   d:'+13 % poškození a +15 % dosah',eff:{d:0.138,r:.15}},
+ {a:'rotlaser',b:'theo', n:'Vytyčovací rovina',   d:'+11 % rychlosti obou',         eff:{t:0.11}}
 ];
 const SYNR=2.6; // dosah spolupráce v polích
 const SLOW_MIN=.08;   // ani tri zpomaleni najednou nesmi znamenat zastavu
@@ -9284,7 +9289,7 @@ function capMax(){if(chMod('small'))return 7;
  // Pas nabizi mist dost, takze omezenim je nove KAPACITA - jedno cislo,
  // ktere hrac vidi v HUDu, misto rozptylenych neviditelnych zamku.
  return 6+Math.floor((S?S.wave:0)/5)+SAVE.meta.cap
-        +3*((S&&S.net.cap)||0)+2*M('cap')+2*M('fwd')
+        +3*((S&&S.net.cap)||0)+2*M('cap')
         +((S&&S.mods&&S.mods.crew)||0)+((S&&S.crew)||0);}
 function priceOf(k){
  const f=Math.max(.45,1-.15*M('cheap')-.10*SAVE.meta.disc);
@@ -9374,6 +9379,10 @@ function critOf(t){
  });
  return c;
 }
+// POZOR: karta Rozhledny da aure GNSS 12 %, zatimco dosahu vsech ostatnich
+// pristroju 7 % (r. v rngOf). Popisek karty slibuje 7 %, takze hrac dostava
+// vic, nez mu hra slibila - proto se to nechalo byt. Kdo to bude sjednocovat,
+// at vi, ze to je zmena balancu, ne preklep k opraveni mimochodem.
 function auraR(t){return T.gnss.rng[t.l]*(1+.07*S.net.rng)*(1+.12*M('range'))*(1+accEff('gnss','rng'))*CS;}
 function calCost(t){
  const base=(16+t.cal*15)*(1+t.l*1.1);
@@ -11579,6 +11588,10 @@ function endWave(){
  S.towers.filter(t=>t.k==='gnss').forEach(g=>bonus+=(T.gnss.inc[g.l]+6*M('gnss_inc')+accEff('gnss','inc'))*(hasPerk(g,'supinc')?2:1));
  S.towers.filter(t=>t.k==='mensula'&&hasPerk(t,'econwave')).forEach(()=>bonus+=12);
  S.towers.filter(t=>t.k==='basecal'&&hasPerk(t,'ballinc')).forEach(()=>bonus+=15);
+ // Radiomodem pridava 2,2 za stanici, takze bonus vysel zlomkovy a hra hlasila
+ // "+18.2 rozpoctu". Rozpocet je cele cislo, zaokrouhli se az tady, aby se
+ // po ceste nic neztratilo.
+ bonus=Math.round(bonus);
  S.cr+=bonus;
  if(S.net.rep)S.acc=Math.min(100,S.acc+S.net.rep*2);
  if(M('regen'))S.acc=Math.min(100,S.acc+2*M('regen'));
@@ -12241,8 +12254,19 @@ function openDraft(){
    d.innerHTML='<div class="rtag" style="background:'+rr.col+'">'+rr.n+'</div>'+
      '<div class="pn">'+c.n+'</div><div class="pd">'+c.d+'</div>'+
      '<div class="pk">máš '+(S.mods[c.id]||0)+'/'+c.max+'</div>';
-   d.onclick=()=>{S.mods[c.id]=(S.mods[c.id]||0)+1;recalcBuffs();
-     $('draft').classList.remove('on');snd('merge');ui();toast('Získáno: '+c.n);};
+   d.onclick=()=>{S.mods[c.id]=(S.mods[c.id]||0)+1;
+     // Karty s okamzitym ucinkem. Predsunute stanoviste slibovalo "hned uvolni
+     // dve mista u trasy", ale jedine, co delalo, bylo +2 ke KAPACITE - tedy
+     // presne totez co bezna karta Terenni ceta, jen za vzacnost. Ted opravdu
+     // odkryje dve policka.
+     if(c.id==='fwd'&&typeof openNewSpotForce==='function'){
+       let n=0; for(let i=0;i<2;i++) if(openNewSpotForce())n++;
+       toast(n?('Předsunuté stanoviště · '+n+(n===1?' nové místo':' nová místa')):
+                'Volná místa u trasy už jsou odkrytá všechna.');
+     }
+     recalcBuffs();
+     $('draft').classList.remove('on');snd('merge');ui();
+     if(c.id!=='fwd')toast('Získáno: '+c.n);};
    L.appendChild(d);
  });
  $('draft').classList.add('on');snd('coin');
@@ -15735,6 +15759,18 @@ function renderOpts(){
            '  přístroj: Měřický stůl" a za 33 „Rotační laser" — jenže hrdinové\n'+
            '  nejsou ve sbírce a v nabídce se nikdy neobjeví. Hrdiny odemykají\n'+
            '  poháry (400 a 1150). Místo prázdného slibu teď dávají karty\n'+
+           '• PŘÍSLUŠENSTVÍ SLIBOVALO SKORO DVOJNÁSOBEK toho, co dává. Všech dvanáct\n'+
+           '  kusů mělo popisek z doby před vyvážením — Přesná libela slibovala +8 %\n'+
+           '  a dávala +4,4 %, Naklápěcí senzor +15 % a dával +8,3 %. Popisky teď\n'+
+           '  říkají, co hra opravdu dělá, a všude dodávají „za úroveň“\n'+
+           '• Hranol 360° měl první úroveň za 99 výzkumu, která nedělala vůbec nic —\n'+
+           '  odraz přibyl až u druhé. Nově je úroveň jediná, za tutéž celkovou cenu\n'+
+           '• Popisky synergií dvojic slibovaly víc, než dávají — osm z deseti\n'+
+           '• Rozpočet na konci etapy mohl být zlomkový („+18.2 rozpočtu“)\n'+
+           '• KARTA PŘEDSUNUTÉ STANOVIŠTĚ NEDĚLALA, CO SLIBUJE. Text říká „hned uvolní\n'+
+           '  dvě místa u trasy“, ale jediné, co dělala, bylo +2 ke kapacitě — tedy\n'+
+           '  totéž co běžná Terénní četa. Teď opravdu odkryje dvě políčka\n'+
+           '• Karta Výkonné baterie: dronům přidává 25 % doletu, ale 15 % rychlosti\n'+
            '\n'+
            'CO SE ZMĚNILO PROTI 88\n'+
            '• NOVÝ VZHLED CELÉ HRY. Karty místo barevných ploten, tmavá deska,\n'+

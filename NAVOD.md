@@ -57,7 +57,7 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 
 ## Co je nového ve verzi 90
 
-Opravné vydání, **šestnáct oprav**. Nic nového se nepřidávalo, jen se spravilo,
+Opravné vydání, **dvaadvacet oprav**. Nic nového se nepřidávalo, jen se spravilo,
 co bylo rozbité — včetně věci, která na třech územích brala hráči celého
 hrdinu, a čtyř metod, které se daly spálit za nic. **Vzhledu se tahle verze
 nedotýká**, ten řeší jiná session.
@@ -123,6 +123,34 @@ nedotýká**, ten řeší jiná session.
   Aby se to nemohlo tiše vrátit, `applyReward()` nově pozná odměnu mimo sbírku
   a místo prázdného slibu dá karty.
 
+- **Příslušenství slibovalo skoro dvojnásobek toho, co dává.** Všech dvanáct
+  kusů mělo v popisku číslo z doby před vyvážením — skutečná hodnota je přesně
+  **0,55násobek**. Změřeno na živých přístrojích: Přesná libela slibovala +8 %
+  poškození a dávala **+4,4 %**, Naklápěcí senzor +15 % dosahu aury a dával
+  **+8,3 %**, Termokamera +10 % a dávala **+5,5 %**, Vyšší frekvence +12 %
+  a dávala **+6,6 %**. Popisky teď říkají, co hra opravdu dělá, a všude dodávají
+  **za úroveň** — dosud to stálo jen u jednoho z dvanácti, takže se dalo číst
+  jako celkový účinek. Hodnoty samotné se nezměnily; jestli mají být silnější,
+  je to rozhodnutí o vyvážení, ne oprava.
+- **Hranol 360° měl první úroveň za 99 výzkumu, která nedělala vůbec nic.**
+  Řetěz dálkoměru se počítá cyklem, takže zlomek pod jedničkou se ztratí:
+  změřeno **3 zásahy před i po** první úrovni, čtvrtý přibyl až u druhé.
+  Nově je úroveň jediná, za tutéž celkovou cenu (279) a se stejným výsledkem —
+  jen z obchodu zmizela slepá položka, na kterou se dal vyhodit výzkum.
+- **Popisky synergií dvojic** slibovaly víc, než dávají — osm z deseti, opět
+  0,55násobek (Fúze dat slibovala +30 % poškození dronů, dává +16,5 %;
+  Klasické mapování +35 % rychlosti, dává +19,3 %). Sjednoceno s kódem.
+- **Rozpočet na konci etapy mohl být zlomkový.** Radiomodem přidává 2,2 za
+  stanici, takže hra hlásila „Etapa 3 hotova · **+18.2 rozpočtu**" a rozpočet
+  nebyl celé číslo. Zaokrouhlí se, až když je celý bonus spočítaný.
+- **Karta Předsunuté stanoviště nedělala to, co slibovala.** Text říká „hned
+  uvolní dvě místa u trasy", ale jediné, co dělala, bylo **+2 ke kapacitě** —
+  tedy přesně totéž co běžná karta Terénní četa, jen za vzácnost. Změřeno:
+  odkrytých políček 62 → 62, kapacita 6 → 8. Teď opravdu odkryje dvě políčka
+  (62 → 64) a kapacitu nechává být.
+- Karta **Výkonné baterie** slibovala dronům +25 % doletu i rychlosti; rychlost
+  dostává 15 %. Popisek to teď říká.
+
 ### Ověřeno bez nálezu
 
 Tyhle věci prošly zkouškou v pořádku, ať je nikdo nehledá znovu:
@@ -151,6 +179,13 @@ Tyhle věci prošly zkouškou v pořádku, ať je nikdo nehledá znovu:
   odemčeném profilu — **0 chyb**.
 
 ### Co zůstává na příště
+
+**Otevřená otázka k vyvážení, ne vada:** příslušenství i synergie dávají 0,55×
+toho, co původně slibovaly. Opravily se texty, ne hodnoty — kdyby měly být
+hodnoty zpátky na původní výši, je to zásah do vyvážení a patří k rozhodnutí,
+ne k úklidu. Stejně tak karta Rozhledny dá auře GNSS 12 %, zatímco dosahu všech
+ostatních přístrojů 7 %; hráč tam dostává víc, než mu hra slíbila, takže se to
+nechalo být a v kódu je u toho poznámka.
 
 Čtyři největší nálezy z prohlídky 5. 9. večer jsou vizuální a tahle verze se
 jich nedotkla — deska vypadá jako z jiné hry než menu, draft karet vypadá jako

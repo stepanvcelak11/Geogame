@@ -58,6 +58,33 @@ Sedm oprav, každá ověřená spuštěním a A/B proti v89 (podrobně v `NAVOD.
     nevypíše prázdný slib, ale dá karty. Kdyby to někdo zase napsal, projeví
     se to jako menší odměna, ne jako tichý podvod na hráči.
 
+17. **Popisky příslušenství slibovaly 1,8× toho, co dávají** — všech dvanáct,
+    poměr přesně 0,55. Změřeno na živých přístrojích (libela +8 % → +4,4 %,
+    tilt +15 % → +8,3 %, thermo +10 % → +5,5 %, freq +12 % → +6,6 %).
+    Sjednoceny texty, ne hodnoty; a doplněno „za úroveň“, které stálo jen
+    u jednoho z dvanácti.
+18. **Hranol 360°: první úroveň za 99 výzkumu nedělala nic.** Řetěz se počítá
+    `for(j=0;j<=jumps;j++)`, takže 0,55 se ztratí — 3 zásahy před i po.
+    Nově `max:1, cost:279, eff:{chain:1}`: tentýž koncový účinek i cena,
+    bez slepé úrovně.
+19. **Popisky synergií** — osm z deseti slibovalo víc (týž poměr 0,55).
+20. **Rozpočet na konci etapy mohl být zlomkový** (Radiomodem dává 2,2 za
+    stanici) → „+18.2 rozpočtu“. `bonus=Math.round(bonus)` před přičtením.
+21. **Karta Předsunuté stanoviště nedělala, co slibuje** — text „hned uvolní
+    dvě místa u trasy“, kód `+2*M('fwd')` do `capMax()`, tedy duplikát běžné
+    karty Terénní četa. Změřeno: odkrytých 62 → 62, kapacita 6 → 8. Nově
+    volá `openNewSpotForce()` dvakrát ve výběru karet (62 → 64) a do kapacity
+    nesahá. **Pozor:** `fwd` teď nemá čtenáře přes `M()`, takže ho hledač
+    mrtvých id hlásí falešně.
+22. Karta **Výkonné baterie** slibovala dronům +25 % doletu i rychlosti;
+    rychlost dostává 15 %.
+
+**Nechalo se být (je to vyvážení, ne vada):** hodnoty příslušenství a synergií
+zůstaly na 0,55násobku původního slibu — vrátit je nahoru je rozhodnutí
+o obtížnosti. A karta Rozhledny dá auře GNSS 12 %, zatímco dosahu ostatních
+přístrojů 7 %; hráč tam dostává **víc**, než mu popisek slibuje, takže se to
+nechalo a v kódu je u `auraR()` poznámka, aby to nikdo neopravil mimochodem.
+
 **Ověřeno bez nálezu** (ať to nikdo nehledá znovu): uložení a obnova
 rozehraného měření (0 rozdílů ve 12 sledovaných hodnotách), strop nábojů,
 vrácení stanoviska, ceny vylepšení hrdiny, výměna nabídky během tutoriálu,
