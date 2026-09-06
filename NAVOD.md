@@ -1,4 +1,4 @@
-# GeoGame — verze 98
+# GeoGame — verze 101
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=98;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=101;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v98-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v101-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v98-jediny-soubor.html
+copy index.html geogame-v101-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -55,7 +55,7 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
 
-## Co je nového ve verzi 98
+## Co je nového ve verzi 101
 
 Dodělávky po verzi 96. Ta vznikla z jednoho dlouhého seznamu připomínek přes
 celou hru; tahle verze ten seznam prošla znovu položku po položce a dodělala,

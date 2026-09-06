@@ -6,15 +6,18 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VERZE 98 (6. 9., session „dodělávky“) — DODĚLÁVKY PO 96
+## AKTUÁLNÍ STAV: VERZE 101 (6. 9., session „dodělávky“) — DODĚLÁVKY PO 96
 
-**Číslo 98 je zabrané, další si berte 101.** Větev **`dodelavky-v98`**, vlastní
+**Číslo 101 je zabrané, další si berte 102.** Větev **`dodelavky-v98`**
+(jméno větve nese původní číslo 98 a nic neznamená: 98 si ve stejnou minutu
+vzala i větev `prohlidka-v97`, rozdíl commitů 19 vteřin, tak jsem ustoupil)., vlastní
 git worktree `Desktop\geogame-dodelavky`.
 Na main to ZATÍM NEJDE — vydání si drží uživatel.
 
 ⚠ Ve stejnou dobu běžely worktree `geogame-v97`, `-v99`, `-v100`
-a `-prohlidka-v97`, všechny nad týmž `index.html`. Čísla 97, 99 a 100 si
-vzaly ony.
+a `-prohlidka-v97`, všechny nad týmž `index.html`. Čísla 97, 98, 99 a 100 si
+vzaly ony. ⚠ Větev `prohlidka-v97` opravila TÝŽ přesah karty hrdiny
+o pixel jako já — při slučování to bude kolidovat.
 
 ### Čeho se to týká
 
