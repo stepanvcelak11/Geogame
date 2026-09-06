@@ -3123,7 +3123,7 @@ html[data-theme="hc"] #podstavec{background:none}
   pointer-events:auto;
   width:100%; max-width:var(--podW);
   display:flex; flex-direction:column;
-  padding:var(--m2) var(--m2) calc(var(--m2) + env(safe-area-inset-bottom,0px));
+  padding:var(--m2) var(--m2) max(var(--m2),env(safe-area-inset-bottom,0px));
   background:linear-gradient(180deg,var(--s3) 0%,var(--s2) 40%,var(--s1) 100%);
   border-top:var(--w3) solid var(--s5);
   border-radius:var(--r4) var(--r4) 0 0;
@@ -9448,6 +9448,45 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
   font-size:calc(11px*var(--fs,1));font-weight:800;letter-spacing:.02em;
   color:var(--skyT,var(--sky));padding:0 2px}
 .hslot.lock .hDet{opacity:.75}
+
+/* ======================================================================
+   DODELAVKY PO VERZI 96 - to, co ze seznamu pripominek zbylo
+   Vse nize je ZMERENE prohlizeckou na 320 / 390 / 430 px, ne odhad.
+   ====================================================================== */
+
+/* --- "Sestava je zmackla, krajni pristroje jsou vytlacene ven" -------
+   Pet prihradek vedle sebe vyjde na 320 px na 46,4 px kazda, do ktere se
+   "Dalkomer" nevejde: text meri 48,6 px. Predchozi kolo to resilo tak, ze
+   pole nazvu dostalo ZAPORNY okraj -3 px - text tim ale prelezl pres lem
+   dlazdice ven (mereno: rezerva k lemu -1,1 px), coz je presne to
+   "vytlaceny ven", na ktere si hrac stezoval. Zmensovat pismo dal nema
+   smysl (aby text sedel s rezervou, muselo by klesnout na 9,2 px).
+   Na uzkem telefonu je proto rada 3+2 misto 5 vedle sebe: prihradka ma
+   80 px a nejdelsi nazev v ni ma rezervu +13,6 px pri BEZNEM prostrkani.
+   Trojice taky sedi k rade hrdinu pod tim, ktera uz tri sloupce ma. */
+@media (max-width:360px){
+  #vbPane0 .vbGrp--pri #deckRow{grid-template-columns:repeat(3,1fr);gap:6px}
+  #deckRow .dslot .dn{margin-left:0;margin-right:0;letter-spacing:-.02em}
+}
+
+/* --- Nazvy ve vyberu pristroju se orezavaly zespodu ------------------
+   line-height:1.15 je mensi nez skutecna vyska pisma s hackami, takze
+   scrollHeight prerustal clientHeight o 2 px u VSECH dvaceti nazvu
+   (mereno na 320, 390 i 430 px). Radek dostane vyssi proklad. */
+.pkNm{line-height:1.4}
+
+/* --- Karta hrdiny pretekala ramecek skupiny --------------------------
+   Na 320 px koncila treti karta na 295,1 px, deska skupiny na 294,0.
+   Polozka mrizky se implicitne nesmrskne pod svou min-content sirku;
+   min-width:0 to povoli. */
+#hrdRow > *{min-width:0}
+
+/* --- Tlacitka Detail u hrdinu nebyla v rade zarovnana ----------------
+   Karty jsou stejne vysoke, ale obsah ruzne dlouhy (jeden hrdina ma
+   navic odznak V TERENU a dvouradkovy podtitul), takze Detail plaval
+   v kazde karte jinde. Tlacitko se opre o spodni hranu karty. */
+.hslot{justify-content:flex-start}
+.hslot .hDet{margin-top:auto}
 </style>
 </head>
 <body>
@@ -17538,7 +17577,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=96;
+const VERZE=98;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -20957,23 +20996,9 @@ function kaSbalit(h){
  h.setAttribute('aria-expanded',s.hasAttribute('data-zavreno')?'false':'true');
  try{ snd('ui'); }catch(e){}
 }
-function upgradeAll(){
- let n=0,guard=0;
- while(guard++<60){
-   const k=ORD.find(x=>{const c=cardCost(x);
-     return hasType(x)&&c&&(SAVE.cards[x]||0)>=c.cards&&SAVE.res>=c.res&&!SPEC[(SAVE.lvl[x]||0)+1];});
-   if(!k)break;
-   const c=cardCost(k);
-   SAVE.cards[k]-=c.cards;SAVE.res-=c.res;SAVE.lvl[k]=(SAVE.lvl[k]||0)+1;n++;
- }
- save();
- if(n){snd('merge');toast2('Vylepšeno '+n+'× — na specializace tě hra vyzve zvlášť.');}
- else toast2('Teď není co vylepšit, chybí karty nebo výzkum.');
- renderColl();
-}
+// Funkce upgradeAll() slo pryc s tlacitkem "Vylepsit vse, na co mam"
+// (hrac ho oznacil za zbytecne). Nevolal ji uz nikdo.
 function initCollFilter(){
- const ca=$('collAll');
- if(ca&&!ca.dataset.init){ca.dataset.init='1';ca.onclick=upgradeAll;}
  const row=$('collFilter'); if(!row||row.dataset.init)return;
  row.dataset.init='1';
  [...row.children].forEach(b=>b.onclick=()=>{

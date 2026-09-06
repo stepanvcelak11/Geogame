@@ -1,4 +1,4 @@
-# GeoGame — verze 96
+# GeoGame — verze 98
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=96;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=98;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v96-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v98-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v95-jediny-soubor.html
+copy index.html geogame-v98-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -55,6 +55,67 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
 
+## Co je nového ve verzi 98
+
+Dodělávky po verzi 96. Ta vznikla z jednoho dlouhého seznamu připomínek přes
+celou hru; tahle verze ten seznam prošla znovu položku po položce a dodělala,
+co v něm zbylo. Do pravidel hry se nesahalo — žádné číslo, které rozhoduje
+o obtížnosti, se nezměnilo.
+
+### Sestava už není zmáčklá na úzkém telefonu
+
+Pět přihrádek vedle sebe vyjde na 320px displeji na 46,4 px každá a „Dálkoměr“
+měří 48,6 px. Verze 96 to řešila tím, že pole názvu dostalo **záporný okraj
+−3 px** — text tím ale přelezl přes lem dlaždice ven (změřeno: rezerva k lemu
+−1,1 px). To je přesně to „krajní přístroje jsou vytlačený ven“ ze seznamu.
+Zmenšovat písmo dál nemá smysl: aby se název vešel s rezervou, muselo by
+klesnout na 9,2 px. Na úzkém telefonu je proto řada **3 + 2 místo pěti vedle
+sebe**: přihrádka má 80 px a nejdelší název v ní má rezervu **+13,6 px** při
+běžném prostrkání. Trojice zároveň sedí k řadě hrdinů pod tím, která tři
+sloupce už měla.
+
+### Názvy ve výběru přístrojů se ořezávaly zespodu
+
+`line-height:1.15` je menší než skutečná výška písma s háčky a čárkami, takže
+se **všech dvacet názvů** v mřížce výběru ořezávalo o 2 px — na 320, 390
+i 430 px. Řádek dostal vyšší proklad.
+
+### Karty hrdinů
+
+Třetí karta na 320 px končila na 295,1 px, deska skupiny na 294,0 — položka
+mřížky se implicitně nesmrskne pod svou min-content šířku. Tlačítka **Detail**
+navíc plavala v každé kartě jinde, protože karty jsou stejně vysoké, ale obsah
+různě dlouhý (jeden hrdina má navíc odznak V TERÉNU a dvouřádkový podtitul).
+Teď se tlačítko opře o spodní hranu karty a v řadě jsou zarovnaná.
+
+### Spodní okraj displeje
+
+Deska pod hrou si k bezpečné zóně telefonu **přičítala ještě vlastní odsazení**,
+takže pod popisky záložek zůstávalo na iPhonu 10 + 34 px plochy, kde nic není.
+`max()` místo součtu z toho udělá jedno odsazení. Manifest navíc hlásil jinou
+barvu než hra samotná — `#0a0f2e` proti `#0c1030` v `<meta name="theme-color">`;
+teď jsou stejné.
+
+⚠ **Změřeno, že hra sama k dolnímu okraji dosahuje**: deska menu končí přesně
+na spodní hraně okna (mezera 0 px) a v bitvě sahá plocha i lišta na 844 px
+z 844. Pokud proužek na telefonu zůstane, není z těchhle dvou příčin.
+
+### Uklizeno
+
+Funkce `upgradeAll()` a drát na `$('collAll')` zůstaly ve verzi 96 viset po
+tlačítku „Vylepšit vše, na co mám“, které šlo pryč — prvek v HTML už nebyl,
+kód ano. Návod měl u příkazu na kopii pořád `geogame-v95-…`, ačkoli soubor byl
+už v96.
+
+### Co je změřené
+
+- **Ořezaný text**: 12 obrazovek × 320 / 390 / 430 px. Před **26** ořezaných
+  míst, po **2** — a ty dvě jsou záměrné zkrácení popisu režimu na dva řádky
+  (celý text je pod kolečkem „i“).
+- **Konzole**: 12 obrazovek × 4 sestavy (320, 390, 390 noční, 430 kontrastní)
+  — **žádná chyba**.
+- Přihrádky, karty hrdinů i řada metod **nepřesahují** desku skupiny na žádné
+  ze tří šířek.
 ## Co je nového ve verzi 96
 
 Celá verze vznikla z jednoho dlouhého seznamu připomínek hráče — od obchodu
