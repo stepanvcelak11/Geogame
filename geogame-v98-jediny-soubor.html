@@ -2803,11 +2803,15 @@ html[data-theme="hc"] .ov.ovCela .box{background:#fff}
 .pfKarta .pfN{font-size:calc(12.5px*var(--fs,1));color:var(--t2);margin:2px 0 6px}
 .pfPrejm{grid-column:1/-1;width:100%;font-size:calc(12px*var(--fs,1));margin-top:var(--m1)}
 .pfKarta .pfRank{margin-top:2px}
+/* v99: radek byl pevny flex bez moznosti zlomu - delsi hodnota (a s
+   doplnenou jednotkou je delsi) by vylezla z okna. Klic si drzi svou sirku,
+   hodnota se smi zalomit pod nej. */
 .pfRad{display:flex;justify-content:space-between;gap:var(--m2);align-items:baseline;
-  font-size:calc(12px*var(--fs,1));margin-top:var(--m1)}
+  flex-wrap:wrap;font-size:calc(12px*var(--fs,1));margin-top:var(--m1)}
+.pfRad .pfK{flex:none}
 .pfRad .pfK{color:var(--t3);text-transform:uppercase;letter-spacing:.06em;font-weight:800;
   font-size:calc(11px*var(--fs,1))}
-.pfRad .pfV{color:var(--t2);text-align:right}
+.pfRad .pfV{color:var(--t2);text-align:right;flex:1 1 auto;min-width:0}
 #profTelo .pfB{height:12px;border-radius:999px;background:var(--s1);
   border:var(--w2) solid var(--stroke);overflow:hidden}
 #profTelo .pfB>i{display:block;height:100%;background:linear-gradient(90deg,var(--brass),var(--brassL))}
@@ -5041,6 +5045,20 @@ html[data-theme="hc"] .cmpB{background:#fff;border:2px solid #000}
   text-transform:uppercase;font-weight:800;margin-bottom:var(--m1)}
 .kaOdm{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:var(--m3)}
 #kaGo{margin-top:0}
+
+/* v99: pata okna pristroje - stav karet/vyzkumu a tlacitko vylepsit. */
+.tiUpR{display:flex;gap:var(--m2);margin-top:12px;flex-wrap:wrap}
+.tiUpK{flex:1 1 96px;display:flex;align-items:baseline;gap:5px;
+  background:var(--s2);border:var(--w2) solid var(--stroke);
+  border-radius:var(--r2);padding:7px 10px;
+  font-size:calc(11.5px*var(--fs,1));color:var(--t3)}
+.tiUpK b{margin-left:auto;color:var(--t1);font-size:calc(14px*var(--fs,1))}
+.tiUpK s{text-decoration:none;color:var(--t3)}
+.tiUpZ{margin-top:8px;font-size:calc(11.5px*var(--fs,1));color:var(--t2)}
+.tiUpZ b{color:var(--t1)}
+button.tiUpBtn{width:100%;margin-top:10px}
+button.tiUpBtn:disabled{opacity:.45}
+.pkSp.pkLze{color:var(--laser);font-weight:800}
 
 /* ---------- 8. OKNO S CELOU CESTOU ---------- */
 #kaFull .box{max-width:520px}
@@ -8267,7 +8285,15 @@ html[data-theme="hc"] #lab .labD{color:#06131c}
 #kaFull .kaFullSum{justify-content:center}
 /* "ramecek okolo toho textu je moc tvrdy" - misto tvrdeho obrysu jen
    jemna plocha a svetla linka nahore. */
+/* v99: #roadList je polozka flexu (.box je sloupec) a .roadWrap ma
+   overflow:hidden. Polozka se tedy SMRSTILA na zbytek okna a zbytek cesty
+   se orizl - zmereno 390x780: obsah 2599 px, videt 534 px, a NIC nerolovalo
+   (prekryv i .roadWrap maji overflow hidden, .box mel scrollHeight == vysku
+   okna). Hrac tak z dvanacti oblasti videl dve a k uzlu "JSI TADY" se nemel
+   jak dostat. flex:none vrati seznamu jeho skutecnou vysku a roluje ho .box,
+   presne jako u sezonni cesty. */
 #kaFull .roadWrap{
+  flex:none;
   border:0;
   background:linear-gradient(180deg,
     color-mix(in srgb,var(--s3) 70%,transparent),
@@ -10024,7 +10050,7 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
 <!-- ============ NASTAVENÍ ============ -->
 <div class="screen" id="opts">
   <div class="pgHead stick"><h2>Nastavení</h2><button class="xBtn" data-back="optBack">✕</button></div>
-  <div class="pan"><div class="ph"><span>NASTAVENÍ</span><span>verze <span id="verOpt">81</span></span></div>
+  <div class="pan"><div class="ph"><span>HRA A ZAŘÍZENÍ</span><span>verze <span id="verOpt">81</span></span></div>
     <div class="pb" id="optBody"></div></div>
   <button class="big key" id="optBack">ZPĚT</button>
   <div class="foot">Postup se ukládá do tohoto zařízení.</div>
@@ -16367,6 +16393,26 @@ function addTrophies(n){
  save();
  return gained;
 }
+/* v99: vylepseni pristroje o uroven vys bylo napsane JEN uvnitr renderColl,
+   takze slo udelat vyhradne z dlazdice ve Sbirce. Okno detailu pritom o nem
+   mluvi ("Na uroven 2 potrebujes 6 / 3 karet a 24 vyzkumu") - hrac si tam
+   precte, ze na to ma, a nema tam co zmacknout. Ted je ucet na jednom miste
+   a volaji ho obe obrazovky. */
+function muzeVylepsit(k){
+ if(jeHrdina(k)||!hasType(k))return false;
+ const c=cardCost(k); if(!c)return false;
+ return (SAVE.cards[k]||0)>=c.cards&&SAVE.res>=c.res;
+}
+function vylepsiPristroj(k){
+ if(!muzeVylepsit(k))return false;
+ const c=cardCost(k), lv=SAVE.lvl[k]||0;
+ SAVE.cards[k]=(SAVE.cards[k]||0)-c.cards;
+ SAVE.res-=c.res;
+ SAVE.lvl[k]=lv+1;
+ save();
+ try{ snd('merge'); }catch(e){}
+ return true;
+}
 function cardCost(k){
  const lv=SAVE.lvl[k]||0;
  if(lv>=CARDNEED.length)return null;
@@ -17670,7 +17716,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=98;
+const VERZE=99;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -18469,7 +18515,7 @@ function renderShop(){
  fd.style.setProperty('--ak','var(--brass)');
  fd.innerHTML='<div class="sfIc"><svg viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5v8L12 21l-9-4.5z"/><path d="M3 8.5 12 13l9-4.5M12 13v8"/></svg></div>'+
    '<div class="sfT"><b>'+f.title+'</b><s>'+f.sub+'</s></div>'+
-   '<div class="sfB">'+(shopBought(f.id)?'VYZVEDNUTO':'ZDARMA')+'</div>';
+   '<div class="sfB">'+(shopBought(f.id)?'VYZVEDNUTO':'VZÍT')+'</div>';
  fd.onclick=()=>{ if(!shopBought(f.id))buyOffer(f); };
  free.appendChild(fd);
  // nabídka
@@ -18872,10 +18918,12 @@ function renderProfOkno(){
    '<button type="button" class="pfPrejm" id="pfPrejm">Přejmenovat</button>'+
   '</div>'+
   '<div class="pfRad"><span class="pfK">Hodnost</span><span class="pfV">'+
-    (nx?('do <b>'+nx.n+'</b> zbývá '+(nx.tr-SAVE.tr)+' pohárů'):'nejvyšší hodnost')+
+    (nx?('do <b>'+nx.n+'</b> zbývá '+(nx.tr-SAVE.tr)+' '+kaPoh(nx.tr-SAVE.tr))
+       :'nejvyšší hodnost')+
    '</span></div><div class="pfB"><i style="width:'+pct+'%"></i></div>'+
   '<div class="pfRad"><span class="pfK">Oblast</span><span class="pfV">'+
-    ar.n+(arN?(' · do „'+arN.n+'“ zbývá '+(arN.tr-SAVE.tr)):' · nejvyšší')+
+    ar.n+(arN?(' · do „'+arN.n+'“ zbývá '+Math.max(0,arN.tr-SAVE.tr)+
+      ' '+kaPoh(Math.max(0,arN.tr-SAVE.tr))):' · nejvyšší')+
    '</span></div><div class="pfB pfB2"><i style="width:'+arPct+'%"></i></div>'+
   '<div class="pfMr">'+
    [['Výzkum',SAVE.res],['Poháry',SAVE.tr],['Mezníky',SAVE.mez||0],
@@ -19073,9 +19121,12 @@ function renderQuests(){
      '<div class="dqb"><i style="width:'+Math.min(100,q.prog/q.goal*100)+'%"></i></div></div>'+
      '<div class="dqp"><span class="dqCnt">'+Math.min(q.prog,q.goal)+' / '+q.goal+'</span>'+
      '<span class="mince">'+q.res+' výzkumu</span>'+
-     '<span class="odznak odznak--tyrkys">'+q.cards+' karty</span></div>';
+     '<span class="odznak odznak--tyrkys">'+q.cards+cardWord(q.cards)+'</span></div>';
    const btn=document.createElement('button');
-   btn.textContent=q.claimed?'✓':(ready?'VZÍT':'—');
+   // Nesplneny ukol mel na tlacitku pomlcku, ktera nerika nic. Procento
+   // je stejne kratke a ukazuje, jak daleko hrac je.
+   btn.textContent=q.claimed?'✓':(ready?'VZÍT'
+     :(Math.floor(Math.min(1,q.prog/q.goal)*100)+' %'));
    btn.disabled=!ready;
    btn.onclick=()=>{
      if(!ready)return;
@@ -19154,7 +19205,7 @@ function openAbilPick(idx){
    if(!umi){ L.appendChild(d); return; }
    const up=document.createElement('button');
    up.style.cssText='width:74px;flex:none;font-size:10.5px;padding:8px 2px';
-   up.textContent=cost?cost+' v.':'MAX';
+   up.textContent=cost?cost+' výzk.':'MAX';
    up.disabled=!cost||SAVE.res<cost;
    up.onclick=e=>{e.stopPropagation();
      if(!cost||SAVE.res<cost)return;
@@ -19495,8 +19546,7 @@ function openTinfo(k){
    ?['<b>hrdina</b>','zabírá <b>4 pole</b>','1. řada <b>zdarma</b>','nelze sloučit']
    :[(lv?'úroveň <b>'+lv+'</b><i>/8</i>':''),
      'cena <b>'+priceOf(k)+'</b>',
-     (SUP.indexOf(k)>=0?'podpůrný':'útočný'),
-     'karet <b>'+(SAVE.cards[k]||0)+'</b>']
+     (SUP.indexOf(k)>=0?'podpůrný':'útočný')]
  ).filter(Boolean).map(x=>'<span>'+x+'</span>').join('');
  $('tiDemoNote').textContent=DEMONOTE[k]||def.d;
  // pruhy vlastností
@@ -19634,10 +19684,40 @@ function openTinfo(k){
      ceny.join(' · ')+'</b>.</div>';
  } else {
  const cost=cardCost(k), have=SAVE.cards[k]||0;
- if(cost){
-   up.innerHTML='<div style="margin-top:12px;font-size:11.5px;color:var(--dim)">'+
-     'Na úroveň '+(lv+1)+' potřebuješ <b style="color:var(--paper)">'+have+' / '+cost.cards+
-     ' karet</b> a '+cost.res+' výzkumu.</div>';
+ if(!cost){
+   up.innerHTML='<div class="tiUpZ">Nejvyšší úroveň — víc už tenhle přístroj neumí.</div>';
+ } else {
+   const chybiK=Math.max(0,cost.cards-have), chybiV=Math.max(0,cost.res-SAVE.res);
+   const lze=!chybiK&&!chybiV;
+   // Veta drive znela "potrebujes 44 / 3 karet" - hrac ma 44, potreba jsou 3,
+   // a presto to zacinalo slovem "potrebujes". Ted je videt, co JESTE chybi,
+   // a kdyz nechybi nic, rekne se to rovnou.
+   up.innerHTML='<div class="tiUpR">'+
+     '<span class="tiUpK">karty <b>'+have+'</b><s>/'+cost.cards+'</s></span>'+
+     '<span class="tiUpK">výzkum <b>'+SAVE.res+'</b><s>/'+cost.res+'</s></span>'+
+    '</div>'+
+    '<div class="tiUpZ">'+(lze
+      ?('Můžeš povyšit na <b>úroveň '+(lv+1)+'</b>.')
+      :('Na úroveň '+(lv+1)+' chybí '+
+        [chybiK?('<b>'+chybiK+'</b>'+cardWord(chybiK)):'',
+         chybiV?('<b>'+chybiV+'</b> výzkumu'):''].filter(Boolean).join(' a ')+'.'))+
+    '</div>';
+   const bt=document.createElement('button');
+   bt.type='button';bt.className='big key tiUpBtn';
+   bt.innerHTML='VYLEPŠIT NA ÚROVEŇ '+(lv+1);
+   bt.disabled=!lze;
+   bt.onclick=function(){
+     if(!vylepsiPristroj(k))return;
+     const nl=SAVE.lvl[k]||0;
+     // Obrazovky, ktere ta cisla ukazuji, se musi prekreslit - jinak by
+     // Sbirka za oknem zustala na stare urovni.
+     try{ if(typeof renderColl==='function')renderColl(); }catch(e){}
+     try{ if(typeof renderDeck==='function')renderDeck(); }catch(e){}
+     try{ if(typeof renderTitle==='function')renderTitle(); }catch(e){}
+     if(SPEC[nl]){ $('tinfo').classList.remove('on'); openSpec(k,nl); }
+     else openTinfo(k);
+   };
+   up.appendChild(bt);
  }
  }
  const tiZnovu=$('tinfo').classList.contains('on')&&window.__tiK===k;
@@ -19687,8 +19767,26 @@ function vykresliPick(){
    const nm=document.createElement('div');nm.className='pkNm';
    nm.textContent=SHORT[k]||T[k].n[0];d.appendChild(nm);
    const sp=document.createElement('div');sp.className='pkSp';
-   sp.textContent=zna?(lv?('úroveň '+lv):(owns?'bez úrovně':'chybí karty'))
-                     :towerOdkudKratce(k);
+   // v99: u vsech nevylepsenych pristroju tu stalo "bez urovne" - dvanactkrat
+   // pod sebou tataz veta, ktera hraci nic nerika. Ted je na tom miste postup
+   // ke kartam, stejne cislo jako ve Sbirce.
+   // Drive tu u kazdeho nevylepseneho pristroje stalo "bez urovne" -
+   // dvanactkrat pod sebou tataz veta, ktera hraci nic nerika. Ted je tam
+   // to, co mu do dalsi urovne SCHAZI.
+   // POZOR: pouhy pomer "karty/potreba" se tu cist neda. Novy hrac zacina
+   // se ctyrmi kartami na pasmo, ktere jich potrebuje tri - stalo by mu tam
+   // "4/3 karet", coz vypada jako chyba, a povysit stejne nemuze, protoze
+   // ma nula vyzkumu. Proto se rozlisuje, co presne chybi.
+   const cst=cardCost(k), mam=SAVE.cards[k]||0;
+   let stav;
+   if(!zna)stav=towerOdkudKratce(k);
+   else if(muzeVylepsit(k))stav='lze vylepšit';
+   else if(lv)stav='úroveň '+lv;
+   else if(!cst)stav='nejvyšší';
+   else if(mam>=cst.cards)stav='chybí výzkum';
+   else stav=mam+'/'+cst.cards+' karet';
+   sp.textContent=stav;
+   if(zna&&muzeVylepsit(k))sp.classList.add('pkLze');
    d.appendChild(sp);
    if(SUP.indexOf(k)>=0){const r2=document.createElement('div');r2.className='pkRole';
      r2.textContent='podpůrný';d.appendChild(r2);}
@@ -20350,7 +20448,8 @@ function renderTitle(){
    if(ai>SAVE.arena)SAVE.arena=ai;
    ab.textContent='Oblast · '+AREN[ai].n;
    const nx=AREN[ai+1];
-   $('arenaNext').textContent=nx?('další oblast za '+Math.max(0,nx.tr-SAVE.tr)+' pohárů'):'nejvyšší oblast';
+   $('arenaNext').textContent=nx?('další oblast za '+Math.max(0,nx.tr-SAVE.tr)+
+     ' '+kaPoh(Math.max(0,nx.tr-SAVE.tr))):'nejvyšší oblast';
    const cur=AREN[ai];
    $('arenaFill').style.width=nx?Math.max(3,Math.min(100,(SAVE.tr-cur.tr)/Math.max(1,nx.tr-cur.tr)*100))+'%':'100%';
  }
@@ -20430,7 +20529,7 @@ function renderLab(){
      '<div class="pips">'+Array.from({length:u.max},(_,i)=>
        '<div class="pip'+(i<lv?' f':(i===lv?' n':''))+'"></div>').join('')+'</div>';
    const bt=document.createElement('button');
-   bt.textContent=max?'MAX':cost+' v.';
+   bt.textContent=max?'MAX':cost+' výzk.';
    bt.disabled=max||SAVE.res<cost;
    bt.onclick=()=>{if(SAVE.res<cost)return;SAVE.res-=cost;SAVE.meta[u.id]++;save();snd('merge');renderLab();};
    c.appendChild(bt);grid.appendChild(c);
@@ -20465,7 +20564,7 @@ function applyTheme(){
 }
 function rwText(rw){
  const out=[];
- if(rw.res)out.push(rw.res+' v.');
+ if(rw.res)out.push(rw.res+' výzk.');
  if(rw.cards)out.push(rw.cards+cardWord(rw.cards));
  if(rw.crate)out.push(CRATES[rw.crate].n.split(' ')[0]);
  return out.join(' + ');
@@ -20612,7 +20711,8 @@ function renderStarRew(){
      x.n+'</div><div class="srT">'+rw.join(' + ')+
      '<div class="srB"><i style="width:'+Math.min(100,tot/x.n*100)+'%"></i></div></div>';
    const btn=document.createElement('button');
-   btn.textContent=done?'✓':(rdy?'VZÍT':'—');btn.disabled=!rdy;
+   btn.textContent=done?'✓':(rdy?'VZÍT'
+     :(Math.floor(Math.min(1,tot/x.n)*100)+' %'));btn.disabled=!rdy;
    btn.onclick=()=>{
      if(!rdy)return;
      if(x.r.res)SAVE.res+=x.r.res;
@@ -20677,7 +20777,8 @@ function renderAch(){
      '<div class="achB postup"><i style="width:'+Math.round(pr/a.g*100)+'%"></i></div>'+
      '<div class="achR"><span class="achP">'+pr+' / '+a.g+'</span>'+kaRwChips(a.r,1)+'</div></div>';
    const btn=document.createElement('button');
-   btn.textContent=done?'✓':(rd?'VZÍT':'—');btn.disabled=!rd;
+   btn.textContent=done?'✓':(rd?'VZÍT'
+     :(Math.floor(Math.min(1,pr/a.g)*100)+' %'));btn.disabled=!rd;
    btn.onclick=()=>{
      if(!rd)return;
      if(a.r.res)SAVE.res+=a.r.res;
@@ -20879,11 +20980,25 @@ function renderRoadTrack(){
  const a=AREN.reduce((acc,x,i)=>SAVE.tr>=x.tr?i:acc,0);
  const vse=!!window.__pasVse;
  const od=vse?0:Math.max(0,a-1);
+ // v99: pas se orezaval jen ZDOLA, takze zacinal u nejvyssi mety hry.
+ // Hrac s nula pohary tedy nahore videl odmenu za 3200 poharu a k uzlu
+ // "JSI TADY" musel odrolovat (zmereno: y=2156 pri obrazovce 780).
+ // Ted se oreze i SHORA - dve mety nad tou nejblizsi bohate staci a
+ // zbytek je za tlacitkem, presne jako uz splnene oblasti pod tim.
+ const vys=!!window.__pasVys;
+ const doI=(vse||vys)?AREN.length-1:Math.min(AREN.length-1,a+2);
  el.innerHTML='';
  const pas=document.createElement('div');pas.className='pas';
+ if(doI<AREN.length-1){
+   const bv=document.createElement('button');bv.type='button';bv.className='pasVic';
+   bv.textContent='Zobrazit i vyšší oblasti ('+(AREN.length-1-doI)+')';
+   bv.onclick=e=>{e.stopPropagation();window.__pasVys=1;
+     try{snd('ui');}catch(x){}renderRoadTrack();};
+   pas.appendChild(bv);
+ }
  // Poradi se obraci: nejvyssi oblast nahore, splnene dole. Tlacitko
  // "zobrazit i splnene" tedy pribyva ZDOLA, ne shora.
- for(let i=AREN.length-1;i>=od;i--){
+ for(let i=doI;i>=od;i--){
    const ar=AREN[i];
    const hotovo=SAVE.tr>=ar.tr;
    const ted=(i===a+1)||(i===a&&a===AREN.length-1);
@@ -20932,7 +21047,7 @@ function renderRoad(){
    const span=nxt.tr-cur.tr, got=SAVE.tr-cur.tr;
    $('xpfill').style.width=Math.max(3,Math.min(100,got/span*100))+'%';
    $('xpTxt').textContent='Hodnost '+rankOf().n+' · do oblasti „'+nxt.n+'" zbývá '+
-     Math.max(0,nxt.tr-SAVE.tr)+' pohárů';
+     Math.max(0,nxt.tr-SAVE.tr)+' '+kaPoh(Math.max(0,nxt.tr-SAVE.tr));
  } else {
    $('xpfill').style.width='100%';
    $('xpTxt').textContent=cur.n+' · nejvyšší oblast dosažena';
@@ -20976,6 +21091,42 @@ function renderRoad(){
 // ve kterem hrac nevidel, co ho ceka.
 function kaPoh(n){ return n===1?'pohár':(n>=2&&n<=4?'poháry':'pohárů'); }
 function kaBod(n){ return n===1?'bod':(n>=2&&n<=4?'body':'bodů'); }
+
+/* --- v99: cesty se otviraji tam, kde hrac NENI ---------------------------
+   Trofejni i sezonni cesta se kresli odshora dolu od nejvyssi mety, aby se
+   po ni dalo "lezt vzhuru". Jenze hrac na zacatku otevre okno a prvni, co
+   uvidi, je odmena za 3200 poharu / uroven 20 - k uzlu "JSI TADY" musel
+   odrolovat pres dva tisice pixelu. Zmereno (390x780): trofejni cesta mela
+   ten uzel na y=2394, sezonni na y=1411, obrazovka je 780.
+
+   POZOR na past: v kaCela() srovnani UZ BYLO napsane, jenze nastavovalo
+   scrollTop primo prekryvu #kaFull. Od v96 ale .ovCela prekryv NEROLUJE
+   (ma overflow:hidden) - roluje az jeho vnitrek. Prirazeni tedy tise
+   nedelalo nic a nikdo si toho nevsiml. Proto se rolujici predek HLEDA,
+   nepise se natvrdo. */
+function rolujiciPredek(el){
+ let p=el&&el.parentElement;
+ while(p&&p!==document.body&&p!==document.documentElement){
+   if(p.scrollHeight>p.clientHeight+4){
+     const ov=getComputedStyle(p).overflowY;
+     if(ov==='auto'||ov==='scroll'||ov==='overlay')return p;
+   }
+   p=p.parentElement;
+ }
+ return null;
+}
+function srovnejNaTed(el,odsazeni){
+ if(!el)return false;
+ const od=odsazeni===undefined?150:odsazeni;
+ const sc=rolujiciPredek(el);
+ if(sc){
+   sc.scrollTop=Math.max(0,el.getBoundingClientRect().top
+     -sc.getBoundingClientRect().top+sc.scrollTop-od);
+ } else {
+   window.scrollTo(0,Math.max(0,el.getBoundingClientRect().top+window.scrollY-od));
+ }
+ return true;
+}
 
 // Ikona uspechu podle druhu ukolu.
 const KA_ACHSVG={
@@ -21109,8 +21260,10 @@ function kaCela(){
  $('kaFull').classList.add('on');
  try{ snd('ui'); }catch(e){}
  setTimeout(()=>{
-   const ov=$('kaFull'), cur=document.querySelector('#roadList .arena.next');
-   if(ov&&cur)ov.scrollTop=Math.max(0,cur.getBoundingClientRect().top+ov.scrollTop-180);
+   // .arena.next je uzel "JSI TADY"; kdyz uz je hrac na vrcholu, zadny
+   // takovy uzel neni a srovna se na posledni splneny.
+   srovnejNaTed(document.querySelector('#roadList .arena.next')||
+                document.querySelector('#roadList .arena.done'),150);
  },40);
 }
 
@@ -21208,9 +21361,7 @@ function renderColl(){
      btn.innerHTML='VYLEPŠIT <b>'+cost.res+'</b>';
      btn.disabled=!can;
      btn.onclick=e=>{e.stopPropagation();
-       if(!can)return;
-       SAVE.cards[k]=have-cost.cards;SAVE.res-=cost.res;SAVE.lvl[k]=lv+1;
-       save();snd('merge');
+       if(!vylepsiPristroj(k))return;
        if(SPEC[lv+1])openSpec(k,lv+1); else renderColl();
      };
    }
@@ -21295,7 +21446,7 @@ function renderAcc(){
    st.appendChild(lvT);
    t.appendChild(st);
    const btn=document.createElement('button');
-   btn.textContent=cost?cost+' v.':'MAX';
+   btn.textContent=cost?cost+' výzk.':'MAX';
    btn.disabled=!cost||SAVE.res<cost;
    btn.onclick=()=>{if(!cost||SAVE.res<cost)return;
      SAVE.res-=cost;SAVE.acc[a.id]=lv+1;save();snd('merge');renderColl();};
@@ -22286,7 +22437,11 @@ $('kaClose').onclick=kaZavri;
 $('kaGo').onclick=()=>{ if(kaAkce)kaAkce(); };
 $('kaOv').onclick=e=>{ if(e.target.id==='kaOv')kaZavri(); };
 $('kaZoom').onclick=kaCela;
-$('seZoom').onclick=()=>{snd('ui');renderSeasonFull();$('seFull').classList.add('on');};
+$('seZoom').onclick=()=>{snd('ui');renderSeasonFull();$('seFull').classList.add('on');
+  // Stejne jako u trofejni cesty: rada 20 je nahore, hrac je na urovni 0
+  // uplne dole. Bez tohohle otevrel okno u odmen, na ktere nedosahne.
+  setTimeout(()=>{ srovnejNaTed(document.querySelector('#seFullBox .sePasR.ted')||
+                                document.querySelector('#seFullBox .sePasR:last-child'),150); },40);};
 $('seFullX').onclick=()=>$('seFull').classList.remove('on');
 $('seFullClose').onclick=()=>{snd('ui');$('seFull').classList.remove('on');};
 $('kaFullX').onclick=()=>$('kaFull').classList.remove('on');
