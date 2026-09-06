@@ -1,4 +1,4 @@
-# GeoGame — verze 92
+# GeoGame — verze 93
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=91;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=93;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v91-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v93-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v91-jediny-soubor.html
+copy index.html geogame-v93-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -527,6 +527,145 @@ co bylo rozbité — včetně dvou věcí, které braly hráči postup.
 - Obtížnost: přesnost klesá plynule podle toho, kolik vlny projde, vlny nerostou
   na konci tak strmě a v Nastavení přibylo **Omezit pohyb**.
 
+## Co je nového ve verzi 93
+
+Verze o **obsahu**: čím se dvanáct území liší jedno od druhého. Verze 92 srovnala,
+jak se hraje; tahle řeší, **co se hraje**. Do minulé verze byla mezi územími
+rozdílná jen trasa, terén a počet etap — chodily po nich tytéž vlivy ve stejném
+pořadí a **finálový boss se lišil jen jménem**.
+
+**Dvanáct finálových bossů se konečně chová podle svého popisu**
+
+V mapě u každého území stála věta o tom, co jeho boss umí: „odolá i pancéřovým
+metodám", „léčí okolní vlivy", „postupně zrychluje", „ruší stanoviska", „silný
+pancíř", „odolá zpomalení". Ani jedna z nich nebyla pravda — všech dvanáct bossů
+mělo tytéž hodnoty a tytéž čtyři náhodné akce. Teď má každý svůj rys:
+
+| Území | Finále | Co doopravdy dělá |
+|---|---|---|
+| Katastrální území | Neuzavřený polygon | pancíř mu **nejde snížit** — průrazné metody, fólie ani karty na něj neplatí |
+| Údolní přehrada | Sesuv hrázního tělesa | **vrací odolnost** vlivům kolem sebe |
+| Rašeliniště | Bezedná sonda | **nabírá tempo** — každou vteřinu o 4 % rychleji, až do dvojnásobku |
+| Lomová stěna | Odlomený blok | stanoviska do 2,5 pole od něj **každou čtvrtou ranou minou** |
+| Městská zástavba | Chyba orientace | každých 8 s **umlčí stanoviska** kolem sebe na 2,5 s |
+| Důlní dílo | Zával chodby | o **8 vyšší pancíř** než ostatní bossové |
+| Letecká plocha | Turbulentní vzduch | o 35 % **rychlejší**, zato křehčí |
+| Železniční koridor | Posun násypu | léčí okolí **a zároveň** nabírá tempo |
+| Zátopová oblast | Povodňová vlna | každých 7 s **vypustí pět šumů** a kryje okolí o 25 % |
+| Rozcestí sítí | Rozpojená síť | vyrazí **na každou z obou tras jeden**, každý slabší |
+| Mostní konstrukce | Dilatace mostu | **zpomalení na něj působí jen z třetiny** |
+| Vysokohorská síť | Lavina | nabírá tempo, uvolňuje roj a vzdoruje zpomalení |
+
+**Rys není síla zadarmo.** Každý má cenu, o kterou boss přijde na odolnosti —
+jinak by finále každého území tiše ztěžklo. Turbulentní vzduch je proto o 35 %
+rychlejší, ale o čtvrtinu křehčí, a dvojice na Rozcestí sítí má každý o 38 % nižší
+odolnost, přesně tím koeficientem, kterým se na území se dvěma trasami škáluje
+všechno ostatní.
+
+Rysy nestojí v textu dvakrát: popisek v encyklopedii, řádek v detailu území
+i hlášení na začátku finále se skládají z **téže tabulky**, kterou se řídí kód.
+Text a chování se tím nemají jak rozejít — přesně to se stalo předtím.
+Po klepnutí na bosse navíc kartička ukáže jeho jméno, **skutečný pancíř**
+(u Závalu chodby 17, ne 9) a čím se liší.
+
+Na Rozcestí sítí to opravuje starou vadu: území se dvěma trasami posílá menší
+vlny a **dvojice finálových bossů se tím zaokrouhlila na jednoho**, takže jedna
+z obou tras zůstala bez bosse a slib „chodí po obou trasách" byl nepravdivý.
+Boss se nově nedělí.
+
+**Každé území posílá svou vlastní směs vlivů**
+
+Dosud chodilo na všech dvanácti územích totéž. Nově má každé své složení podle
+prostředí: ve **městě** je skoro dvakrát tolik multipathu a víc rušiček, v **dole**
+rušičky a zákryty, na **letišti** refrakce a šum, na **rašeliništi** sedání bodu,
+na **mostě** drift a zákryt, ve **vysokohorské síti** zákryt a refrakce.
+
+Obtížnost se tím posunout nesměla. Drží se proto **váha vlny** — jenže ne pouhý
+součet odolnosti. Rušička umlčí stanoviska kolem sebe, léčitel drží celou vlnu
+a zákryt sráží poškození všem sousedům: **vyměnit je za stejné množství odolnosti
+v šumu není výměna jedna ku jedné.** Každý druh vlivu má proto ještě násobek síly
+(rušička 2,2×, léčitel 2,5×, zákryt 2,0×) a území za ně v rozpočtu vlny platí víc.
+Jak vyhraněná území jsou, drží jediné číslo `MIX_SILA` — kdyby měl někdo chuť
+rozdíly zvětšit nebo zmírnit, mění se jedna konstanta, ne dvanáct tabulek.
+
+Měřeno robotem, tři kola proti třem: **9,7 výhry z 12 u verze 92 i u téhle**
+(jednotlivá kola 11/9/9 proti 10/9/10 — takový je rozptyl samotného měřidla).
+Mění se, **co** chodí, ne kolik toho je.
+
+Nebyl to první pokus. Napoprvé vyšlo **8,0 proti 9,7** a bylo to na rysech, které
+byly čistý přídavek. Napodruhé, už s jejich cenou, **8,7** — a rozklad ukázal, že
+zbytek nedělaly rysy (9,7), ale právě ta směs (8,7), protože se vážila jen
+odolností. Až třetí pokus, s násobkem síly, drží obojí.
+
+V detailu území proto nově stojí řádek **Nejčastější vlivy** — a jde se podle něj
+vybrat sestava. Čte se z téhož předpisu, kterým se vlna doopravdy skládá.
+
+**Všech dvanáct rušivých vlivů má výklad**
+
+Přístroje měly v encyklopedii odborný výklad od začátku, vlivy jen jednu větu
+o tom, jak se chovají ve hře. Teď má každý z nich vysvětlení, co to v geodézii
+doopravdy je, a k tomu jednu věc z praxe — multipath a odrazy od fasád, refrakce
+a její poměr k zakřivení Země, rozdíl mezi chybou náhodnou, hrubou a systematickou,
+vyrovnání, které chybu „rozpustí" do sítě, i to, proč se rušička do zapalovače
+pozná podle skokového pádu počtu družic.
+
+**Zkouška má místo 36 otázek 60**
+
+Denně se losuje pět, takže se při 36 otázkách začaly opakovat do týdne. Nových
+čtyřiadvacet je na multipath, počet družic, fixované řešení RTK, nadbytečná měření,
+uzávěr pořadu, ETRS89 a transformaci do S-JTSK, excentricitu stanoviska, žabku
+a invarovou lať, výšku antény, kolmici pentagonem, rajón, VFK, měřítko sáhových
+map, PPBP, georadar, InSAR, zenitový úhel, sklon v procentech, kubatury z profilů
+a ověření úředně oprávněným zeměměřickým inženýrem.
+
+### Čeho se tahle verze nedotýká
+
+Vzhledu ani čísel balancu. Křivka odolnosti vln, kapacita čety, mistrovská řada
+i ceny jsou přesně takové, jaké je nechala verze 92.
+
+## Co je nového ve verzi 92
+
+**Uzávěr etapy.** Každá etapa teď končí číslem: jak daleko po trase se dostal
+nejhlubší vliv. Dokud jsi neztrácel přesnost, hra mlčela — a tys nevěděl, jestli
+to bylo o vlas, nebo o tři třídy. Změřeno robotem: **86 % etap skončilo beze změny
+jediné číslice.** Uzávěr to řekne dopředu (v prohraném území roste z 39 % na 100 %
+už čtyři etapy před první ztrátou) a čím dál od nulového bodu obranu udržíš, tím
+větší dotace.
+
+**Mistrovská řada ★ až ★★★.** Čtvrtá řada bývala strop, na který se dosáhne kolem
+desáté etapy — a tím růst skončil, zatímco vlny rostly dál. „Mistrovská varianta"
+sice existovala, ale byla to jediná hvězda a bylo na ni potřeba **osm** přístrojů
+téhož druhu; robot na ni za celý běh došel třikrát ze sedmdesáti etap. Teď nad
+čtvrtou řadou vede žebřík tří hvězd, každá **+90 % poškození**, a vedou k ní dvě
+cesty: sloučit dva stejně označené přístroje (zdarma), nebo hvězdu koupit
+(260 / 900 / 1 900). Tlačítko je tam, kde bývalo SLOUČIT, jakmile není s čím slučovat.
+
+**Koupená hvězda přežije POKRAČOVAT.** `plus` se neukládalo do snímku rozehrané
+hry už od doby, kdy vzniklo — po načtení se mistrovská řada tiše ztratila i s tím,
+co za ni hráč zaplatil. Změřeno: ★★ za 1 160 rozpočtu → po načtení **267 poškození
+místo 746**.
+
+**Kapacita čety konečně něco znamená.** Rostla na 43–46 stanovisek, zatímco na
+desce jich stálo 8–14 — to číslo v HUDu za celý běh nikdy nic neomezilo. Hlavní
+příčina: +1 za každé třetí sloučení bez stropu, ačkoli sloučení už samo jedno
+místo uvolňuje. Teď má strop. Podíl etap, kdy je četa plná, u hráče, který
+neslučuje: **33 % → 51 %**; u toho, kdo slučuje, zůstává skoro nulový. Slučování
+je tím konečně to, čím má být — cesta ven z nedostatku místa.
+
+**Příjem drží krok s vlnami.** Dotace přestávala růst ve 12. etapě a odměna za
+zničený vliv nerostla vůbec, ale odolnost vln mezi 12. a 24. etapou vyroste 22×.
+Nebyl to strop síly, ale peněz.
+
+**Gravimetr konečně ubírá.** Celé jeho poškození jde přes vír a ten je uděloval
+po snímcích — zlomek bodu, ze kterého pancíř sebral všechno. Sedání bodu,
+Multipath, Rušička ani boss od něj nedostávali **nic**, a přitom je držel na
+místě, takže etapa neměla jak skončit.
+
+**Pásmo mělo zdarma průbojnost**, kterou popisek slibuje jen teodolitu. Teodolit
+za dvojnásobek ceny byl proto horší nákup skoro ve všem.
+
+**Tlak je rovnoměrnější.** První třetina území už není na všech dvanácti stejná
+a poslední třetina už není zeď.
 
 ## Co je nového ve verzi 83
 

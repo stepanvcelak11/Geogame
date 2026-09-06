@@ -6,7 +6,61 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VYDÁNA VERZE 92 (6. 9. odpoledne) — GAMEPLAY
+## AKTUÁLNÍ STAV: VERZE 93 (6. 9. odpoledne, session „obsah") — OBSAH ÚZEMÍ A FINÁLE
+
+**Číslo 93 je moje.** Souběžně běžely další tři session a čísla jsme si rozdělili
+zprávami: **92** balanc (capMax, slučování na ★, uzávěr etapy + dřívější commit
+s příjmem a gravimetrem), **93** obsah (tenhle), **94** vizuál (oddělený worktree
+`geogame-vizual-v93`, větev `vizual-v93` — jméno větve nese 93, ale vydávat bude
+jako 94).
+
+Pracuju ve **vlastním worktree** `C:\Users\stepa\Desktop\geogame-obsah-v93`,
+větev `obsah-v93`, postavená na verzi 92 (ee2be80). Do sdíleného
+stromu `Desktop\geogame` už nepíšu.
+
+### Co je v mé půlce (a kde to při slučování hledat)
+
+- `MAPS`: u každého území přibylo `boss:{...,"r":[...]}` a `mix:{...}`
+- nová tabulka `RYS` + `bossRysy / finaleRysy / mixUzemi / casteVlivy` nad `const T={`
+- `spawnAt` (rysy se věší na bosse), řádka pancíře v `hurt`, `shieldOf` + `S.covers`
+- blok `if(e.k==='boss')` a řádka pohybu ve `step`, `S.rozptyl` ve `step` a ve `fire`
+- `dveTrasy` (boss se už nedělí), poslední řádka `waveComp` (`return mixUzemi(l)`),
+  hlášení rysů ve `startWave`
+- texty: `EINFO`, záložky Vlivy a Pravidla v `renderCodex`, dva řádky v `#lvTer`,
+  `QUIZ` z 36 na 60 otázek
+
+**Vzhledu jsem se nedotkl** — ani řádka v CSS, v `draw`, `drawTower`, `buildBG`,
+`terrainFull` ani v `PALS`. Na plátně po mně přibývají jen dva efekty typu `ring`,
+které hra už používá.
+
+**Balanc jsem nechal souběžné session.** `waveScale`, `capMax` ani ceny jsem
+neotevřel. Dvě věci jsem si ale musel dovážit sám, protože je přinesl můj vlastní
+obsah: **cenu rysu** (boss s rysem má o to nižší odolnost) a **násobek síly vlivu**
+v územní směsi. Bez nich měřidlo ukázalo 8,0 proti 9,7 výhry z 12 — rysy i směs
+byly tichý přídavek k obtížnosti. S nimi 9,7 proti 9,7. Územní směs vlivů drží váhu vlny (součet odolnosti) na původní hodnotě,
+naměřeno ×0,99–×1,04 na dvanácti územích; A/B robotem po třech kolech dalo
+**9,3 výher z 12 před i po**.
+
+### Past, na kterou jsem doplatil (a ať na ni nedoplatí někdo znovu)
+
+Vložil jsem 24 otázek na konec `QUIZ` a **poslední původní otázka končila bez
+čárky** (`'}` a hned `{q:`). Tím přestal být platný JavaScript celý velký
+`<script>`, hra se nespustila a `window.__G` nikdy nevzniklo — a protože v tom
+souboru zrovna měřily další dvě session, spadla měření i jim. Načtení přes
+`file://` hlásí jen `Unexpected token '{'` **bez čísla řádku**.
+
+Jak se to najde rychle (od session 4c): vytáhnout velký `<script>` do samostatného
+`.js`, v prázdné stránce ho vložit jako **inline** skript
+(`el.textContent=src; head.appendChild(el)`) a poslouchat `window.onerror` — u inline
+skriptu už číslo řádku přijde. Pak přičíst offset první řádky skriptu.
+
+**Poučení:** při vkládání do pole vždy zkontrolovat, čím končí předchozí položka.
+A po každém zásahu do sdíleného souboru ho **hned bootnout**, ne až na konci —
+tenhle soubor sdílely tři session naráz.
+
+---
+
+## PŘEDCHOZÍ STAV: VYDÁNA VERZE 92 (6. 9. odpoledne) — GAMEPLAY
 
 **Číslo 92 je vydané. 93 má session „obsah", 94 session „vizuál", další si berte 95.**
 

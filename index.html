@@ -10024,7 +10024,7 @@ function terRng(t){ const d=TER[terAt(t.c,t.r)]; return d&&d.rng?1+d.rng:1; }
 
 const MAPS=[
  {n:'Katastrální území',
-   node:[0.08, 0.86], boss:{"n": "Neuzavřený polygon", "d": "Úhlový uzávěr se nezavírá. Odolá i pancéřovým metodám."},
+   node:[0.08, 0.86], boss:{"n": "Neuzavřený polygon", "d": "Úhlový uzávěr se nezavírá.", "r":["nekrot"]}, mix:{err:1.3,refr:.8,blun:1.2},
    brief:"Katastrální mapování. Rovinaté pozemky, dlouhé přímé záměry a spousta času na rozmyšlenou.",
   d:'Rovina, dlouhá trasa. Klidný start.',waves:14,hp:0.78,
   ter:[['wood',4,0],['wood',5,0],['wood',4,1],['hill',7,1],['hill',8,1],
@@ -10032,7 +10032,7 @@ const MAPS=[
   p:[[1,0],[1,1],[1,2],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[7,4],[7,5],[7,6],
      [6,6],[5,6],[4,6],[3,6],[2,6],[1,6],[1,7],[1,8],[1,9],[2,9],[3,9],[4,9],[5,9],[6,9],[7,9],[7,10],[7,11],[7,12]]},
 {n:'Údolní přehrada',
-   node:[0.18, 0.68], boss:{"n": "Sesuv hrázního tělesa", "d": "Přehradní profil se hýbe. Léčí okolní vlivy."},
+   node:[0.18, 0.68], boss:{"n": "Sesuv hrázního tělesa", "d": "Přehradní profil se hýbe.", "r":["hoji"]}, mix:{subs:1.5,drift:1.4,refr:.75},
    brief:"Vodní dílo. Na hladinu se běžný stativ nepostaví — potřebuješ echolot na člunu nebo dron.",
   unlock:'sonar',d:'Vodní nádrž uprostřed. Na hladinu jen sonar, dron nebo batoh.',waves:16,hp:0.66,
   ter:[['water',3,2],['water',4,2],['water',5,2],['water',3,3],['water',4,3],['water',5,3],
@@ -10043,7 +10043,7 @@ const MAPS=[
      [1,5],[1,6],[1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[7,8],[7,9],[7,10],
      [6,10],[5,10],[4,10],[3,10],[2,10],[1,10],[1,11],[1,12]]},
  {n:'Rašeliniště',
-   node:[0.11, 0.44], boss:{"n": "Bezedná sonda", "d": "Rašeliniště polyká body. Postupně zrychluje."},
+   node:[0.11, 0.44], boss:{"n": "Bezedná sonda", "d": "Rašeliniště polyká body.", "r":["zrychl"]}, mix:{subs:1.7,noise:1.25,multi:.7},
    brief:"Rašeliniště. Podmáčený terén, kde se stativ boří. Suchá místa jsou vzácná a je o ně boj.",
   unlock:'penta',d:'Mokřad protkaný vodou. Suchá místa jsou vzácná.',waves:17,hp:0.70,
   p:[[0,3],[1,3],[2,3],[3,3],[3,4],[3,5],[3,6],[4,6],[5,6],[6,6],[6,7],[6,8],[6,9],
@@ -10054,7 +10054,7 @@ const MAPS=[
        ['wood',6,0],['wood',7,0],['wood',6,1],['wood',1,12],['wood',0,12],
        ['hill',5,2],['hill',5,3]]},
  {n:'Lomová stěna',
-   node:[0.25, 0.26], boss:{"n": "Odlomený blok", "d": "Lomová stěna se hroutí. Rozptyluje měření."},
+   node:[0.25, 0.26], boss:{"n": "Odlomený blok", "d": "Lomová stěna se hroutí.", "r":["rozptyl"]}, mix:{blun:1.6,noise:1.3,refr:.75},
    brief:"Činný lom. Skalní stěny nejde obejít, ale z hran je vidět do celé jámy.",
   unlock:'compass',d:'Těžební jáma. Skály blokují, ale z hran je vidět daleko.',waves:18,hp:0.74,
   p:[[4,0],[4,1],[3,1],[2,1],[1,1],[1,2],[1,3],[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],
@@ -10065,7 +10065,7 @@ const MAPS=[
        ['rock',3,8],['rock',4,8],['rock',5,8],['rock',0,11],['rock',0,12],
        ['hill',6,2],['hill',7,2],['hill',6,5],['hill',8,7],['hill',8,8],['hill',2,12],['hill',3,12]]},
  {n:'Městská zástavba',
-   node:[0.38, 0.4], boss:{"n": "Chyba orientace", "d": "Ve městě se ztratil sever. Ruší stanoviska."},
+   node:[0.38, 0.4], boss:{"n": "Chyba orientace", "d": "Ve městě se ztratil sever.", "r":["rusi"]}, mix:{multi:1.8,jam:1.4,subs:.7,refr:.8},
    brief:"Zaměření uliční sítě. Dlouhá trasa mezi budovami, málo volných rohů pro stanoviska.",
   unlock:'prism',d:'Hustá síť ulic. Dlouhá trasa, ale málo místa.',waves:19,hp:0.79,
   p:[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[8,2],[8,3],
@@ -10078,7 +10078,7 @@ const MAPS=[
        ['rock',4,8],['rock',6,8],['hill',0,0],['hill',8,0],['hill',0,12],['wood',3,11],
        ['wood',4,11],['wood',5,11],['water',6,11],['water',7,11]]},
 {n:'Důlní dílo',
-   node:[0.32, 0.7], boss:{"n": "Zával chodby", "d": "Důlní dílo se sesypalo. Silný pancíř."},
+   node:[0.32, 0.7], boss:{"n": "Zával chodby", "d": "Důlní dílo se sesypalo.", "r":["pancir"]}, mix:{jam:1.7,cover:1.4,refr:.6,noise:1.15},
    brief:"Důlní měřictví. Bez signálu družic se orientuješ jen podle optiky a gyroskopu.",
   pal:'night',d:'Podzemní chodby. Bez signálu družic — GNSS tu nefunguje.',
   waves:20,hp:0.85,ban:['gnss'],
@@ -10091,7 +10091,7 @@ const MAPS=[
        ['rock',8,12],['rock',6,0],['rock',5,0],['water',1,9],['water',1,10],['water',0,9],
        ['hill',2,7],['hill',3,7],['hill',6,3],['hill',6,4]]},
  {n:'Letecká plocha',
-   node:[0.46, 0.82], boss:{"n": "Turbulentní vzduch", "d": "Nad plochou to nese. Rychlý a odolný."},
+   node:[0.46, 0.82], boss:{"n": "Turbulentní vzduch", "d": "Nad plochou to nese.", "r":["rychly"]}, mix:{refr:1.7,noise:1.35,subs:.6,jump:1.2},
    brief:"Provozní letiště. Rovina bez překážek — je odsud vidět daleko.",
   d:'Provozní letiště. Rovina, dlouhé záměry.',
   waves:21,hp:1.00,ban:[],
@@ -10104,7 +10104,7 @@ const MAPS=[
        ['water',5,11],['water',6,11],['water',5,12],
        ['rock',4,0],['rock',4,12],['rock',1,0]]},
  {n:'Železniční koridor',
-   node:[0.53, 0.56], boss:{"n": "Posun násypu", "d": "Koridor ujíždí. Léčí a zrychluje."},
+   node:[0.53, 0.56], boss:{"n": "Posun násypu", "d": "Koridor ujíždí.", "r":["hoji","zrychl"]}, mix:{jump:1.6,drift:1.4,err:.8,multi:1.15},
    brief:"Trať v provozu. Náspy dávají rozhled, ale postavit se dá jen po stranách koridoru.",
   unlock:'gravi',d:'Dlouhá přímá trať mezi náspy. Málo místa po stranách, zato daleko vidíš.',
   waves:21,hp:1.18,
@@ -10117,7 +10117,7 @@ const MAPS=[
        ['water',3,1],['water',4,1],['water',5,1],['water',4,2],
        ['rock',2,12],['rock',3,12],['hill',5,12]]},
  {n:'Zátopová oblast',
-   node:[0.64, 0.74], boss:{"n": "Povodňová vlna", "d": "Zátopa přišla naráz. Roj s ochranou."},
+   node:[0.64, 0.74], boss:{"n": "Povodňová vlna", "d": "Zátopa přišla naráz.", "r":["roj","kryje"]}, mix:{drift:1.5,noise:1.4,heal:1.35,subs:.7},
    brief:"Povodňová oblast. Většina území je pod vodou, suchá místa spočítáš na prstech.",
   unlock:'backpack',d:'Voda všude, kam se podíváš. Bez plovoucích přístrojů to nepůjde.',
   waves:22,hp:1.27,
@@ -10131,7 +10131,7 @@ const MAPS=[
        ['water',0,11],['water',1,11],['water',0,12],['water',1,12],
        ['hill',2,0],['hill',3,0],['hill',6,11],['hill',7,12],['wood',5,11],['wood',6,12]]},
  {n:'Rozcestí sítí',
-   node:[0.72, 0.44], boss:{"n": "Rozpojená síť", "d": "Rozcestí ztratilo spojení. Chodí po obou trasách."},
+   node:[0.72, 0.44], boss:{"n": "Rozpojená síť", "d": "Rozcestí ztratilo spojení.", "r":["obetrasy"]}, mix:{jam:1.5,multi:1.3,err:.85},
    brief:"Dvě nezávislé sítě, které se před koncem spojí. Musíš pokrýt obě větve.",
   unlock:'thermal',d:'Dvě trasy, které se před koncem spojí. Musíš pokrýt obě větve, nebo bránit až u ústí.',
   waves:22,hp:1.66,twin:true,
@@ -10142,7 +10142,7 @@ const MAPS=[
   ter:[['hill',3,0],['hill',4,0],['wood',0,6],['wood',0,7],['wood',8,7],
        ['water',3,10],['water',4,10],['water',3,11],['rock',5,2],['rock',5,4],['hill',2,10],['hill',3,12]]},
  {n:'Mostní konstrukce',
-   node:[0.85, 0.66], boss:{"n": "Dilatace mostu", "d": "Konstrukce dýchá. Odolá zpomalení."},
+   node:[0.85, 0.66], boss:{"n": "Dilatace mostu", "d": "Konstrukce dýchá.", "r":["vzdor"]}, mix:{drift:1.7,cover:1.35,subs:1.2,noise:.65},
    brief:"Most přes údolí. Pod nosnou konstrukcí je voda, stavět jde jen na úzkých lávkách.",
   unlock:'meteo',d:'Měření na mostě přes údolí. Stavět jde jen na úzkých lávkách po stranách.',
   waves:23,hp:1.78,
@@ -10158,7 +10158,7 @@ const MAPS=[
        ['water',7,11],['water',8,11],['water',3,12],['water',4,12],['water',5,12],
        ['hill',3,5],['hill',4,5],['hill',5,5],['hill',3,9],['hill',4,9],['hill',5,9]]},
  {n:'Vysokohorská síť',
-   node:[0.92, 0.36], boss:{"n": "Lavina", "d": "Vysokohorská síť pod sněhem. Nejtěžší protivník hry."},
+   node:[0.92, 0.36], boss:{"n": "Lavina", "d": "Sněhová masa se dala do pohybu.", "r":["zrychl","roj","vzdor"]}, mix:{cover:1.5,refr:1.35,multi:1.3,err:.8},
    brief:"Vysokohorské body. Skály, hřebeny a nejtvrdší podmínky, jaké síť zná.",
   pal:'night',unlock:'quadrant',d:'Skály a hřebeny. Stavět jde jen tam, kde je pevná zem.',waves:24,hp:1.92,
   ter:[['rock',0,0],['rock',1,0],['rock',0,1],['rock',8,0],['rock',7,0],['rock',8,1],
@@ -10169,6 +10169,72 @@ const MAPS=[
      [7,6],[7,7],[7,8],[6,8],[5,8],[4,8],[3,8],[2,8],[1,8],[1,9],[1,10],[1,11],
      [2,11],[3,11],[4,11],[5,11],[6,11],[7,11],[7,12]]}
 ];
+
+/* ==================== RYSY FINÁLOVÝCH BOSSŮ ====================
+   Do verze 91 se dvanáct finálových bossů lišilo JEN jménem a popiskem.
+   „Léčí okolní vlivy", „postupně zrychluje", „odolá pancéřovým metodám" byly
+   pouhé věty — chování měli všichni stejné. Tady jsou ty věty přeložené do
+   mechaniky. Popisek v encyklopedii i hlášení v boji se skládají z TÉHOŽ
+   seznamu, takže se text a chování už nemají jak rozejít. */
+// `cena` je to, oc se bossovi SNIZI odolnost, kdyz rys dostane. Bez toho by
+// kazdy rys byla sila navic a finale kazdeho uzemi by tise ztezkla - zmereno
+// robotem: 9,7 -> 8,0 vyher z 12. Finale ma byt jine, ne tezsi.
+const RYS={
+ nekrot:  {n:'Nezkrotitelný pancíř',d:'Pancíř mu nejde snížit — průrazné metody, odrazné fólie ani karty na něj neplatí.',nopierce:1,cena:1.12},
+ pancir:  {n:'Zesílený pancíř',     d:'Má o 8 vyšší pancíř než ostatní bossové.',ar:8,cena:1.12},
+ vzdor:   {n:'Vzdoruje zpomalení',  d:'Zpomalení na něj působí jen z třetiny.',noslow:.35,cena:1.08},
+ hoji:    {n:'Vyrovnává chybu',     d:'Vlivům kolem sebe průběžně vrací odolnost.',heal:1,cena:1.10},
+ zrychl:  {n:'Nabírá tempo',        d:'Každou vteřinu je o 4 % rychlejší, až do dvojnásobku.',ramp:1,cena:1.12},
+ rozptyl: {n:'Rozptyluje měření',   d:'Stanoviska do 2,5 pole od něj každou čtvrtou ranou minou.',miss:1,cena:1.18},
+ rusi:    {n:'Ruší orientaci',      d:'Každých 8 s umlčí stanoviska kolem sebe na 2,5 s.',jam:1,cena:1.12},
+ roj:     {n:'Uvolňuje roj',        d:'Každých 7 s po sobě vypustí pět šumů.',roj:1,cena:1.18},
+ kryje:   {n:'Kryje okolí',         d:'Vlivy kolem něj dostávají o 25 % míň.',shield:.25,cena:1.12},
+ rychly:  {n:'Rychlý, zato křehčí', d:'O 35 % rychlejší, ale s nižší odolností.',sp:1.35,cena:1.35},
+ obetrasy:{n:'Chodí po obou trasách',d:'Na každou z obou tras vyrazí jeden, každý slabší.',obe:1,cena:1.60}
+};
+function bossRysy(mi){
+ const m=MAPS[(mi===undefined&&S)?S.map:mi];
+ return ((m&&m.boss&&m.boss.r)||[]).map(id=>RYS[id]).filter(Boolean);
+}
+// Rysy dostane jen boss POSLEDNÍ etapy území — ten, který má v mapě jméno.
+function finaleRysy(){
+ if(!S||S.rush5)return [];
+ if(typeof lastWaveOf!=='function'||S.wave<lastWaveOf())return [];
+ return bossRysy(S.map);
+}
+// Uzemni smes: kazde uzemi posila jine vlivy. Aby to nebyla tichá zmena
+// obtiznosti, poctem se vaha vlny (soucet odolnosti) drzi na puvodni hodnote —
+// meni se SLOZENI, ne tlak.
+// Kolikrat vic nez svou odolnost vliv vazi. Rusicka umlci stanoviska kolem sebe,
+// lecitel drzi celou vlnu, zakryt srazi poskozeni vsem sousedum - vymenit je za
+// stejnou odolnost v sumu NENI vymena jedna ku jedne, a bez tohohle nasobku by
+// uzemni smes tise ztezovala hru. Zmereno robotem, viz NAVOD k verzi 93.
+const SILA={jam:2.2,heal:2.5,cover:2.0,jump:1.4,drift:1.35,blun:1.2,multi:1.15,subs:1.1};
+// Jak vyhranena uzemi jsou: 1 = plne podle tabulky `mix`, 0 = vsude stejne.
+// Nizsi cislo znamena mensi rozdily mezi uzemimi, ale i mensi dopad na obtiznost.
+const MIX_SILA=.7;
+function vahaVlivu(k){ return E[k].hp*(SILA[k]||1); }
+function mixUzemi(l){
+ const mx=S&&MAPS[S.map]&&MAPS[S.map].mix;
+ if(!mx)return l;
+ const vaha=a=>a.reduce((x,y)=>x+(y[0]==='boss'?0:y[1]*vahaVlivu(y[0])),0);
+ const pred=vaha(l);
+ const km=k=>1+((mx[k]||1)-1)*MIX_SILA;
+ let out=l.map(x=>x[0]==='boss'?x:[x[0],Math.max(1,Math.round(x[1]*km(x[0]))),x[2]]);
+ const po=vaha(out);
+ if(pred>0&&po>0){
+   const f=pred/po;
+   out=out.map(x=>x[0]==='boss'?x:[x[0],Math.max(1,Math.round(x[1]*f)),x[2]]);
+ }
+ return out;
+}
+// Co na uzemi chodi nejcasteji - pro popis uzemi. Cte se z TEHOZ mixu,
+// kterym se vlna opravdu sklada.
+function casteVlivy(mi){
+ const mx=MAPS[mi]&&MAPS[mi].mix; if(!mx)return [];
+ return Object.keys(mx).filter(k=>mx[k]>=1.3&&E[k])
+   .sort((a,b)=>mx[b]-mx[a]).slice(0,3).map(k=>E[k].n);
+}
 
 const T={
  theo:{n:['Teodolit','Totální stanice','Robotická TS','Monitorovací TS'],c:'#2fe3c8',cost:18,kind:'single',
@@ -10708,7 +10774,121 @@ const QUIZ=[
   a:['Přesnost, se kterou byla určena poloha bodu','Stáří zaměření bodu',
      'Způsob, jakým je bod v terénu označen','Právní závaznost hranice'],c:0,
   e:'Kód 3 odpovídá střední souřadnicové chybě 0,14 m, kód 8 hodnotě 1 m. '+
-    'Kódy 3 až 8 jdou od nejpřesnějšího k nejhrubšímu; kódy 1 a 2 se dnes nepoužívají.'}
+    'Kódy 3 až 8 jdou od nejpřesnějšího k nejhrubšímu; kódy 1 a 2 se dnes nepoužívají.'},
+  {q:'Co je multipath při měření GNSS?',
+   a:['Signál družice dorazí k anténě i odražený od okolních ploch','Přijímač zachytí dvě družice na téže frekvenci',
+      'Anténa je nakloněná a mění se fázové centrum','Korekce z referenční stanice dorazí opožděně'],c:0,
+   e:'Odražený signál urazí delší dráhu, takže poloha uteče i o decimetry. Nejhorší je u fasád, aut a vodní hladiny; '+
+     'potlačí ho choke-ring anténa, delší observace a měření téhož bodu v jinou denní dobu.'},
+  {q:'Kolik družic je nejméně potřeba k určení polohy GNSS?',
+   a:['Čtyři','Tři','Pět','Šest'],c:0,
+   e:'Tři by stačily na tři souřadnice, čtvrtá je potřeba na neznámou chybu hodin přijímače. '+
+     'V praxi se měří s daleko větším počtem — nadbytečná měření zvyšují spolehlivost.'},
+  {q:'Co znamená, že má RTK řešení „fix“?',
+   a:['Ambiguity fázových měření jsou vyřešené v celých číslech','Přijímač má stabilní spojení s internetem',
+      'Anténa stojí na stativu, ne na výtyčce','Poloha se přestala měnit'],c:0,
+   e:'Bez vyřešených ambiguit („float“) je přesnost decimetrová až metrová. Zapisovat se smí jen fixované řešení, '+
+     'a to ještě po kontrolním přeměření s novou inicializací.'},
+  {q:'Která chyba se opakovaným měřením NEVYLOUČÍ?',
+   a:['Systematická','Náhodná','Hrubá','Žádná z nich'],c:0,
+   e:'Náhodná chyba se průměrováním zmenšuje, hrubou odhalí nadbytečné měření. Systematická má pořád stejné znaménko, '+
+     'takže ji opakování jen potvrdí — odhalí ji kalibrace, jiná metoda nebo měření ve dvou polohách.'},
+  {q:'K čemu jsou nadbytečná měření?',
+   a:['Odhalí hrubé chyby a umožní vyrovnání','Zkracují dobu měření','Nahrazují kalibraci přístroje','Zvětšují dosah dálkoměru'],c:0,
+   e:'Bez nadbytečnosti nemá měření kontrolu a každá chyba se tiše přepíše do výsledku. '+
+     'Rozdíl mezi počtem měření a počtem neznámých je počet nadbytečných měření.'},
+  {q:'Co se udělá s uzávěrovou odchylkou polygonového pořadu?',
+   a:['Porovná se s mezní odchylkou a pak se rozdělí na body pořadu','Připíše se poslednímu bodu',
+      'Zanedbá se, pokud je malá','Pořad se vždy musí celý přeměřit'],c:0,
+   e:'Úhlová odchylka se rozdělí rovnoměrně na vrcholy, souřadnicová podle délek stran. '+
+     'Když ale odchylka překročí mez, rozdělovat se nesmí — někde je hrubá chyba.'},
+  {q:'V jakém souřadnicovém systému pracují evropské sítě GNSS?',
+   a:['ETRS89','S-JTSK','WGS84 z roku 1984','Balt po vyrovnání'],c:0,
+   e:'ETRS89 je pevně svázaný s euroasijskou deskou, takže se s ní pohybuje a souřadnice zůstávají v čase stálé. '+
+     'V globálním WGS84 se Evropa posouvá zhruba 2,5 cm za rok. Balt po vyrovnání je výškový systém.'},
+  {q:'Proč se souřadnice z ETRS89 nedají do S-JTSK jen tak přepočítat?',
+   a:['Trigonometrická síť S-JTSK má místní deformace, proto se používá transformace','Osy X a Y jsou prohozené',
+      'S-JTSK nemá kartografické zobrazení','ETRS89 neobsahuje výšky'],c:0,
+   e:'Síť z 20. let má lokální odchylky až několik decimetrů. Používá se proto zpřesněná globální transformace, '+
+     'případně místní klíč z identických bodů v okolí.'},
+  {q:'Co je excentricita stanoviska?',
+   a:['Měření z pomocného bodu vedle daného bodu s převodem na jeho střed','Chyba svislé osy přístroje',
+      'Nesouosost dalekohledu a vodorovného kruhu','Posun hranolu proti ose výtyčky'],c:0,
+   e:'Když se na daný bod nedá postavit, měří se vedle a výsledek se početně převede. '+
+     'Excentricitu je nutné změřit a zapsat — jinak vznikne systematická chyba všech měření z toho stanoviska.'},
+  {q:'K čemu je při nivelaci podložka pod lať, takzvaná žabka?',
+   a:['Drží přestavový bod na místě mezi záměrou vzad a vpřed','Urovnává lať do svislice',
+      'Chrání patu latě před vlhkem','Označuje nivelační bod natrvalo'],c:0,
+   e:'Přestavový bod nemá stabilizaci, takže by se lať mezi dvěma záměrami zabořila nebo posunula. '+
+     'Žabka je těžká a má vrchlík, na kterém lať stojí pokaždé stejně.'},
+  {q:'Proč se pro přesnou nivelaci používají invarové latě?',
+   a:['Invar se teplotou téměř neroztahuje','Invar je lehčí než dřevo',
+      'Invar lépe odráží laserový paprsek','Invar netrpí magnetickým rušením'],c:0,
+   e:'Teplotní roztažnost invaru je zhruba desetkrát menší než u oceli. '+
+     'Jinak by změna teploty měnila délku stupnice a vznikla by systematická chyba celého pořadu.'},
+  {q:'Co způsobí špatně zadaná výška antény při měření GNSS?',
+   a:['Všechny body jsou posunuté ve výšce o tentýž rozdíl','Poloha se začne náhodně rozptylovat',
+      'Přijímač ztratí fixované řešení','Nic, výška se počítá z družic'],c:0,
+   e:'Je to nejčastější hrubá chyba v RTK a z přesnosti měření ji nepoznáš — všechny body jsou posunuté stejně. '+
+     'Odhalí ji jedině kontrola na bodu se známou výškou.'},
+  {q:'Jak se pentagonálním hranolem vytyčí kolmice?',
+   a:['Měřič jde po přímce, dokud se obraz v hranolu nekryje s cílem','Hranol se natočí o 100 gonů podle stupnice',
+      'Hranol se postaví na bod a odečte se úhel','Změří se dvě délky a rozdíl se dopočítá'],c:0,
+   e:'Pentagon odklání záměru přesně o 100 gonů bez ohledu na to, jak je natočený. '+
+     'V okamžiku, kdy se obraz z hranolu kryje s bodem viděným přímo, stojí měřič na patě kolmice.'},
+  {q:'Co je rajón?',
+   a:['Určení bodu z jednoho stanoviska měřením délky a směru','Uzavřený polygonový pořad',
+      'Protínání ze tří směrů','Vyrovnaná síť podrobných bodů'],c:0,
+   e:'Rajón nemá kontrolu — bod je určen jediným měřením, takže se v něm chyba nemá jak projevit. '+
+     'Proto je omezená jeho délka a bod se ověřuje jiným způsobem.'},
+  {q:'Co obsahuje výměnný formát katastru (VFK)?',
+   a:['Popisné i geometrické údaje katastru v textovém souboru','Jen rastr katastrální mapy',
+      'Jen seznam vlastníků','Ortofoto se souřadnicemi'],c:0,
+   e:'Je to dávkový textový formát s bloky tabulek — parcely, vlastníci, hranice, body podrobného polohového bodového pole. '+
+     'Načte ho každý geodetický software.'},
+  {q:'Jaké měřítko má katastrální mapa v takzvaných sáhových územích?',
+   a:['1:2880','1:1000','1:5000','1:500'],c:0,
+   e:'Sáhové mapy z 19. století vznikly v měřítku jeden palec na 40 sáhů, což je 1:2880. '+
+     'Nově mapovaná území mají 1:1000, méně často 1:2000.'},
+  {q:'Co je bod podrobného polohového bodového pole?',
+   a:['Stabilizovaný bod s určenou přesností, ze kterého se měří podrobné body','Jakýkoli zaměřený roh budovy',
+      'Každý bod ležící na hranici parcely','Bod určený výhradně metodou GNSS'],c:0,
+   e:'PPBP navazuje na základní bodové pole, je stabilizovaný a jeho souřadnice mají předepsanou přesnost. '+
+     'Vede se v databázi bodů a jde ho znovu použít i za deset let.'},
+  {q:'Jak se u georadaru volí mezi hloubkou a rozlišením?',
+   a:['Nižší frekvence antény dosáhne hlouběji, ale rozliší méně','Vyšší frekvence dosáhne hlouběji i rozliší víc',
+      'Rozhoduje jen rychlost pojezdu antény','Hloubka závisí pouze na vlhkosti půdy'],c:0,
+   e:'Anténa 250 MHz dohlédne asi 5 m, ale tenkou trubku nerozliší; 800 MHz dá jemný obraz jen do 1,5 m. '+
+     'Pro inženýrské sítě se proto volí jiná anténa než pro geologický profil.'},
+  {q:'Co změří družicová radarová interferometrie (InSAR)?',
+   a:['Posun povrchu mezi dvěma snímky, v milimetrech','Absolutní nadmořskou výšku bodu',
+      'Teplotu povrchu','Vlhkost půdy'],c:0,
+   e:'Z fázového rozdílu dvou snímků téhož místa vyjde změna vzdálenosti k družici. '+
+     'Odhalí pokles poddolovaného území i o pár milimetrů za rok, aniž kdo vyjede do terénu.'},
+  {q:'Proč se u trigonometrického určení výšky zavádí oprava ze zakřivení Země a refrakce?',
+   a:['Na delších záměrách dělají obě dohromady centimetry až decimetry','Kvůli sbíhavosti poledníků',
+      'Kvůli tíhové anomálii','Kvůli nadmořské výšce stanoviska'],c:0,
+   e:'Zakřivení Země zvedá cíl zdánlivě výš, refrakce působí opačně a asi ze sedminy ho ruší. '+
+     'Obě rostou se čtvercem délky — na kilometru už jde dohromady o víc než 6 cm.'},
+  {q:'Co je zenitový úhel?',
+   a:['Úhel měřený od svislice k záměře','Úhel měřený od vodorovné roviny',
+      'Úhel mezi dvěma směry ve vodorovné rovině','Sklon terénu v procentech'],c:0,
+   e:'Vodorovná záměra má zenitový úhel 100 gonů, směr do zenitu nulu. '+
+     'Výškový úhel se od zenitového liší právě o tuto hodnotu, jen s opačným znaménkem.'},
+  {q:'Co znamená sklon 5 %?',
+   a:['Převýšení 5 m na 100 m vodorovné vzdálenosti','Odklon 5 gonů od vodorovné roviny',
+      'Převýšení 5 m na kilometr','Stoupání 5 stupňů'],c:0,
+   e:'Procenta udávají poměr převýšení k vodorovné vzdálenosti. U mírných sklonů je rozdíl proti délce ve svahu '+
+     'zanedbatelný, u strmých už ne — proto se u silnic pracuje s vodorovnou délkou.'},
+  {q:'Jak se z příčných profilů spočítá kubatura?',
+   a:['Plochy sousedních profilů se zprůměrují a vynásobí jejich vzdáleností','Sečtou se plochy všech profilů',
+      'Největší plocha se vynásobí délkou úseku','Od výkopu se odečte násyp'],c:0,
+   e:'Je to metoda průměrných ploch. Čím hustší profily, tím menší chyba — v každém lomu terénu se profil vkládá navíc.'},
+  {q:'Kdo ověřuje výsledek zeměměřické činnosti pro katastr?',
+   a:['Úředně oprávněný zeměměřický inženýr','Kterýkoli zaměstnanec zeměměřické firmy',
+      'Katastrální úřad při přijetí podání','Stavební úřad'],c:0,
+   e:'Ověřením přebírá odpovědnost za správnost a úplnost konkrétní fyzická osoba s oprávněním. '+
+     'Bez ověřovací doložky katastr podání nepřijme.'},
 ];
 const INFO={
  tape:{p:'Pásmo je nejstarší způsob měření délek. Ocelové pásmo se komparuje a při přesném měření se zavádějí opravy z teploty, napínací síly, průvěsu a převýšení. Invarová pásma se používala pro měření základen s přesností až 1:1 000 000.',
@@ -12492,7 +12672,7 @@ function waveComp(w){
  if(w>=13) l.push(['jump',1+Math.round(w*.14),2.4]);
  if(w>=10) l.push(['heal',Math.max(1,Math.round((w-9)*.35)),2.8]);
  if(w>=15) l.push(['cover',1+Math.round(w*.12),2.6]);
- return l;
+ return mixUzemi(l);
 }
 
 /* ==================== KRESLENÍ ==================== */
@@ -13810,17 +13990,41 @@ function spawnAt(k,p,scale,forceElite,pi){
  if(k!=='boss'&&(forceElite||Math.random()<eliteChance(S.wave)))
    el=ELITE[(Math.random()*ELITE.length)|0];
  const hp=d.hp*scale*(el?el.hp:1);
- S.enemies.push({k,p:Math.max(0,p),pi:pi||0,hp,mhp:hp,slowT:0,slowM:1,mark:0,dead:false,el:el});
+ const e={k,p:Math.max(0,p),pi:pi||0,hp,mhp:hp,slowT:0,slowM:1,mark:0,dead:false,el:el};
+ // Finalovy boss uzemi si s sebou nese rysy z tabulky RYS.
+ if(k==='boss'){
+   const rr=finaleRysy();
+   if(rr.length){
+     e.rys=rr;
+     let cena=1;
+     rr.forEach(r=>{ if(r.cena)cena*=r.cena; });
+     if(cena>1){e.hp/=cena;e.mhp/=cena;}
+     rr.forEach(r=>{
+       if(r.hp){e.hp*=r.hp;e.mhp*=r.hp;}
+       if(r.sp)e.spM=(e.spM||1)*r.sp;
+       if(r.ar)e.arPlus=(e.arPlus||0)+r.ar;
+       if(r.nopierce)e.nopierce=1;
+       if(r.noslow)e.noslow=r.noslow;
+       if(r.heal)e.bHeal=1;
+       if(r.ramp)e.ramp=1;
+       if(r.miss)e.bMiss=1;
+       if(r.jam)e.bJam=1;
+       if(r.roj)e.bRoj=1;
+       if(r.shield)e.bShield=r.shield;
+     });
+   }
+ }
+ S.enemies.push(e);
 }
 function shieldOf(e){
- if(E[e.k].shield)return 0;
+ if(E[e.k].shield||e.bShield)return 0;
  const list=S.covers;
  if(!list||!list.length)return 0;
  let sh=0;const q=pathPos(e.p,e.pi);
  for(let i=0;i<list.length;i++){
    const o=list[i]; if(o.dead)continue;
    const z=pathPos(o.p,o.pi);
-   if(Math.hypot(z.x-q.x,z.y-q.y)<=CS*1.9){sh=Math.max(sh,E[o.k].shield); if(sh>=.25)break;}
+   if(Math.hypot(z.x-q.x,z.y-q.y)<=CS*1.9){sh=Math.max(sh,E[o.k].shield||o.bShield||0); if(sh>=.25)break;}
  }
  return sh;
 }
@@ -13834,7 +14038,9 @@ function hurt(e,amount,pierce,crit,src){
    if(hasPerk(src,'g_mark')){e.mark=Math.max(e.mark||0,1.5);e.markPow=Math.max(e.markPow||0,.20);}
    if(hasPerk(src,'g_gold'))S.cr+=2;
  }
- const ar=Math.max(0,E[e.k].ar+((e.el&&e.el.ar)||0)-(pierce||0)-2*M('armor')-(e.armorCut||0));
+ // Nezkrotitelny pancir (finale katastru): jemu se pancir snizit neda.
+ const arZ=E[e.k].ar+(e.arPlus||0)+((e.el&&e.el.ar)||0);
+ const ar=e.nopierce?arZ:Math.max(0,arZ-(pierce||0)-2*M('armor')-(e.armorCut||0));
  // Podlaha 1 plati pro rany, ne pro drobne tiky zon - jinak by zona na 120Hz
  // telefonu delala dvakrat tolik co na 60Hz a pancir by se vubec neuplatnil.
  let d=(amount<1?Math.max(0,amount-ar):Math.max(1,amount-ar))*(1-shieldOf(e));
@@ -13897,6 +14103,12 @@ function fire(t){
  const cand=S.enemies.filter(e=>!e.dead&&inR(t,e,R));
  if(!cand.length){ if(k==='lock')t.lock=null; return false; }
  if(condEff('miss')&&Math.random()<condEff('miss'))return true;
+ if(S.rozptyl&&S.rozptyl.length){
+   for(let i=0;i<S.rozptyl.length;i++){
+     const q=S.rozptyl[i];
+     if(Math.hypot(q.x-tx,q.y-ty)<=CS*2.5){ if(Math.random()<.25)return true; break; }
+   }
+ }
  let D=dmgOf(t); const CR=critOf(t);
  t.flash=.18;
  skLegFx(t,tx,ty);   // legendarni vzhled: efekt vystrelu (jen kresleni)
@@ -14210,14 +14422,17 @@ function step(dt){
    if(S.phase==='combat')snd('jam');
  }
  const es=Math.max(.55,1-.07*M('entry_slow'));
- S.covers=S.enemies.filter(o=>!o.dead&&E[o.k].shield);
+ // Rozptyl (finale lomu): stanoviska kolem nej obcas minou.
+ S.rozptyl=S.enemies.filter(o=>!o.dead&&o.bMiss).map(o=>pathPos(o.p,o.pi));
+ S.covers=S.enemies.filter(o=>!o.dead&&(E[o.k].shield||o.bShield));
  S.enemies.forEach(e=>{
    if(e.dead)return;
    if(e.slowT>0)e.slowT-=dt;
    // Az efekt vyprsi, musi se vratit i jeho nasobky - jinak se jednou srazena
    // rychlost drzi do konce behu a kazde dalsi zpomaleni na ni navazuje.
    if(e.slowT<=0&&(e.slowM!==1||e.slowDmg||e.armorCut)){ e.slowM=1;e.slowDmg=0;e.armorCut=0; }
-   const m=e.slowT>0?e.slowM:1;
+   let m=e.slowT>0?e.slowM:1;
+   if(e.noslow&&m<1)m=1-(1-m)*e.noslow;   // vzdoruje zpomaleni
    if(e.mark>0)e.mark-=dt;
    if(e.haste>0)e.haste-=dt;
    if(E[e.k].jump){
@@ -14234,8 +14449,33 @@ function step(dt){
    if(e.k==='boss'){
      e.actT=(e.actT||6)-dt;
      if(e.actT<=0){e.actT=9+Math.random()*4;bossAct(e);}
+     if(e.ramp)e.rampT=(e.rampT||0)+dt;
+     if(e.bJam){
+       e.jamT=(e.jamT||8)-dt;
+       if(e.jamT<=0){
+         e.jamT=8;
+         const q=pathPos(e.p,e.pi);let n=0;
+         S.towers.forEach(t=>{if(Math.hypot(tcx(t)-q.x,tcy(t)-q.y)<=CS*2.6){t.bossJam=2.5;n++;}});
+         S.fx.push({type:'ring',x:q.x,y:q.y,r:CS*2.6,c:E.jam.c,t:.5,d:.5});
+         if(n&&!e.jamSaid){e.jamSaid=1;
+           feed('<b>'+((S.bossInfo&&S.bossInfo.n)||E.boss.n)+'</b> ruší orientaci — stanoviska kolem něj na chvíli oněmí','var(--tape)');}
+         if(n)snd('jam');
+       }
+     }
+     if(e.bRoj){
+       e.rojT=(e.rojT||7)-dt;
+       if(e.rojT<=0){
+         e.rojT=7;
+         const sc=waveScale();
+         for(let i=0;i<5;i++)spawnAt('noise',Math.max(0,e.p-i*.22),sc*.75,false,e.pi);
+         const q=pathPos(e.p,e.pi);
+         S.fx.push({type:'ring',x:q.x,y:q.y,r:CS*1.6,c:E.noise.c,t:.45,d:.45});
+         if(!e.rojSaid){e.rojSaid=1;
+           feed('<b>'+((S.bossInfo&&S.bossInfo.n)||E.boss.n)+'</b> uvolňuje roj šumů','var(--tape)');}
+       }
+     }
    }
-   if(E[e.k].heal){
+   if(E[e.k].heal||e.bHeal){
      const q=pathPos(e.p,e.pi);
      S.enemies.forEach(o=>{ if(o.dead||o===e)return;
        const z=pathPos(o.p,o.pi);
@@ -14244,7 +14484,7 @@ function step(dt){
    const rg=(E[e.k].regen||0)+((e.el&&e.el.rg)||0);
    if(rg&&e.slowT<=0)e.hp=Math.min(e.mhp,e.hp+e.mhp*rg*dt);
    S.frontier=Math.max(S.frontier||0,e.p/Math.max(1,pathOf(e.pi).length-1));
-   e.p+=E[e.k].sp*(e.el?e.el.sp:1)*(e.haste>0?1.4:1)*m*es*(1+.012*(S.wave-1))*(1+condEff('spd'))*(chMod('fast')?1.25:1)*dt;
+   e.p+=E[e.k].sp*(e.el?e.el.sp:1)*(e.haste>0?1.4:1)*(e.spM||1)*(e.ramp?Math.min(2,1+.04*(e.rampT||0)):1)*m*es*(1+.012*(S.wave-1))*(1+condEff('spd'))*(chMod('fast')?1.25:1)*dt;
    if(e.p>=pathOf(e.pi).length-1){
      e.dead=true;S.leaked++;
      // ztráta roste s vlnou, ale má strop; „Záložní značky" ji tlumí
@@ -14397,7 +14637,10 @@ function pickCond(w){
 // Rozcesti siti dosud lhal ve VSECH etapach: sliboval 11 vlivu a prislo 7.
 function dveTrasy(comp){
  if(!(S&&MAPS[S.map]&&MAPS[S.map].twin))return comp;
- return comp.map(x=>[x[0],Math.max(1,Math.round(x[1]*.62)),x[2]]);
+ // Boss se NEDELI: finale ma na kazdou z obou tras poslat jednoho. Do v91
+ // se z dvojice zaokrouhlenim stal jeden a slib "chodi po obou trasach" byl
+ // na uzemi Rozcesti sítí nepravdivy.
+ return comp.map(x=>x[0]==='boss'?x:[x[0],Math.max(1,Math.round(x[1]*.62)),x[2]]);
 }
 function nahledVlny(w){ return dveTrasy(waveComp(w)); }
 function startWave(){
@@ -14445,6 +14688,10 @@ function startWave(){
    snd('s_boss');
    duck(.6,1.2);
    setTimeout(()=>{ if(S&&S.phase==='combat'&&S.bossInfo)feed('<b>'+S.bossInfo.n+'</b> — '+S.bossInfo.d,'var(--tape)'); },900);
+   // Cim se tenhle boss lisi, se hrac dozvi PRED tim, nez ho to prekvapi.
+   const rysy=finaleRysy();
+   if(rysy.length)setTimeout(()=>{ if(S&&S.phase==='combat')
+     rysy.forEach(r=>feed('<b>'+r.n+'</b> — '+r.d,'var(--tape)')); },1500);
  }
  snd('wave');
  if(SAVE.tut===4){SAVE.tut=5;save();}
@@ -15249,6 +15496,35 @@ const COUNTER={
  cover:'Kryje sousedy o 25 %. Sundej ho jako prvního.',
  boss:'Obrovská odolnost. Multistanice ubírá procenta a metody dělají zbytek.'
 };
+
+/* Co ten rusivy vliv je ve SKUTECNE geodezii. Pristroje takovy vyklad maji
+   od zacatku (INFO), vlivy dosud jen jednu vetu o tom, jak se chovaji ve hre. */
+const EINFO={
+ err:{p:'Chyba odečtu je omyl při čtení stupnice nebo latě — přehlédnutý decimetr, zaměněná číslice, špatně odečtený nonius. Nepatří mezi chyby náhodné ani systematické: je to hrubá chyba, kterou nelze vyrovnat, jen odhalit a měření opakovat.',
+   f:'Nejčastěji se zamění celý decimetrový dílek latě, takže výsledek skočí rovnou o 10 cm. Proto se u nivelace čte trojí čtení a jejich rozdíly se hlídají.'},
+ refr:{p:'Refrakce je ohyb paprsku v atmosféře. Hustota vzduchu klesá s výškou, takže záměra se zakřivuje k zemi a cíl se jeví výš, než ve skutečnosti je. Vertikální refrakce je největší v přízemní vrstvě nad rozpálenou plochou.',
+   f:'Refrakce ruší asi sedminu vlivu zakřivení Země — proto se obě opravy zavádějí společně. U trigonometrické výšky dělají na kilometru přes 6 cm.'},
+ subs:{p:'Sedání bodu je svislý pohyb stabilizace: měřická značka klesá s podložím, s násypem nebo se stavbou. Zjišťuje se opakovanou nivelací v epochách a porovnáním s bodem mimo ovlivněnou oblast.',
+   f:'Aby se dalo poznat sedání od chyby měření, musí být přesnost aspoň třikrát lepší než sledovaný posun. Proto se pro monitoring používá přesná nivelace, ne GNSS.'},
+ multi:{p:'Multipath je odražený signál družice — od fasády, auta, plechové střechy nebo vodní hladiny. Přijímač dostane tentýž signál dvakrát, po delší dráze, a poloha se posune. Je to hlavní důvod, proč se v zastavěné části RTK bod měří dvakrát v jinou denní dobu.',
+   f:'Odražený signál se dá potlačit choke-ring anténou, delší observací a hlavně tím, že se anténa nedává těsně ke zdi.'},
+ noise:{p:'Šum měření je náhodná chyba: drobné výkyvy s nulovým průměrem, které mají normální rozdělení. Nedá se odstranit, ale dá se zmenšit — průměr z n měření má chybu menší v poměru odmocniny z n.',
+   f:'Čtyřnásobek měření sníží náhodnou chybu jen na polovinu. Proto se u přesných prací vyplatí spíš lepší metoda než víc opakování.'},
+ blun:{p:'Hrubá chyba není chyba měření, ale omyl: zaměněný bod, přehozené číslice, špatná výška hranolu. Odhalí ji jedině nadbytečné měření — proto se pořady uzavírají a body určují dvakrát.',
+   f:'Ve vyrovnání se hledá statistickými testy odlehlých oprav. Když se hrubá chyba nechá projít, vyrovnání ji rozetře do všech okolních bodů a napáchá víc škody, než kdyby zůstala na jednom místě.'},
+ jam:{p:'Rušení GNSS pásma zahltí přijímač silnějším signálem, než jaký přichází z družic. Projeví se skokovým poklesem počtu družic, ztrátou fixu nebo nesmyslným skokem polohy. Nebezpečnější je podvržený signál (spoofing), protože přijímač hlásí, že je vše v pořádku.',
+   f:'Levné rušičky do zapalovače, kterými řidiči vyřazují sledování vozidel, spolehlivě položí i geodetický přijímač v okolí několika desítek metrů.'},
+ drift:{p:'Drift bodu je pomalý plynulý posun — sesuv svahu, poddolované území, dotvarování konstrukce. Na rozdíl od sedání se často projevuje i vodorovně a odhalí ho až porovnání epoch nebo družicová interferometrie.',
+   f:'InSAR umí zachytit pokles i o pár milimetrů za rok na ploše stovek kilometrů čtverečních, aniž by kdokoli vyjel do terénu.'},
+ heal:{p:'Dorovnávaný posun je chyba, kterou vyrovnání „rozpustí" do sítě: místo aby se ukázala na jednom bodě, rozdělí se po malých kouscích do všech okolních. Síť pak vypadá bezvadně a přitom je celá pokřivená.',
+   f:'Proto se před vyrovnáním hledají odlehlá měření a teprve pak se počítá. Vyrovnání není nástroj na schování chyby, ale na rozdělení nevyhnutelných nepřesností.'},
+ cover:{p:'Zákryt je překážka v záměře — budova, porost, hřeben. U optiky znamená nutnost pomocného bodu nebo rajónu, u GNSS zaclonění oblohy: čím menší kus nebe je vidět, tím horší je geometrie družic a tím větší PDOP.',
+   f:'Pod korunami stromů klesne počet viditelných družic natolik, že RTK nedrží fix. Klasické měření z totální stanice je tam často jediná cesta.'},
+ jump:{p:'Překlep v zápisníku je přepis číslic — prohozené pořadí, chybějící metr, zaměněné číslo bodu. Dřív se proti němu psalo dvojmo a počítalo nezávisle dvěma lidmi, dnes ho brzdí přímý zápis do přístroje a kódování bodů.',
+   f:'Nejzákeřnější je záměna čísel dvou sousedních bodů: měření sedí, kontroly projdou a chyba se ukáže až v mapě.'},
+ boss:{p:'Systematická chyba působí stále stejným směrem — neseřízený kompenzátor, špatná konstanta hranolu, nezadaná teplota, chybná délka latě. Opakováním měření se nevyruší, průměr ji jen potvrdí. Odhalí ji kalibrace, jiná metoda nebo měření ve dvou polohách.',
+   f:'Je nebezpečnější než chyba náhodná právě proto, že měření vypadá klidně a shodně. Většina měřických postupů — dvě polohy, střed mezi latěmi, komparace — vznikla jen kvůli ní.'}
+};
 function showEnemyCard(k){
  const d=E[k];
  showHint(d.n+'\n\nOdolnost '+d.hp+' · pancíř '+d.ar+' · rychlost '+d.sp.toFixed(2)+
@@ -15257,11 +15533,19 @@ function showEnemyCard(k){
 function showEnemyInfo(e){
  const d=E[e.k];
  const el=e.el;
- showHint(d.n+(el?' · elitní ('+el.n+')':'')+'\n\n'+
+ // Finalovy boss ma vlastni jmeno, vlastni pancir a vlastni rysy. Karticka
+ // musi rikat totez co tabulka RYS - jinak by u Zavalu chodby stalo 9,
+ // zatimco skutecny pancir je 17.
+ const jm=(e.rys&&e.rys.length&&S&&S.bossInfo)?S.bossInfo.n:d.n;
+ const pancir=d.ar+(e.arPlus||0)+((el&&el.ar)||0);
+ const rysy=(e.rys&&e.rys.length)
+   ? '\n\n'+e.rys.map(r=>r.n+' — '+r.d).join('\n')
+   : '';
+ showHint(jm+(el?' · elitní ('+el.n+')':'')+'\n\n'+
    'Odolnost '+Math.round(e.hp)+' / '+Math.round(e.mhp)+
-   ' · pancíř '+(d.ar+((el&&el.ar)||0))+
+   ' · pancíř '+pancir+
    ' · sráží přesnost o '+d.dm+' %\n\n'+
-   (COUNTER[e.k]||'')+(el?'\n\nElita má vyšší odolnost i odměnu.':''));
+   (COUNTER[e.k]||'')+rysy+(el?'\n\nElita má vyšší odolnost i odměnu.':''));
 }
 function boardTap(ev){
  if(!S||S.over)return;
@@ -16308,7 +16592,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=92;
+const VERZE=93;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -18482,6 +18766,23 @@ function openLevel(i){
    sp.innerHTML='<i style="background:'+TER[t].c+'"></i>'+TER[t].n+' — '+TER[t].note;
    tl.appendChild(sp);
  });
+ // Co na tomhle uzemi chodi nejcasteji - cte se z TEHOZ mixu, kterym se vlna
+ // opravdu sklada, takze to nemuze zacit lhat.
+ {
+   const vl=casteVlivy(i);
+   if(vl.length){
+     const sp=document.createElement('span');
+     sp.innerHTML='<i style="background:'+E.multi.c+'"></i>Nejčastější vlivy — '+vl.join(', ');
+     tl.appendChild(sp);
+   }
+   if(m.boss){
+     const rr=bossRysy(i);
+     const sp=document.createElement('span');
+     sp.innerHTML='<i style="background:'+T.lidar.c+'"></i>Finále: '+m.boss.n+' — '+m.boss.d+
+       (rr.length?' <b>'+rr.map(r=>r.n).join(' · ')+'</b>':'');
+     tl.appendChild(sp);
+   }
+ }
  const c=$('lvThumb');c.width=300;c.height=386;
  drawMapThumb(c,i);
  $('lvEndless').classList.toggle('hide',!SAVE.won[i]);
@@ -19958,15 +20259,21 @@ function renderCodex(){
      ch.push(cip('sráží přesnost o '+e.dm+' %','dm'));
      if(kc)ch.push(cip('zničeno '+kc+'×','ok'));
      add(e.c,e.n,'<span class="cdxCipy">'+ch.join('')+'</span>'+
-       (e.note?'<span class="cdxNota">'+e.note+'</span>':''));});
+       (e.note?'<span class="cdxEf">'+e.note+'</span>':'')+
+       (EINFO[k]?'<span class="cdxTelo">'+EINFO[k].p+'</span>'+
+                 '<span class="cdxNota">'+EINFO[k].f+'</span>':''));});
  }
  if(CDXTAB==='rule'||CDXTAB==='all'){
    sek('Bossové a finále','--tape','Na poslední etapě každého území. Ve finále přicházejí dva naráz.');
    add(T.lidar.c,'Bossové území',
-   '<span class="cdxTelo">Každé území má na poslední etapě vlastního bosse pojmenovaného podle prostředí — '+
-   'od Neuzavřeného polygonu na katastru po Lavinu ve vysokohorské síti. Ve finále přicházejí dva naráz.</span>');
- MAPS.forEach((m,i)=>{ if(m.boss)add(T.lidar.c,'Finále: '+m.n,
-   '<span class="cdxEf">'+m.boss.n+'</span><span class="cdxTelo">'+m.boss.d+'</span>'); });
+   '<span class="cdxTelo">Každé území má na poslední etapě vlastního bosse — a každý z nich se chová jinak. '+
+   'Jednomu nejde snížit pancíř, druhý léčí okolní vlivy, třetí nabírá tempo, čtvrtý umlčuje stanoviska kolem sebe. '+
+   'Čím se ten který liší, stojí u něj níž. Ve finále přicházejí dva naráz.</span>');
+ MAPS.forEach((m,i)=>{ if(!m.boss)return;
+   const rr=bossRysy(i);
+   add(T.lidar.c,'Finále: '+m.n,
+     '<span class="cdxEf">'+m.boss.n+'</span><span class="cdxTelo">'+m.boss.d+'</span>'+
+     rr.map(r=>'<span class="cdxNota"><b>'+r.n+'</b> — '+r.d+'</span>').join('')); });
  BOSSACT.forEach(a=>add('var(--tape)','Boss: '+a.n,
    '<span class="cdxTelo">'+a.d+'</span><span class="cdxNota">Boss to udělá zhruba každých 10 s.</span>'));
    sek('Vývoj a slučování','--laser');
