@@ -1531,7 +1531,14 @@ html[data-theme="night"] .crCard .crR{color:#06111a}
 html[data-theme="night"] #lower:after{
   background:linear-gradient(180deg,rgba(3,8,16,0),rgba(3,8,16,.94) 42%,rgba(3,8,16,.99))}
 html[data-theme="hc"] #lower:after{background:#fff}
-#place{position:relative;margin-bottom:8px;border-radius:var(--r1);
+/* Pruh "Umistujes ..." byl JEDINY prvek #game v bezne sazbe - vsechno ostatni
+   (#hud, #lower, #cv) je absolutni. Skoncil proto na souradnici 0,0 primo POD
+   hornim HUD: merene 390x844 mel place t=0 h=60, hud t=0 h=73, a
+   elementFromPoint nad tlacitkem ZRUSIT vracel .v z HUD. Pruh nebylo videt
+   a ZRUSIT neslo trefit prstem (klik prosel jen programove).
+   Ted se umistuje stejne jako rychla lista - nad #lower, viz placeQuick(). */
+#place{position:absolute;left:10px;right:10px;z-index:5;max-width:540px;
+  margin:0 auto;border-radius:var(--r1);
   background:var(--scrim);border:1px solid var(--tape);padding:9px 11px;font-size:calc(12px*var(--fs,1));display:none;
   justify-content:space-between;align-items:center;gap:8px;line-height:1.3;
   box-shadow:var(--elev2)}
@@ -5291,7 +5298,7 @@ html[data-theme="hc"] .feedI,html[data-theme="hc"] #toast{
   background:linear-gradient(180deg,var(--s3),var(--s2));color:var(--t1);
   box-shadow:var(--hrana),inset 3px 0 0 var(--tape),
              0 3px 0 var(--stroke),0 10px 22px rgba(4,8,28,.45);
-  padding:10px 12px 10px 15px;margin-bottom:var(--m2)}
+  padding:10px 12px 10px 15px;margin:0 auto}
 #place b{color:var(--tapeT);font-weight:900}
 #place button{min-height:38px;padding:7px 13px;border-radius:999px;
   --plA:var(--s4);--plB:var(--s2);--plC:#161c48;
@@ -5493,6 +5500,7 @@ html[data-theme="hc"] #quick .qHead,html[data-theme="hc"] #quick button{
 
 /* Hlavicka bitvy: byla vyssi nez potreba a rozpocet mel vlastni velke pismo. */
 #game #hud{padding:4px 10px 0;padding-top:calc(4px + env(safe-area-inset-top,0px));gap:5px}
+/* (pravidlo pro uzky telefon je na konci stylu, v bloku 98-bitva.css) */
 #game #hud .cell{padding:4px 8px 5px}
 #game #hud .k{font-size:calc(9.5px*var(--fs,1));letter-spacing:.08em}
 #game #hud .v{font-size:calc(14px*var(--fs,1));line-height:1.02}
@@ -6704,6 +6712,22 @@ html[data-theme="hc"] #sheet.on{color:#fff}
 #shop .card{padding:3px 4px;gap:0}
 #shop .card canvas{width:27px;height:27px}
 #shop .card .n{min-height:12px;margin-top:1px;line-height:1.15}
+/* Vycerpany slot: prouzek, ne karta. Drzi misto v rade, aby karty
+   pod prstem nepreskakovaly, ale nebere sirku nazvum. */
+#shop .card.prazdny{padding:0;border-style:dashed;border-width:1px;
+  border-color:color-mix(in srgb,var(--t3) 42%,transparent);
+  background:none;box-shadow:none;opacity:.5;pointer-events:none}
+#shop .card.prazdny:before,#shop .card.prazdny:after{display:none}
+/* Nazev pristroje se zmensuje s poctem dlazdic - merene sirky nazvu jsou
+   45-62 px pri 12 px pisma, takze pri peti a vice sloupcich uz se
+   "Dalkomer" ani "Pilot roje" v plne velikosti nevejde. */
+#shop[data-uz="1"] .card .n{font-size:calc(10.5px*var(--fs,1));letter-spacing:-.02em}
+#shop[data-uz="2"] .card .n{font-size:calc(9.5px*var(--fs,1));letter-spacing:-.03em}
+#shop[data-uz="3"] .card .n{font-size:calc(9px*var(--fs,1));letter-spacing:-.04em}
+/* Pod 52 px se nazev nevejde ani v devitce - misto trI pismen radeji vetsI
+   ikona a cena; cely nazev rekne podrzeni prstu (openTinfo). */
+#shop[data-uz="4"] .card .n{display:none}
+#shop[data-uz="4"] .card canvas{width:31px;height:31px}
 #shop .card .c{margin-top:1px;padding:0 8px 0 4px;line-height:1.3}
 
 /* 2b. Hlavni tlacitko a prepinace: 50 -> 46 px.
@@ -9448,6 +9472,32 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
   font-size:calc(11px*var(--fs,1));font-weight:800;letter-spacing:.02em;
   color:var(--skyT,var(--sky));padding:0 2px}
 .hslot.lock .hDet{opacity:.75}
+
+/* ============================================================
+   98-bitva.css - prohlidka bitvy (v98)
+   Zamerne az na konci: predchozi pokus umistit tato pravidla mezi bloky
+   70-hra.css prebila pozdejsi sazba a "PRESNOST" zustala orezana (74 px
+   do 69 misto ocekavanych 66).
+   ============================================================ */
+
+/* Popisek "PRESNOST" potreboval na 320 px 80 px do sloupce sirokeho 69 a
+   orezal se na "PRESNOS...". Uzsi prolozeni a o pixel mensi pismo to srovna;
+   od 356 px vys zustava sazba presne jako dosud. */
+@media (max-width:355px){
+  #game #hud .k{font-size:calc(11px*var(--fs,1));letter-spacing:.01em}
+}
+
+/* Krizek tutorialu mel terc 44x34, tedy pod 40 px na vysku. Vysku mu NELZE
+   jen pridat - resize() z ni pocita velikost pole desky (CS = floor(min(
+   availW/COLS, availH/ROWS)), availH = VH - (hud+8+pprev+6) - (lower+6)),
+   takze kazdy pixel navic ubira z hraci plochy. Terc se proto roztahuje
+   neviditelne, pres pseudoprvek - sazba i vyska desky zustavaji stejne.
+   Pruh #pprev (22 px) takhle resit nejde: ma overflow:hidden a pseudoprvek
+   by orizl. Je siroky pres celou obrazovku a vede jen na zalozku Etapa,
+   dostupnou i z panelu - zustava beze zmeny. */
+#game #tut .tuX{position:relative}
+#game #tut .tuX:after{content:'';position:absolute;left:0;right:0;
+  top:-6px;bottom:-6px}
 </style>
 </head>
 <body>
@@ -13241,7 +13291,16 @@ function rollShop(free){
  // v celem souboru jiny vyskyt nez svou definici.
  const slots=(pool.length>=5?4:3)+M('slot')+M('depot');
  S.shop=[];
- for(let i=0;i<slots;i++)S.shop.push(pool.splice((Math.random()*pool.length)|0,1)[0]);
+ // Kdyz je v balicku min typu nez slotu, splice vracel undefined a v rade
+ // zbyla dlazdice, ktera se uz NIKDY nenaplni. Merene: vychozI balicek ma
+ // 4 typy, takze "Vetsi sklad" 2. urovne a "Polni sklad" delaly dve mrtve
+ // dlazdice do konce mereni. Slot se ted zalozI, jen kdyz je co do nej dat.
+ // (Ze ta vylepseni pak nedelaji nic, je otazka jejich hodnoty - hlaseno.)
+ for(let i=0;i<slots;i++){
+   const k=pool.splice((Math.random()*pool.length)|0,1)[0];
+   if(k===undefined)break;
+   S.shop.push(k);
+ }
  S.placing=null;
 }
 
@@ -16743,7 +16802,22 @@ function ui(){
  // Dokud hrdina nestoji na desce, ma vlastni kartu na zacatku skladu.
  // Je zdarma a je jen jedna za mereni, proto vypada jinak nez zbozi.
  const hrdKarta=!S.hrdT&&S.hrd&&T[S.hrd];
- sh.style.gridTemplateColumns='repeat('+(S.shop.length+(hrdKarta?1:0))+',1fr)';
+ // Vycerpany slot dosud bral stejne siroky sloupec jako zivá karta a psal do
+ // nej "pouzito". Pri sesti slotech (vylepseni slot+depot) a karte hrdiny to
+ // delalo sedm sloupcu po 30 px a ze VSECH nazvu zbyly triznaky:
+ // "Pil... Niv... Teo... Pas... Dal... pou...". Ted je vycerpany slot uzky
+ // prouzek a sirku dostanou karty, na kterych zalezi.
+ const zivych=S.shop.filter(Boolean).length+(hrdKarta?1:0);
+ const prazdnych=S.shop.filter(k=>!k).length;
+ sh.style.gridTemplateColumns=
+   (hrdKarta?['minmax(0,1fr)']:[]).concat(
+     S.shop.map(k=>k?'minmax(0,1fr)':'22px')).join(' ');
+ // Nazev se musi ridit tim, kolik px na dlazdici opravdu zbyde - poctem
+ // zivych karet ne, protoze uzke prazdne sloty sirku neberou. Nejdelsi
+ // nazev ("Pilot roje") potreboval merene 62 px pri pismu 12 px.
+ const mezera=5*Math.max(0,zivych+prazdnych-1);
+ const naKartu=((sh.clientWidth||300)-mezera-22*prazdnych)/Math.max(1,zivych);
+ sh.dataset.uz=naKartu>=70?'0':naKartu>=60?'1':naKartu>=55?'2':naKartu>=52?'3':'4';
  if(hrdKarta){
    const k=S.hrd;
    const d=document.createElement('div');d.className='card hrdCard';
@@ -16764,7 +16838,10 @@ function ui(){
      const lv2=SAVE.lvl[k]||0;
      /* 19: uroven ze Sbirky se na karte skladu uz nezobrazuje -
         v prubehu mereni s ni hrac nic nedela a cislo prekryvalo ikonu. */ }
-   if(!k){d.style.opacity=.2;d.innerHTML='<div class="n">použito</div>';sh.appendChild(d);return;}
+   if(!k){ d.className='card prazdny';
+     d.title='Slot je použitý — nová nabídka po etapě';
+     d.setAttribute('aria-label','Použitý slot skladu');
+     sh.appendChild(d);return; }
    const cost=priceOf(k);
  const enablesMerge=S.towers.some(t=>t.k===k&&t.l===0);
    if(S.cr<cost)d.classList.add('no');
@@ -17538,7 +17615,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=96;
+const VERZE=98;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -22050,21 +22127,28 @@ function placeQuick(){
  const q=$('quick'),lower=$('lower'),fd=$('feed');
  if(!q||!lower)return;
  const tu=$('tut'), tuH=(tu&&tu.classList.contains('on'))?tu.offsetHeight+7:0;
- q.style.bottom=(lower.offsetHeight+6+tuH)+'px';
+ const zaklad=lower.offsetHeight+6+tuH;
+ q.style.bottom=zaklad+'px';
+ // Pruh "Umistujes ..." sedi na stejnem miste jako rychla lista. Obe naraz
+ // nesviti nikdy (pri umistovani se rusi vyber stanoviska), takze si
+ // nekonkuruji - jen se obe musi drzet nad spodnim ovladanim.
+ const pl=$('place');
+ if(pl)pl.style.bottom=zaklad+'px';
+ const dk=$('dock');
+ if(dk&&!dk.classList.contains('closed'))dk.style.bottom=zaklad+'px';
  // Driv natvrdo 54 px. Lista se ted muze zalomit do dvou rad, takze se jeji
  // vyska musi PREMERIT, jinak by hlaseni lezela na tlacitkach.
- if(fd)fd.style.bottom=(lower.offsetHeight+tuH+
-   (q.classList.contains('on')?(q.offsetHeight+8):8))+'px';
+ const nadstavba=q.classList.contains('on')?(q.offsetHeight+8):
+                 ((pl&&pl.classList.contains('on'))?(pl.offsetHeight+8):8);
+ if(fd)fd.style.bottom=(lower.offsetHeight+tuH+nadstavba)+'px';
 }
 function setDock(open){
  DOCK=open;
  const d=$('dock');
  d.classList.toggle('closed',!open);
  $('sheet').classList.toggle('on',open);
- if(open){
-   const lower=$('lower');
-   d.style.bottom=((lower?lower.offsetHeight:180)+6)+'px';
- }
+ // Vlastni umisteni resi placeQuick() - drzi se stejneho zakladu jako
+ // rychla lista a pruh "Umistujes ...", vcetne vysky tutorialove bubliny.
  placeQuick();
 }
 function setTab(t){
