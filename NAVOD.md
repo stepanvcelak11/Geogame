@@ -618,6 +618,30 @@ a invarovou lať, výšku antény, kolmici pentagonem, rajón, VFK, měřítko s
 map, PPBP, georadar, InSAR, zenitový úhel, sklon v procentech, kubatury z profilů
 a ověření úředně oprávněným zeměměřickým inženýrem.
 
+**Encyklopedie ví o hře konečně všechno**
+
+Dala se v ní dohledat každá z 23 pomůcek, ale **ani jedna ze 36 karet** — přitom
+karta je to, co si hráč vybírá po každé etapě. Stejně tak v ní nebyly měřické
+metody, vylepšení sítě ani příslušenství z laborky. Přibyla proto záložka
+**Karty a metody**: všech 36 karet po vzácnostech s tím, kolikrát jde tatáž vzít
+a od které etapy se nabízí, všech 7 metod i s dobíjením, 5 vylepšení sítě
+a 12 kusů příslušenství s cenou prvního stupně. Hledání je teď najde taky —
+napiš „Rozhledny" a karta vyskočí.
+
+Záložka **Terén se rozrostla na Území**: všech dvanáct v pořadí, jak jdou po sobě,
+se zadáním, počtem etap, odemykaným přístrojem, zákazy, nejčastějšími vlivy
+a finálovým bossem i s jeho rysem. Terén zůstal pod tím.
+
+**Podmínky etapy** dostaly stejné zacházení jako vlivy: ke každé z osmi je výklad,
+co to v geodézii doopravdy je — od tetelení nad rozpálenou vozovkou přes výtyčku
+ve větru (náklon jednoho stupně na dvou metrech je bod vedle o 3,5 cm) až po mráz,
+který vytlačuje kolíky. Věta „potlačí meteostanice" u nich navíc stála
+**devětkrát pod sebou**; teď je jednou, zato s číslem: ve čtvrté řadě až z 85 %.
+
+**Tipů z praxe je 40 místo 25** a **úspěchy dostaly dva chybějící vrcholy** —
+řada končila na osmi dokončených územích a dvaceti hvězdách, přestože území je
+dvanáct a hvězd 36.
+
 ### Čeho se tahle verze nedotýká
 
 Vzhledu ani čísel balancu. Křivka odolnosti vln, kapacita čety, mistrovská řada

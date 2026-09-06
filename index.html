@@ -9597,11 +9597,12 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
     <button data-t="syn">Spolupráce</button>
     <button data-t="ene">Vlivy</button>
     <button data-t="rule">Elity a pravidla</button>
+    <button data-t="karty">Karty a metody</button>
     <button data-t="cond">Podmínky</button>
-    <button data-t="ter">Terén</button>
+    <button data-t="ter">Území</button>
     <button data-t="tip">Tipy</button>
   </div>
-  <input id="cdxSearch" type="search" placeholder="Hledat přístroj, vliv nebo pojem…" autocomplete="off">
+  <input id="cdxSearch" type="search" placeholder="Hledat přístroj, kartu, vliv nebo pojem…" autocomplete="off">
   <div class="pan"><div class="pb" id="codex"></div></div>
   <button class="big b-ghost" id="cdxBack">ZPĚT</button>
 </div>
@@ -10579,7 +10580,22 @@ const TIPS=[
  'Vícepaprskový echolot potřebuje profil rychlosti zvuku, jinak jsou hloubky systematicky mimo.',
  'Multistanice umí sledovat desítky bodů v cyklu a odhalí posun konstrukce pod 1 mm.',
  'Rotační laser se sám urovná. Na stavbě s ním osadíš výšky rychleji než nivelákem.',
- 'Termokamera nevidí skrz sklo — odráží se v něm jako v zrcadle.'
+ 'Termokamera nevidí skrz sklo — odráží se v něm jako v zrcadle.',
+ 'Bod určený jediným měřením je bod bez kontroly. Rajón proto měř krátký a ověř ho ještě odjinud.',
+ 'Než začneš vytyčovat, ověř dva známé body mezi sebou. Když nesedí, nesedí síť — ne tvoje práce.',
+ 'Výšku antény zapiš hned a radši dvakrát. Špatná výška posune všechny body stejně a z přesnosti měření to nepoznáš.',
+ 'V zástavbě měř bod GNSS dvakrát s odstupem a s novou inicializací. Odražený signál se tak podruhé netrefí stejně.',
+ 'Pod korunami stromů RTK fix neudrží. Rychlejší je postavit se na volno a zbytek doměřit totální stanicí.',
+ 'Výtyčku opři o bipod, jakmile jde o přesnost. Náklon jednoho stupně na dvou metrech je bod vedle o 3,5 cm.',
+ 'Nivelaci veď záměrami stejné délky vzad i vpřed a drž se aspoň půl metru nad terénem — u země ohýbá záměru refrakce.',
+ 'Zápisník si zkontroluj ještě v terénu. Vrátit se pro jedno chybějící číslo stojí víc než celé to měření.',
+ 'Fotku stabilizace udělej hned, jak bod osadíš. Za rok podle ní bod najdeš, podle samotných souřadnic ne vždycky.',
+ 'Kolík v mrazu vylézá. Body pro dlouhodobé vytyčení stabilizuj pod hloubku promrzání, u nás kolem 80 cm.',
+ 'Sníh nebo led na anténě je závaží i chyba. Než začneš, setři ji.',
+ 'Každé území posílá jinou směs vlivů. Mrkni na Nejčastější vlivy v detailu území dřív, než poskládáš sestavu.',
+ 'Finálový boss má na každém území jiný rys. Co umí, stojí v detailu území i v encyklopedii — a vyplatí se to vědět předem.',
+ 'Proti bossovi, kterému nejde snížit pancíř, jsou průrazné metody k ničemu. Vezmi si to, co pancíř ignoruje: teodolit nebo sonar.',
+ 'Na Rozcestí sítí vyrazí ve finále boss po obou trasách naráz. Nenechávej jednu větev prázdnou.'
 ];
 // Rovnomerne zamichani. sort(()=>Math.random()-.5) rovnomerne NENI:
 // vysledek zavisi na tom, jak radici algoritmus porovnava.
@@ -11447,7 +11463,13 @@ const ACH=[
   f:()=>SAVE.stats.runs, r:{res:350,cards:8}},
  {id:'clean', n:'Bez ztráty',       d:'Dokonči území se 100 % přesností',g:1,
   f:()=>SAVE.perfect||0, r:{crate:'epic',res:250}},
- {id:'star9', n:'Hvězdář',             d:'Nasbírej 9 hvězd na územích',  g:9,  f:()=>(SAVE.stars||[]).reduce((a,b)=>a+b,0), r:{res:220,cards:5}}
+ {id:'star9', n:'Hvězdář',             d:'Nasbírej 9 hvězd na územích',  g:9,  f:()=>(SAVE.stars||[]).reduce((a,b)=>a+b,0), r:{res:220,cards:5}},
+ // Rada koncila na osmi uzemich a dvaceti hvezdach, prestoze uzemi je dvanact
+ // a hvezd 36. Tohle jsou ty dva chybejici vrcholy.
+ {id:'won12', n:'Celá síť',            d:'Dokonči všech dvanáct území',  g:MAPS.length,
+  f:()=>(SAVE.won||[]).filter(x=>x).length, r:{crate:'legend',res:400}},
+ {id:'star36',n:'Bez jediné odchylky', d:'Nasbírej všech 36 hvězd',      g:MAPS.length*3,
+  f:()=>(SAVE.stars||[]).reduce((a,b)=>a+b,0), r:{crate:'legend',res:600,cards:10}}
 ];
 function achProg(a){ try{ return Math.max(0,a.f()||0); }catch(e){ return 0; } }
 function achReady(a){ return achProg(a)>=a.g && !(SAVE.ach||{})[a.id]; }
@@ -15524,6 +15546,27 @@ const EINFO={
    f:'Nejzákeřnější je záměna čísel dvou sousedních bodů: měření sedí, kontroly projdou a chyba se ukáže až v mapě.'},
  boss:{p:'Systematická chyba působí stále stejným směrem — neseřízený kompenzátor, špatná konstanta hranolu, nezadaná teplota, chybná délka latě. Opakováním měření se nevyruší, průměr ji jen potvrdí. Odhalí ji kalibrace, jiná metoda nebo měření ve dvou polohách.',
    f:'Je nebezpečnější než chyba náhodná právě proto, že měření vypadá klidně a shodně. Většina měřických postupů — dvě polohy, střed mezi latěmi, komparace — vznikla jen kvůli ní.'}
+};
+
+/* Co ta podminka je ve SKUTECNE geodezii. Pristroje maji INFO, vlivy EINFO -
+   podminky dosud jen vetu o tom, co delaji ve hre. */
+const EPODM={
+ shimmer:{p:'Tetelení (scintilace) je chvění obrazu způsobené stoupajícím teplým vzduchem. Cíl v dalekohledu se rozmazává a přesně na něj zacílit nejde. Nejsilnější je nad rozpálenou vozovkou, střechou nebo polem v poledne.',
+   f:'Proto se přesná měření dělají brzy ráno nebo k večeru a záměra se vede co nejdál od rozpálených ploch.'},
+ dusk:{p:'Za šera přestává být vidět na terč a na lať. Klasické cílení okem se zpomalí a zhorší; dnes to řeší automatické cílení na hranol a nasvícený terč, u nivelace osvětlená lať.',
+   f:'Nivelační lať se dá číst i za tmy s baterkou, ale rozdíl mezi trojím čtením se pak hlídá dvojnásob — chyba odečtu za šera roste nejvíc.'},
+ fog:{p:'Mlha rozptyluje paprsek dálkoměru: dosah klesá a měření se prodlužuje, protože přístroj hledá dost silný odraz. Letecké snímkování z dronu je v mlze bezcenné, protože model nemá z čeho vzniknout.',
+   f:'Dosah na hranol může v husté mlze spadnout na zlomek údaje z katalogu. Bezhranolové měření přestane fungovat dřív než měření na hranol.'},
+ rain:{p:'Déšť sráží dosah dálkoměru a rozmáčí terén, takže se stativ i lať boří a body se hýbou. Na GNSS má vody vliv malý, zato mokrá lať a rozbředlý přestavový bod dělají v nivelaci pořádnou paseku.',
+   f:'Silný déšť mezi přístrojem a hranolem se chová podobně jako mlha — a kapky na objektivu udělají zbytek.'},
+ wind:{p:'Vítr rozkmitá výtyčku, lať i stativ. Chyba ze svislosti výtyčky roste s výškou: při náklonu jednoho stupně na dvoumetrové výtyčce je bod vedle o 3,5 cm. Dron má v nárazovém větru kratší dolet a horší překryt snímků.',
+   f:'Proto se výtyčka opírá o bipod, jakmile je co měřit přesně — a při větru se lať drží oběma rukama, ne libelou.'},
+ frost:{p:'Mráz bere výkon bateriím, mění délku latí a hlavně hýbe stabilizací: promrzlá zem kolík vytlačuje vzhůru. Body určené na podzim proto na jaře nemusí sedět ve výšce.',
+   f:'Body pro dlouhodobé vytyčení se stabilizují pod hloubku promrzání, v Česku zhruba 80 cm.'},
+ quake:{p:'Otřesy od dopravy, strojů nebo ražby rozhodí kompenzátor i libelu. Přístroj se neustále dorovnává a měření se rozptyluje; u nivelace se s každým průjezdem hne bublina i lať.',
+   f:'V provozu se proto měří v okamžicích klidu mezi průjezdy a stativ se nestaví na mostovku ani na chodník u silnice.'},
+ glare:{p:'Záměra proti slunci oslní obsluhu i automatické cílení a hranol přestane být čitelný. Přímé slunce v objektivu navíc dokáže poškodit dalekohled i senzor.',
+   f:'Řeší se clonou, změnou pořadí záměr nebo prostě tím, že se stanovisko postaví o pár metrů jinam.'}
 };
 function showEnemyCard(k){
  const d=E[k];
@@ -20301,12 +20344,66 @@ function renderCodex(){
    sek('Pravidla etap','--brass','Od 7. etapy může etapa dostat jedno z těchto pravidel.');
    WRULE.forEach(r=>add('var(--violet)','Pravidlo etapy: '+r.n,'<span class="cdxTelo">'+r.d+'</span>'));
  }
+ if(CDXTAB==='karty'||CDXTAB==='all'){
+   sek('Karty do měření','--violet',
+     'Po každé etapě si vybíráš jednu ze tří. Čím dál jsi, tím větší je šance na vzácnější. '+
+     'Karty vázané na přístroj se nabízejí jen tehdy, když ten přístroj máš v sestavě.');
+   ['l','e','r','c'].forEach(r=>{
+     CARDS.filter(c=>(c.r||'c')===r).forEach(c=>add(RAR[r].col,c.n,
+       pil(r,RAR[r].n)+
+       '<span class="cdxTelo">'+c.d+'</span>'+
+       '<span class="cdxNota">nejvýš '+c.max+'×'+
+         (c.w?' · nabízí se od '+c.w+'. etapy':'')+'</span>',null,{rar:r}));
+   });
+   sek('Měřické metody','--laser',
+     'Do měření si bereš '+ABILMAX+'. Náboje se dobíjejí samy a v laborce jdou zesílit.');
+   ABIL.forEach(a=>add('var(--laser)',a.n,
+     '<span class="cdxEf">'+a.d+'</span>'+
+     '<span class="cdxTelo">'+a.info+'</span>'+
+     '<span class="cdxNota">dobíjení '+a.cd+' s</span>'));
+   sek('Vylepšení sítě','--brass',
+     'Kupuje se za rozpočet v panelu ☰ během měření a platí do konce území.');
+   NET.forEach(u=>add('var(--'+u.c+')',u.n,
+     '<span class="cdxEf">'+u.d+'</span>'+
+     '<span class="cdxNota">nejvýš '+u.max+'× · první stupeň za '+u.cost(0)+' rozpočtu</span>'));
+   sek('Příslušenství přístrojů','--sky',
+     'Kupuje se za výzkum v laborce a platí ve všech dalších měřeních.');
+   ACC.forEach(a=>add((T[a.t]&&T[a.t].c)||'var(--sky)',a.n,
+     '<span class="cdxCipy">'+cip(SHORT[a.t]||(T[a.t]&&T[a.t].n[0])||a.t)+'</span>'+
+     '<span class="cdxEf">'+a.d+'</span>'+
+     '<span class="cdxNota">nejvýš '+a.max+'× · první stupeň za '+a.cost(0)+' výzkumu</span>'));
+ }
  if(CDXTAB==='cond'||CDXTAB==='all'){
-   sek('Počasí a podmínky etapy','--sky','Platí celou etapu pro obě strany. Meteostanice je dokáže potlačit.');
-   COND.forEach(c=>add(c.c,c.n,'<span class="cdxTelo">'+c.d+'</span>'+
-     '<span class="cdxCipy">'+cip('potlačí meteostanice','ok')+'</span>'));
+   // Veta o meteostanici stala u KAZDE z osmi podminek a jeste v nadpisu -
+   // devetkrat totez. Staci jednou, zato s cislem.
+   sek('Počasí a podmínky etapy','--sky',
+     'Platí celou etapu pro obě strany. Meteostanice je potlačí — ve čtvrté řadě až z '+
+     Math.round(T.meteo.supp[3]*100)+' %.');
+   COND.forEach(c=>add(c.c,c.n,
+     '<span class="cdxEf">'+c.d+'</span>'+
+     (EPODM[c.id]?'<span class="cdxTelo">'+EPODM[c.id].p+'</span>'+
+                  '<span class="cdxNota">'+EPODM[c.id].f+'</span>':'')));
  }
  if(CDXTAB==='ter'||CDXTAB==='all'){
+   sek('Dvanáct území','--tape',
+     'V pořadí, jak jdou po sobě. Co na kterém chodí, se čte z týchž tabulek, '+
+     'kterými se vlna doopravdy skládá — nemá to jak zastarat.');
+   MAPS.forEach((m,i)=>{
+     const ch=[cip(m.waves+' etap')];
+     if(m.unlock)ch.push(cip('odemyká '+(SHORT[m.unlock]||T[m.unlock].n[0]),'ok'));
+     if(m.ban&&m.ban.length)ch.push(cip('nelze: '+m.ban.map(k=>SHORT[k]||T[k].n[0]).join(', '),'ar'));
+     if(m.twin)ch.push(cip('dvě trasy'));
+     if(m.pal==='night')ch.push(cip('měří se za šera'));
+     const st=(SAVE.stars&&SAVE.stars[i])||0;
+     if(st)ch.push(cip(st+' ★','ok'));
+     const vl=casteVlivy(i), rr=bossRysy(i);
+     add(T.tape.c,(i+1)+'. '+m.n,
+       '<span class="cdxCipy">'+ch.join('')+'</span>'+
+       '<span class="cdxTelo">'+(m.brief||m.d)+'</span>'+
+       (vl.length?'<span class="cdxNota">Nejčastější vlivy: '+vl.join(', ')+'</span>':'')+
+       '<span class="cdxNota"><b>Finále: '+m.boss.n+'</b> — '+m.boss.d+
+         (rr.length?' <b>'+rr.map(r=>r.n).join(' · ')+'</b>':'')+'</span>');
+   });
    sek('Na čem stojíš','--moss','Terén rozhoduje, kam se stanovisko vejde a jak daleko dohlédne.');
    Object.keys(TER).forEach(k=>add(TER[k].c,TER[k].n,'<span class="cdxTelo">'+TER[k].note+'</span>'));
  }
