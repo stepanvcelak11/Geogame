@@ -1,4 +1,4 @@
-# GeoGame — verze 96
+# GeoGame — verze 97
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=96;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=97;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v96-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v97-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -54,6 +54,108 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 97
+
+Verze o **číslech a obsahu**: co hra hráči slibuje, to od teď taky dělá. Skoro
+každá položka níž vznikla tak, že se změřilo, co daná věc ve hře opravdu udělá —
+a několikrát vyšlo, že nedělá nic.
+
+### Dva přístroje neměly odkud přijít
+
+`Digitální planimetr` a `Zenitový teleskop` přibyly ve verzi 96 s plnou tabulkou
+hodnot, popisem, cenou i vzácností — a **nevedla k nim žádná cesta**. Hra to
+o nich sama psala: „zatím nedostupný". Zároveň dvě území z dvanácti za první
+dohrání nedávala nic. Sedlo to na sebe:
+
+- **Důlní dílo** odemyká **planimetr** (v důlním měřictví se počítají objemy výrubu),
+- **Letecká plocha** odemyká **zenitál** (otevřená rovina a čistá obloha).
+
+Každé z dvanácti území teď odemyká právě jeden přístroj.
+
+### V detailu území je vidět, co za něj dostaneš
+
+Odměna za první dohrání stála jen v encyklopedii, tedy ne tam, kde si člověk
+území vybírá. Teď je pod popisem území proužek **„Za první dohrání"** i s ikonou
+přístroje — a zmizí, jakmile ho máš.
+
+### Mapa světa se srovnávala na opačné území
+
+Pole uzlů se kvůli kreslení cesty **řadí podle Y**, jenže srovnání okna do něj
+sahalo **pozicí v poli**. První území je dole a poslední nahoře, takže se mapa
+posunula přesně obráceně: kdo hrál první území, dostal vrchol mapy. Naměřeno
+`scrollTop 0` místo `1037`. Navíc se příznak „už srovnáno" nastavoval už při
+prvním kreslení — to ale běželo se schovanou stránkou, kde platno nemá šířku.
+Obojí opraveno; uzel území je teď doprostřed okna.
+
+### Měřické metody: konec vymyšleného „dobíjení"
+
+U každé metody stálo v encyklopedii **„dobíjení 26 s"**. Žádné dobíjení po
+vteřinách ve hře není — `S.cds` se jen odečítá a nikdo do něj nikdy nezapsal.
+Metoda má **náboje** a ty se doplňují na konci etapy.
+
+Místo mrtvé hodnoty se metody liší tím, co je opravdu stojí:
+
+| náboje | metody |
+|---|---|
+| 2 | Orientace na body, Zpětné protínání, Protínání vpřed |
+| 3 | zbytek |
+
+Rozdělení není odhad — vzniklo z prvního měření metod v historii hry (viz níž).
+Počet nábojů je vidět rovnou u výběru metody.
+
+### Polygonový pořad a Uzávěr pořadu: zbrzděný cíl se měří přesněji
+
+Měření ukázalo, že **samotné zpomalení proti plné vlně nepřidá nic**: když má
+každé stanovisko pořád na co střílet, je celkové poškození dané kadencí, ne tím,
+jak dlouho cíl na trase stojí. Obě metody proto dostaly účinek, který hra už umí:
+co se skoro nehýbe, to jde zaměřit přesněji — **+40 % poškození**, u Polygonového
+pořadu k tomu **pancíř −4** a trvání 4 → 5 s.
+
+### Pět přístrojů, které se odemykaly později a byly slabší než pásmo ze startu
+
+Naměřená škoda na jeden rozpočet (3. řada) — pásmo, se kterým hra začíná, dělá
+42:
+
+| přístroj | dřív | teď |
+|---|---|---|
+| Skenovací batoh | 35,5 | 55,3 |
+| Georadar | 32,9 | 50,2 |
+| Laserový skener | 39,6 | 49,6 |
+| Pentagonální hranol | 30,1 | 39,1 |
+| Digitální planimetr | 24,5 | 34,4 |
+
+Popisek batohu navíc sliboval „pomalejší než dron, zato tvrdší" a přitom měl na
+ránu sotva polovinu dronu; teď platí obojí — rána i text.
+
+**Obtížnost se tím nezměnila.** Devět kol robota na starém i novém souboru:
+10 z 12 území dohraných v obou, etap bez ztráty 91,6 % proti 91,3 % — rozdíl je
+menší než rozptyl mezi koly. Nula chyb v konzoli za 216 odehraných území.
+
+### Počasí: Mráz nedělal nic, dva popisky lhaly
+
+- **Mráz** slibuje „−18 % rozpočtu za etapu" a **nedělal vůbec nic** —
+  `condEff('inc')` se v celém souboru nikde nečetlo. Teď dotaci opravdu krátí
+  (naměřeno −18,9 %).
+- **Déšť** sliboval 10 % a dělal 5,5 %; **Otřesy podloží** slibovaly 8 % a dělaly
+  4,4 %. Obojí srovnáno na číslo, které je i v popisku.
+
+### „Větší sklad" a „Polní sklad" byly karty bez účinku
+
+Slotů ve skladu přibylo, jenže nabídka se bere z balíčku a ten má nejvýš pět
+typů — šestý a sedmý slot proto zůstal prázdný a hráč za tu kartu utratil volbu
+z draftu. Nabídka teď smí typ zopakovat (dělala to už u malých balíčků) a dva
+stejné kusy nejsou k ničemu: dají se sloučit.
+
+### Měřidla (složka `mereni`)
+
+- **`metody.py`** — nové. Deset metod se do verze 97 **nikdy neměřilo**, protože
+  robot je neuměl použít; od v97 umí (`window.__botPrah`, záměrně vypnuto).
+- `vlna.py pristroje` bral seznam přístrojů **z ručně psaného pole**, ve kterém
+  tři přístroje z v96 chyběly — měřilo se tedy jen to staré. Bere se ze hry.
+- Do `README.md` přibyly dvě slepé uličky, kterými měření metod prošlo, včetně
+  toho nejdůležitějšího: **napřed spočítat chybu průměru, teprve pak dělat
+  závěry.** Nepárované srovnání dávalo chybu ±5 kusů na rozdíly kolem 1–3.
 
 ## Co je nového ve verzi 96
 

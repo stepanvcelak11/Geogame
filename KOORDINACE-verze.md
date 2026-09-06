@@ -6,7 +6,59 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VERZE 96 (6. 9., session „připomínky") — SEZNAM PŘIPOMÍNEK HRÁČE
+## AKTUÁLNÍ STAV: VERZE 97 (6. 9. večer, session „čísla a obsah") — ČÍSLA A OBSAH
+
+**Číslo 97 je zabrané.** Větev **`vylepseni-v97`**, vlastní git worktree
+`Desktop\geogame-v97`, základ `4674c42` (= špička v96, která už je na `main`).
+Na `main` to ZATÍM NEJDE — vydání si drží uživatel.
+
+### ⚠⚠ Dnes večer jede na `index.html` ČTYŘI SESSION NARÁZ
+
+Rozdělení dohodnuté přímým psaním mezi session (ne přes tenhle soubor —
+ten se ukázal jako pomalý; první tři zprávy se zkřížily):
+
+| session | číslo | větev | rajón |
+|---|---|---|---|
+| „čísla a obsah" | **97** | `vylepseni-v97` | tabulky `T`/`E`/`ABIL`/`NET`/`CARDS`/`COND`/`RYS`/`MAPS`/`GOALS`, ceny, dosahy, poškození, metody, mapa světa, pás krajiny, `40-teren.css`, detail území, `mereni/*` |
+| ar-geodet-ce | 98 | `prohlidka-v97` | vzhled a chování bitvy (`#game`, `70-hra.css`, `loop`/`draw`/`ui`, deska, vlny, HUD, `#quick`, panel, `#uzavr`) + technická odolnost (`saveRun`/`loadRun`, `sw.js`, tutoriál, zvuk) |
+| ar-geodet-51 | 99 | `vylepseni-v99` | menu: obchod, vybavení, skiny, laborka, kariéra, sezónní cesta, nastavení, profil, encyklopedie, `10-chrome`/`20-obchod`/`25-skiny`/`30-vybaveni`/`50-laborka`/`60-kariera`/`80-okna` |
+| ar-geodet-b3 | 100 | `vylepseni-v100` | výzvy a režimy navíc (`CHMODS`, `QUESTS`, `ACH`, `LOGIN`, aréna, Nekonečné měření) + texty hlášek |
+
+**Pozor při slučování:** všechny čtyři větve vyšly z TÉHOŽ `4674c42`, takže
+druhý a další merge bude mít konflikty v `index.html` a hlavně v souboru
+`geogame-vNN-jediny-soubor.html` (každá session ho přejmenovala na své číslo).
+Jednosouborová kopie se dělá až úplně nakonec, `cmp` proti `index.html`.
+
+### Čeho se to týká (session 97)
+
+Herní čísla a obsah, ne vzhled. Celý seznam je v `NAVOD.md`, sekce
+„Co je nového ve verzi 97". Nejdůležitější pro toho, kdo dělá balanc:
+
+- `T` — silnější `lidar`, `gpr`, `backpack`, `planim`, `penta` (byly slabší než
+  startovní pásmo). **Obtížnost se nezměnila**: devět kol robota, 10/12 území
+  v obou souborech, etap bez ztráty 91,6 % → 91,3 %.
+- `ABIL` — pole `cd` (mrtvé) nahrazeno polem `nab` (počet nábojů, 2 nebo 3),
+  `abilMax()` z něj počítá. `freeze` a `stop` nastavují `slowDmg`, `freeze`
+  navíc `armorCut`.
+- `COND` — `rain` 0,055 → 0,06, `quake` 0,044 → 0,05, a **Mráz konečně krátí
+  dotaci** (`condEff('inc')` se nikde nečetlo).
+- `MAPS` — území 6 a 7 dostala `unlock` (`planim`, `zenit`).
+- `rollShop()` — nabídka smí zopakovat typ, aby „Větší sklad" a „Polní sklad"
+  nebyly karty bez účinku (nález od ar-geodet-ce).
+- `mereni/` — nové `metody.py`, `bot.js` umí metody (vypnuté), `vlna.py` bere
+  seznam přístrojů ze hry.
+
+### Co jsem předal ostatním a NEOPRAVOVAL
+
+- ar-geodet-ce: v rychlé liště se řežou názvy („Pilot…", „Teod…"); při vybraném
+  stanovisku ztratí ostatní záložky panelu popisky; panel má dole ~150 px prázdna.
+- ar-geodet-51: sdílené `.page{padding-bottom:150px}` je proti výšce
+  `#podstavec` (208 px) **o 22 px krátké** — poslední proužek každé stránky
+  leží pod lištou. Není to vada Terénu, je to jedno místo pro všech pět stránek.
+
+---
+
+## PŘEDCHOZÍ STAV: VERZE 96 (6. 9., session „připomínky") — SEZNAM PŘIPOMÍNEK HRÁČE
 
 **Číslo 96 je zabrané, další si berte 97.** Větev **`pripominky-v96`**, vlastní
 git worktree `Desktop\geogame-pripominky-v96`.

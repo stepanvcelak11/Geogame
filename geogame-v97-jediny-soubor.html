@@ -643,6 +643,17 @@ html[data-theme="night"] .introBtns .key{color:#0a1626}
 .lvG b{font-weight:600}
 .lvG s{text-decoration:none;color:var(--dim);font-size:calc(11px*var(--fs,1));display:block;margin-top:2px}
 .lvDeck{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+/* Odmena za prvni dohrani uzemi. Bez ni hrac nevidel duvod, proc si pustit
+   zrovna tohle uzemi - ze kazde je pritom jiny pristroj. */
+.lvOdmena{display:flex;align-items:center;gap:10px;margin-top:10px;
+  padding:8px 10px;border-radius:12px;background:var(--ink3);
+  border-left:3px solid var(--brass)}
+.lvOdmena .lvOdT{min-width:0}
+.lvOdmena b{display:block;color:var(--brassT,var(--brass));
+  font-size:calc(10.5px*var(--fs,1));letter-spacing:.08em;text-transform:uppercase}
+.lvOdmena s{display:block;text-decoration:none;font-weight:700;
+  font-size:calc(13px*var(--fs,1));color:var(--t1)}
+.lvOdmena canvas{flex:none}
 .lvD{border:1px solid var(--grid);background:var(--ink2);border-radius:12px;padding:6px 4px;
   width:56px;text-align:center;box-shadow:var(--elev1)}
 .lvD canvas{width:28px;height:28px;display:block;margin:0 auto}
@@ -807,7 +818,8 @@ html[data-theme="night"] .tiRar span{color:#06111a}
 .ptrow .pi{flex:1;min-width:0}
 .ptrow .pn2{font-size:calc(13px*var(--fs,1));font-weight:600;display:flex;align-items:center;gap:7px}
 .ptrow .pd2{font-size:calc(11.5px*var(--fs,1));color:var(--dim);margin-top:4px;line-height:1.5}
-.ptrow .prar{font-size:calc(11px*var(--fs,1));border-radius:999px;padding:2px 7px;color:#fff;font-weight:700}
+.ptrow .prar{font-size:calc(11px*var(--fs,1));border-radius:999px;padding:2px 7px;color:#fff;font-weight:700;
+  margin-left:6px}   /* odznak lepil na nazev, jakmile jich je vic za sebou */
 html[data-theme="night"] .ptrow .prar{color:#06111a}
 #chalCard{border:2px solid var(--violet);border-radius:var(--r2);padding:12px;
   background:linear-gradient(180deg,var(--violetL) 0 34%,var(--violet));
@@ -10094,6 +10106,7 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
     </div>
   </div>
   <p class="tiP" id="lvDesc"></p>
+  <div id="lvOdmena" class="lvOdmena hide"></div>
   <div class="secTitle" style="margin:12px 0 8px">Tvoje sestava</div>
   <div id="lvDeck" class="lvDeck"></div>
   <div id="lvBan" class="lvBan hide"></div>
@@ -10482,6 +10495,7 @@ const MAPS=[
 {n:'Důlní dílo',kraj:'dul',
    node:[0.32, 0.7], boss:{"n": "Zával chodby", "d": "Důlní dílo se sesypalo.", "r":["pancir"]}, mix:{jam:1.7,cover:1.4,refr:.6,noise:1.15},
    brief:"Důlní měřictví. Bez signálu družic se orientuješ jen podle optiky a gyroskopu.",
+  unlock:'planim',   // kubaturni planimetr: v dole se pocitaji objemy vyrubu
   pal:'night',d:'Podzemní chodby. Bez signálu družic — GNSS tu nefunguje.',
   waves:20,hp:0.85,ban:['gnss'],
   p:[[0,6],[1,6],[1,5],[1,4],[2,4],[3,4],[4,4],[4,3],[4,2],[5,2],[6,2],[7,2],[7,3],[7,4],[7,5],
@@ -10495,6 +10509,7 @@ const MAPS=[
  {n:'Letecká plocha',kraj:'letiste',
    node:[0.46, 0.82], boss:{"n": "Turbulentní vzduch", "d": "Nad plochou to nese.", "r":["rychly"]}, mix:{refr:1.7,noise:1.35,subs:.6,jump:1.2},
    brief:"Provozní letiště. Rovina bez překážek — je odsud vidět daleko.",
+  unlock:'zenit',   // zenitovy teleskop: otevrena rovina a cista obloha
   d:'Provozní letiště. Rovina, dlouhé záměry.',
   waves:21,hp:1.00,ban:[],
   p:[[0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[8,3],[8,4],
@@ -10665,7 +10680,7 @@ const T={
    dmg:[6,12,23,44],rng:[2.4,2.6,2.9,3.3],rate:[2.6,2.9,3.3,3.8],chain:[1,2,3,5],
    d:'Rychlý paprsek, odráží se na další cíle. Slabý proti pancíři.'},
  lidar:{n:['Laserový skener','Mobilní mapování','Panoramatický skener','Skenovací věž'],c:'#ff4d7e',cost:22,kind:'splash',
-   dmg:[11,24,50,108],rng:[2.2,2.5,2.7,3.1],rate:[.8,.85,.95,1.05],spl:[.9,1.15,1.45,1.85],
+   dmg:[14,30,62,134],rng:[2.2,2.5,2.7,3.1],rate:[.8,.85,.95,1.05],spl:[1.15,1.45,1.8,2.25],
    d:'Naskenuje celý profil naráz. Plošné poškození kolem cíle.'},
  nivel:{n:['Nivelační přístroj','Digitální nivelák','Hydrostatická síť','Gravimetrická síť'],c:'#a9e08c',cost:13,kind:'slow',
    // NIVELAK byl nejsilnejsi pristroj hry, a pritom je druhy nejlevnejsi a
@@ -10696,7 +10711,7 @@ const T={
    d:'Sleduje jeden cíl a s každou ranou do něj bije tvrději. Ztráta cíle rozběh vynuluje.'},
  gpr:{n:['Georadar','Vícekanálový GPR','Radarový profil','Podpovrchová síť'],
    c:'#8e7bd6',cost:21,kind:'zone',
-   dmg:[7,15,31,62],rng:[1.8,2.0,2.3,2.6],rate:[2.0,2.0,2.0,2.0],
+   dmg:[8,17,35,73],rng:[2.0,2.3,2.6,3.0],rate:[2.0,2.15,2.3,2.5],
    d:'Prosvítí úsek trasy. Vše, co projde skenovanou zónou, průběžně dostává zásah.'},
  multi:{n:['Multistanice','Monitorovací multistanice','Skenovací multistanice','Deformační observatoř'],
    c:'#4aa3df',cost:28,kind:'exec',
@@ -10750,8 +10765,8 @@ const T={
    d:'Neútočí. Vše v dosahu je označené a dostává od ostatních výrazně víc.'},
  backpack:{n:['Skenovací batoh','Mobilní sestava','Autonomní vozík','Robotický mapér'],
    c:'#9ac93f',cost:24,kind:'walker',
-   dmg:[12,25,52,108],rng:[1.7,2.1,2.5,2.9],rate:[1.0,1.1,1.2,1.3],rad:[.8,.95,1.1,1.3],
-   d:'Chodí po trase a snímkuje. Pomalejší než dron, zato tvrdší.'},
+   dmg:[17,35,74,154],rng:[1.7,2.1,2.5,2.9],rate:[1.0,1.1,1.2,1.3],rad:[.8,.95,1.1,1.3],
+   d:'Chodí po trase a snímkuje ji za pochodu. Bije pomaleji než dron, zato zabírá jediné pole a postavíš jich, kolik chceš.'},
  meteo:{n:['Meteostanice','Automatická meteostanice','Refrakční model','Atmosférická korekce'],
    c:'#7fb3c9',cost:20,kind:'weather',
    dmg:[0,0,0,0],rng:[1.9,2.2,2.5,2.9],supp:[.35,.5,.65,.85],reg:[1,2,3,5],rate:[1,1,1,1],
@@ -10770,7 +10785,7 @@ const T={
    d:'Neútočí. Zpřesní úplně všechna stanoviska na mapě bez ohledu na vzdálenost.'},
  penta:{n:['Pentagonální hranol','Dvojitý pentagon','Pentagonová souprava','Ortogonální stanice'],
    c:'#ff8f2e',cost:23,kind:'ortho',
-   dmg:[13,28,58,120],rng:[3.0,3.4,3.8,4.3],rate:[.85,.9,1.0,1.1],
+   dmg:[18,38,79,163],rng:[3.0,3.4,3.8,4.3],rate:[.85,.9,1.0,1.1],
    sirka:[.40,.44,.48,.54],
    d:'Měří VÝHRADNĚ v pravém úhlu — po řadě nebo po sloupci, ve kterém stojí. Rána projde celou přímkou a zasáhne všechno na ní. Mimo osy je slepý.'},
  gravi:{n:['Gravimetr','Relativní gravimetr','Absolutní gravimetr','Supravodivý gravimetr'],
@@ -10785,7 +10800,7 @@ const T={
    d:'Svislice na roh parcely. Nejrychlejší přístroj ve hře, zato dohlédne sotva o dvě pole.'},
  planim:{n:['Digitální planimetr','Kubaturní planimetr','Objemový skener','Výkazová jednotka'],
    c:'#e08fd0',cost:19,kind:'econ',
-   dmg:[13,27,56,116],rng:[2.2,2.5,2.8,3.2],rate:[1.1,1.2,1.3,1.45],gold:[2,3,5,8],
+   dmg:[18,38,79,164],rng:[2.2,2.5,2.8,3.2],rate:[1.1,1.2,1.3,1.45],gold:[3,4,6,9],
    d:'Vyčísluje, co zaměří. Za každý zásah přisype do rozpočtu — a na rozdíl od mensuly nezabírá čtyři pole.'},
  zenit:{n:['Zenitový teleskop','Astronomický zenitál','Cirkumzenitál','Zenitová observatoř'],
    c:'#9ad0ff',cost:26,kind:'global',
@@ -10879,36 +10894,46 @@ const CARDS=[
  {id:'overdrive',n:'Přetížení sítě',    d:'+18 % poškození, ale −10 % dosahu',max:2,r:'l'}
 ];
 
+// Kolik nabojů metoda unese, urcuje `nab`. Do v96 tu misto toho stalo `cd`
+// (dobijeni ve vterinach) a byla to MRTVA hodnota: `S.cds` se v `step()` jen
+// odecita a nikdo do nej nikdy nezapsal. Encyklopedie ji pritom hracovi
+// ukazovala jako skutecne pravidlo. Naboj je jedina cena, kterou hra za
+// metodu bere, takze se podle nej metody lisi:
+//   2 naboje  Orientace na body, Zpetne protinani, Protinani vpred
+//   3 naboje  zbytek
+// Zmereno parovym srovnanim (mereni/metody.py, tataz vlna pro vsechny):
+// na jeden vystrel zastavi Orientace 1,95 vlivu, Zpetne protinani 1,40,
+// Protinani vpred 0,80, Staticke mereni 0,87, Uzaver 0,67, Kontrolni 0,45.
 const ABIL=[
- {id:'adjust',n:'Protínání vpřed',d:'zásah všem',cd:26,
+ {id:'adjust',n:'Protínání vpřed',d:'zásah všem',nab:2,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M7 7l10 10M17 7L7 17"/></svg>',
   info:'Zaměří všechny cíle naráz ze dvou stanovisek a udělí jim tvrdý zásah.'},
- {id:'repair',n:'Nivelační pořad',d:'+6 % přesnosti',cd:50,
+ {id:'repair',n:'Nivelační pořad',d:'+6 % přesnosti',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M3 12h18M6 9v6M18 9v6M12 7v10"/></svg>',
   info:'Přeměří výšky značek a vrátí síti část ztracené přesnosti.'},
- {id:'freeze',n:'Polygonový pořad',d:'zbrzdí trasu',cd:34,
+ {id:'freeze',n:'Polygonový pořad',d:'zbrzdí trasu',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M4 19l5-9 5 5 6-11"/><circle cx="4" cy="19" r="1.6"/><circle cx="20" cy="4" r="1.6"/></svg>',
-  info:'Provede trasu pořadem a na 4 s srazí rychlost všeho na ní na čtvrtinu.'},
- {id:'rush',n:'Statické měření',d:'zrychlí měření',cd:44,
+  info:'Provede trasu pořadem a na 5 s srazí rychlost všeho na ní na čtvrtinu. Zbrzděný cíl drží záměru: dostává o 40 % víc a pancíř mu klesne o 4.'},
+ {id:'rush',n:'Statické měření',d:'zrychlí měření',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4"/></svg>',
   info:'Dlouhá statická observace: na 8 s měří všechna stanoviska o 60 % rychleji.'},
- {id:'check',n:'Kontrolní měření',d:'+70 % poškození',cd:38,
+ {id:'check',n:'Kontrolní měření',d:'+70 % poškození',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 7"/><path d="M3 20h18"/></svg>',
   info:'Na 7 s zdvojnásobí soustředění celé sítě — všechny přístroje udělují o 70 % vyšší poškození.'},
- {id:'stop',n:'Uzávěr pořadu',d:'zastaví trasu',cd:52,
+ {id:'stop',n:'Uzávěr pořadu',d:'zastaví trasu',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>',
-  info:'Uzavře pořad: na 2,5 s se všechno na trase úplně zastaví a dostane slabý zásah.'},
+  info:'Uzavře pořad: na 2,5 s se všechno na trase úplně zastaví, dostane slabý zásah a dokud stojí, měří se přesněji — o 40 % víc.'},
  // --- pridano ve v96 ---
- {id:'orient',n:'Orientace na body',d:'+45 % dosahu',cd:42,
+ {id:'orient',n:'Orientace na body',d:'+45 % dosahu',nab:2,
   ic:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M12 12l5-5"/></svg>',
   info:'Zorientuje síť na okolní body: na 9 s má každé stanovisko o 45 % větší dosah.'},
- {id:'zpetne',n:'Zpětné protínání',d:'zásah nejbližším',cd:30,
+ {id:'zpetne',n:'Zpětné protínání',d:'zásah nejbližším',nab:2,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M3 20 12 4l9 16"/><path d="M7.5 14h9"/><circle cx="12" cy="4" r="1.6"/></svg>',
   info:'Určí polohu ze šesti vlivů nejblíž nulovému bodu — a všem šesti udělí velmi tvrdý zásah.'},
- {id:'tacheo',n:'Tachymetrie',d:'dvojnásobný příjem',cd:46,
+ {id:'tacheo',n:'Tachymetrie',d:'dvojnásobný příjem',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M4 19V8M10 19V4M16 19v-7M22 19H2"/></svg>',
   info:'Podrobné měření za pochodu: na 10 s je odměna za každý zničený vliv dvojnásobná.'},
- {id:'stake',n:'Vytyčení bodů',d:'označí vše',cd:40,
+ {id:'stake',n:'Vytyčení bodů',d:'označí vše',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M12 21V8M12 8l7-3-7-3z"/><path d="M8 21h8"/></svg>',
   info:'Vytyčí všechny cíle na 10 s. Označené dostávají od všech o 25 % víc.'}
 ];
@@ -10978,14 +11003,18 @@ function bossName(w){
  return BOSSNAMES[off];
 }
 
+// POZOR: `d` je to jedine, co se hraci ukaze, a `eff` to jedine, co hra
+// opravdu spocita. Do v96 se rozesly: dest slibil 10 % a delal 5,5 %, otresy
+// slibily 8 % a delaly 4,4 % a mraz slibil -18 % rozpoctu a nedelal NIC
+// (`condEff('inc')` se necetlo nikde). Kdo tu meni cislo, meni obe.
 const COND=[
  {id:'shimmer',n:'Tetelení vzduchu',d:'−13 % dosahu všech přístrojů',c:'#e0a44a',eff:{rng:-.13}},
  {id:'dusk',   n:'Šero',            d:'−12 % poškození',              c:'#5d6b9a',eff:{dmg:-.12}},
  {id:'fog',    n:'Mlha',            d:'−15 % dosahu, drony zpomaleny',c:'#9fb0b8',eff:{rng:-.15,fly:-.40}},
- {id:'rain',   n:'Déšť',            d:'Vlivy jsou o 10 % rychlejší',   c:'#5b91c4',eff:{spd:0.055}},
+ {id:'rain',   n:'Déšť',            d:'Vlivy jsou o 6 % rychlejší',    c:'#5b91c4',eff:{spd:0.06}},
  {id:'wind',   n:'Nárazový vítr',   d:'−20 % doletu dronů, −15 % plochy skenerů',c:'#88b7a0',eff:{fly:-.20,spl:-.15}},
  {id:'frost',  n:'Mráz',            d:'−18 % rozpočtu za etapu',       c:'#89c4d8',eff:{inc:-.18}},
- {id:'quake',  n:'Otřesy podloží',  d:'8 % měření mine',               c:'#c98a6a',eff:{miss:0.044}},
+ {id:'quake',  n:'Otřesy podloží',  d:'5 % měření mine',               c:'#c98a6a',eff:{miss:0.05}},
  {id:'glare',  n:'Oslnění sluncem', d:'−11 % rychlosti měření',        c:'#e6c65a',eff:{rate:-.11}}
 ];
 function condOf(){ return S&&S.cond?COND.find(c=>c.id===S.cond):null; }
@@ -13237,9 +13266,13 @@ function rollShop(free){
    if(pool.length<2)pool=usableTypes().filter(k=>S.ban.indexOf(k)<0);
  }
  if(pool.length<3)while(pool.length<3)pool.push(pool[0]);
- // Karta 'Polni sklad' (+1 karta v nabidce) byla mrtvy kod - jeji id nemelo
- // v celem souboru jiny vyskyt nez svou definici.
  const slots=(pool.length>=5?4:3)+M('slot')+M('depot');
+ // "Vetsi sklad" 2. urovne a "Polni sklad" byly do v96 bez ucinku: slotu
+ // pribylo, ale nabidka se bere z BALICKU, a ten ma nejvys pet typu - sesty
+ // a sedmy slot proto zustal prazdny a hrac za tu kartu utratil volbu
+ // z draftu. Nabidka smi typ zopakovat (delala to uz pro balicky mensi nez
+ // tri) a dva stejne kusy nejsou k nicemu: daji se sloucit.
+ while(pool.length<slots)pool.push(pool[(Math.random()*pool.length)|0]);
  S.shop=[];
  for(let i=0;i<slots;i++)S.shop.push(pool.splice((Math.random()*pool.length)|0,1)[0]);
  S.placing=null;
@@ -15120,7 +15153,10 @@ function myAbils(){
 function abilLv(id){return SAVE.abilLvl[id]||0;}
 function abilUpCost(id){const l=abilLv(id);return l>=4?null:60+l*70;}
 function abilPow(id){return 1+.18*abilLv(id);}
-function abilMax(id){ return 2+Math.floor(abilLv(id)/2)+M('ability_cd')+Math.ceil((SAVE.meta.acd|0)/2); }
+// Zakladni pocet naboju uz NENI dva pro vsechny - viz komentar u ABIL.
+function abilNab(id){ const a=ABIL.find(x=>x.id===id); return (a&&a.nab)||3; }
+function naboju(n){ return n+' '+(n===1?'náboj':(n<5?'náboje':'nábojů')); }
+function abilMax(id){ return abilNab(id)+Math.floor(abilLv(id)/2)+M('ability_cd')+Math.ceil((SAVE.meta.acd|0)/2); }
 // Kolik naboju se doplni na konci etapy.
 function abilRefill(){ return 1+Math.floor((SAVE.meta.acd|0)/2); }
 function useAbil(i){
@@ -15146,9 +15182,20 @@ function useAbil(i){
    S.fx.push({type:'flash',c:'#2fe3c8',t:.35,d:.35});
    toast('Protínání vpřed · zásah '+Math.round(D));
  }else if(a.id==='freeze'){
-   S.enemies.forEach(e=>{e.slowT=Math.max(e.slowT,4*abilPow('freeze'));e.slowM=.25;});
+   // ZMERENO (mereni/metody.py, 6. 9. 2026): ze vsech deseti metod byla tahle
+   // JEDINA, ktera nezastavila ani jeden vliv navic - v obou merenych tlacich
+   // vysla na -0,5 kusu, tedy na nulu. Duvod: v sestave uz stoji nivelak, ktery
+   // drzi vlnu zpomalenou porad, takze ctyri vteriny zpomaleni navic nic nemeni.
+   // Pribyl tedy ucinek, ktery hra UZ UMI (`slowDmg`, dosud jen z perku
+   // nivelaku): co se skoro nehybe, to jde zamerit presneji. Sila zpomaleni
+   // zustava, jen uz neprepisuje silnejsi zpomaleni odjinud.
+   const dur=5*abilPow('freeze');
+   S.enemies.forEach(e=>{ if(e.dead)return;
+     e.slowT=Math.max(e.slowT,dur);
+     e.slowM=Math.max(SLOW_MIN,Math.min(e.slowM===1?9:e.slowM,.25));
+     e.slowDmg=1; e.armorCut=4; });
    S.fx.push({type:'flash',c:'#7fd4ff',t:.35,d:.35});
-   toast('Stabilizace · trasa zmrazena na 4 s');
+   toast('Polygonový pořad · trasa zbrzděná na '+dur.toFixed(1)+' s');
  }else if(a.id==='repair'){
    S.acc=Math.min(100,S.acc+Math.round(6*abilPow('repair')));
    S.fx.push({type:'flash',c:'#a9e08c',t:.35,d:.35});
@@ -15161,7 +15208,8 @@ function useAbil(i){
    const dur=2.5*abilPow('stop');
    S.enemies.forEach(e=>{if(e.dead)return;
      e.slowT=Math.max(e.slowT,dur);e.slowM=0.001;e.haste=0;
-     hurt(e,20+8*S.wave,0,0);});
+     hurt(e,20+8*S.wave,0,0);
+     e.slowDmg=1;});   // az PO zasahu, at si uzaver nenasobi vlastni ranu
    S.fx.push({type:'flash',c:'#f0426e',t:.4,d:.4});
    toast('Uzávěr pořadu · trasa stojí '+dur.toFixed(1)+' s');
  }else if(a.id==='rush'){
@@ -15540,6 +15588,9 @@ function endWave(){
  if(S.leaked===(S.leakedAtWave||0))questProgress('perfect',1);
  S.leakedAtWave=S.leaked;
  if(S.cond)S.condWaves++;
+ // Mraz ubira z dotace za etapu, jenze dotace se pocita az o par radku niz -
+ // a podminka je do te doby zrusena. Ucinek se proto bere jeste tady.
+ const condInc=condEff('inc');
  S.cond=null;S.rule=null;
  // Dotace driv prestala rust ve 12. etape (Math.min(S.wave,12)), zatimco
  // odolnost vln od 8. etapy naopak zrychlila. Od 12. etapy dal tak hrac
@@ -15560,6 +15611,8 @@ function endWave(){
  // vysledek: cim dal od nuloveho bodu se to zastavilo, tim vetsi dotace.
  S.uzavrBon=Math.round((1-S.uzavr/100)*(4+Math.min(S.wave,16)*.9));
  bonus+=S.uzavrBon;
+ // Mraz: "-18 % rozpoctu za etapu". Do v96 to byla veta bez ucinku.
+ if(condInc)bonus=Math.max(0,Math.round(bonus*(1+condInc)));
  S.cr+=bonus;
  if(S.net.rep||SAVE.meta.rep)S.acc=Math.min(100,S.acc+S.net.rep*2+(SAVE.meta.rep||0));
  if(M('regen'))S.acc=Math.min(100,S.acc+2*M('regen'));
@@ -17538,7 +17591,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=96;
+const VERZE=97;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -18584,7 +18637,15 @@ function goPage(n,anim){
  if(typeof renderPlay==='function'){renderPlay();}
  // Mapa se po otevreni Terenu srovna na uzemi, na kterem prave jsem.
  if(PAGE===2&&typeof centrujMapu==='function')
-   requestAnimationFrame(function(){try{centrujMapu(false);}catch(e){}});
+   requestAnimationFrame(function(){try{
+     // Mapu je potreba napred VYKRESLIT. Pri startu je stranka Teren schovana,
+     // platno ma nulovou sirku a `drawWorld` se vrati bez rozvrhu - `centrujMapu`
+     // pak nema podle ceho srovnat a tise skonci. Do v96 se proto mapa po
+     // otevreni Terenu neposunula vubec a hrac koukal na uplne jina uzemi,
+     // nez ktera hraje (namereno: scrollTop 0 misto 1037).
+     if(typeof drawWorld==='function')drawWorld();
+     centrujMapu(false);
+   }catch(e){}});
  requestAnimationFrame(srovnejVysku);   // listy uz maji svou vysku
  window.scrollTo(0,0);
 }
@@ -19006,6 +19067,7 @@ function openAbilPick(idx){
    d.className='ptrow'+(inDeck>=0?' on':'')+(umi?'':' nohave');
    d.innerHTML='<div class="aic">'+a.ic+'</div><div class="pi">'+
      '<div class="pn2">'+a.n+
+       '<span class="prar" style="background:var(--laser)">'+naboju(abilMax(a.id))+'</span>'+
        (lv?'<span class="prar" style="background:var(--brass)">úr. '+lv+'</span>':'')+
        (umi?'':'<span class="prar" style="background:var(--ink3)">zamčeno</span>')+'</div>'+
      '<div class="pd2">'+a.info+
@@ -19653,7 +19715,7 @@ function mapaVyber(){
    pokazde stejne a hrac si ji zapamatuje. */
 const KRAJ={
  pole:      {n:'pole',      a:'#4e7a3a',b:'#2f5226',neb:'#2a4a72'},
- prehrada:  {n:'přehrada',  a:'#1f5f7e',b:'#123murky',neb:'#26456e'},
+ prehrada:  {n:'přehrada',  a:'#1f5f7e',b:'#0e3346',neb:'#26456e'},
  raseliniste:{n:'rašeliniště',a:'#5b6034',b:'#33361d',neb:'#38466a'},
  lom:       {n:'lom',       a:'#7a6a52',b:'#443a2c',neb:'#4a4f66'},
  mesto:     {n:'město',     a:'#565f74',b:'#2e3444',neb:'#39406a'},
@@ -19665,7 +19727,6 @@ const KRAJ={
  most:      {n:'most',      a:'#3f5c78',b:'#233647',neb:'#2e4470'},
  hory:      {n:'hory',      a:'#7c8ba4',b:'#3c4a63',neb:'#1e3466'}
 };
-KRAJ.prehrada.b='#0e3346';
 // Deterministicky sum: stejne cislo pokazde, at mapa nemrka.
 function kSum(i,j){ return Math.abs(Math.sin(i*127.13+j*311.7)*43758.5453)%1; }
 
@@ -19980,7 +20041,12 @@ function drawWorld(){
  const w=c.clientWidth||(wr&&wr.clientWidth)||340;
  if(w<40)return;
  MAPA_ROZVRH=mapaKresli(c,{sirka:w,krok:112,R:25,pismo:13});
- if(wr&&!wr.dataset.srovnano){wr.dataset.srovnano='1';centrujMapu(false);}
+ // Priznak "uz srovnano" se smi nastavit teprve tehdy, kdy okno mapy opravdu
+ // ma vysku a je v nem co rolovat. Driv se nastavil uz pri prvnim kresleni -
+ // to ale probehlo jeste se schovanou strankou a srovnani propadlo naprazdno.
+ if(wr&&!wr.dataset.srovnano&&wr.clientHeight>40&&wr.scrollHeight-wr.clientHeight>4){
+   wr.dataset.srovnano='1';centrujMapu(false);
+ }
 }
 // Okno mapy se posune tak, aby moje uzemi bylo uprostred. Bez toho by hrac
 // po otevreni Terenu koukal na prvni tri uzemi, i kdyz je davno ma.
@@ -19988,7 +20054,13 @@ function centrujMapu(hladce){
  const wr=$('worldWrap'), L=MAPA_ROZVRH;
  if(!wr||!L||!L.uz.length)return;
  const i=Math.max(0,Math.min(L.uz.length-1,mapaVyber()));
- const cil=Math.max(0,Math.round(L.uz[i].y-wr.clientHeight/2));
+ // `L.uz` se v `mapaKresli` SERADI PODLE Y (aby bezierova cesta sedela na
+ // poradi), takze poradi v poli uz neodpovida cislu uzemi. Do v96 se tu
+ // indexovalo pozici - a protoze prvni uzemi je dole a posledni nahore, mapa
+ // se srovnavala presne OBRACENE: kdo hral prvni uzemi, dostal vrchol mapy.
+ // Namereno: uzemi 1 -> scrollTop 0 (spravne 1037), uzemi 12 -> 1037 (spravne 0).
+ const u=L.uz.find(x=>x.i===i)||L.uz[0];
+ const cil=Math.max(0,Math.round(u.y-wr.clientHeight/2));
  try{wr.scrollTo({top:cil,behavior:hladce?'smooth':'auto'});}
  catch(e){wr.scrollTop=cil;}
 }
@@ -20082,6 +20154,19 @@ function openLevel(i){
  const bf=$('lvBrief');
  if(MAPS[i]&&MAPS[i].brief){bf.classList.remove('hide');bf.innerHTML='<b>Zadání</b>'+MAPS[i].brief;}
  else bf.classList.add('hide');
+ // Za prvni dohrani uzemi je pristroj (`unlock`). Do v96 to bylo napsane
+ // jedine v encyklopedii, tedy ne tam, kde si hrac uzemi vybira.
+ {
+   const od=$('lvOdmena'), ft=m.unlock;
+   if(ft&&T[ft]&&!SAVE.won[i]&&!hasType(ft)){
+     od.classList.remove('hide');
+     od.innerHTML='';
+     od.appendChild(mini(ft,0,44));
+     const tx=document.createElement('div');tx.className='lvOdT';
+     tx.innerHTML='<b>Za první dohrání</b><s>'+T[ft].n[0]+'</s>';
+     od.appendChild(tx);
+   } else od.classList.add('hide');
+ }
  const gm=(SAVE.goals&&SAVE.goals[i])||{};
  const gl=$('lvGoals');gl.innerHTML=mapGoals(i).map(g=>{
    // Tri hvezdy znamenaji, ze vsechny tri cile uz jednou padly naraz. Kdyz se
@@ -21759,11 +21844,14 @@ function renderCodex(){
          (c.w?' · nabízí se od '+c.w+'. etapy':'')+'</span>',null,{rar:r}));
    });
    sek('Měřické metody','--laser',
-     'Do měření si bereš '+ABILMAX+'. Náboje se dobíjejí samy a v laborce jdou zesílit.');
+     'Do měření si bereš '+ABILMAX+'. Silnější metoda unese míň nábojů; po každé '+
+     'etapě se doplní a v laborce jdou zesílit.');
+   // Do v96 tu stalo "dobijeni NN s" - hodnota, kterou hra nikde necetla.
    ABIL.forEach(a=>add('var(--laser)',a.n,
      '<span class="cdxEf">'+a.d+'</span>'+
      '<span class="cdxTelo">'+a.info+'</span>'+
-     '<span class="cdxNota">dobíjení '+a.cd+' s</span>'));
+     '<span class="cdxNota">'+naboju(abilNab(a.id))+' na začátku · +'+
+       abilRefill()+' po každé etapě</span>'));
    sek('Vylepšení sítě','--brass',
      'Kupuje se za rozpočet v panelu ☰ během měření a platí do konce území.');
    NET.forEach(u=>add('var(--'+u.c+')',u.n,
