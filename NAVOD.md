@@ -588,14 +588,28 @@ v šumu není výměna jedna ku jedné.** Každý druh vlivu má proto ještě n
 Jak vyhraněná území jsou, drží jediné číslo `MIX_SILA` — kdyby měl někdo chuť
 rozdíly zvětšit nebo zmírnit, mění se jedna konstanta, ne dvanáct tabulek.
 
-Měřeno robotem, tři kola proti třem: **9,7 výhry z 12 u verze 92 i u téhle**
-(jednotlivá kola 11/9/9 proti 10/9/10 — takový je rozptyl samotného měřidla).
-Mění se, **co** chodí, ne kolik toho je.
+Měřeno robotem, vždy tři kola proti třem. Cesta k tomu byla dlouhá a stojí za
+zapsání, protože každý mezikrok něco vyvrátil:
 
-Nebyl to první pokus. Napoprvé vyšlo **8,0 proti 9,7** a bylo to na rysech, které
-byly čistý přídavek. Napodruhé, už s jejich cenou, **8,7** — a rozklad ukázal, že
-zbytek nedělaly rysy (9,7), ale právě ta směs (8,7), protože se vážila jen
-odolností. Až třetí pokus, s násobkem síly, drží obojí.
+| pokus | výhry z 12 | co se ukázalo |
+|---|---|---|
+| jen rysy a směs, bez vážení | 8,0 (základ 9,7) | rys byl čistý přídavek k síle |
+| + cena rysu | 8,7 | zbytek nedělaly rysy, ale směs |
+| + násobek síly vlivu | **9,7 : 9,7** | vážit jen odolností nestačí |
+| + naměřené síly místo odhadu | 9,0 (základ 10,3) | **naměřená čísla to zhoršila** |
+| zpět odhad, směs zmírněna na 0,55 | 9,7 | zmírnění směsi nezměnilo **nic** |
+
+Poslední dva řádky jsou zajímavější než ten úspěšný. Balancová session mezitím
+sílu vlivů **opravdu změřila** (nesmrtelné cíle jednoho druhu na trase) a vyšla
+jí čísla výrazně jiná než moje odhady — rušička 3,24 místo 2,2, drift 2,0 místo
+1,35. Když jsem je dosadil, obtížnost se **zhoršila**, ne zlepšila. A když jsem
+pak zkusil zmírnit celou směs skoro na polovinu, průměr se nepohnul ani o setinu.
+
+Z toho plyne, že **síla druhu proti prázdné trase není totéž co jeho přínos uvnitř
+míchané vlny** — a že zbylý rozdíl proti základu (9,7 proti 10,3, jednotlivá kola
+10/9/10 proti 10/11/10) na síle směsi nestojí. Je v rozptylu měřidla, které samo
+kolísá o výhru na kolo. V kódu je to u tabulky `SILA` napsané i s čísly, aby to
+nikdo nezkoušel podruhé naslepo.
 
 V detailu území proto nově stojí řádek **Nejčastější vlivy** — a jde se podle něj
 vybrat sestava. Čte se z téhož předpisu, kterým se vlna doopravdy skládá.
@@ -641,6 +655,21 @@ který vytlačuje kolíky. Věta „potlačí meteostanice" u nich navíc stála
 **Tipů z praxe je 40 místo 25** a **úspěchy dostaly dva chybějící vrcholy** —
 řada končila na osmi dokončených územích a dvaceti hvězdách, přestože území je
 dvanáct a hvězd 36.
+
+**Cíl „Nejvýš 8 stanovisek" počítal o jedno víc, než sliboval.** Počet se zapisoval
+teprve poté, co nové stanovisko už stálo na desce, a ještě se k němu přičítala
+jednička — hvězda tedy padala už při osmi, ne až při devíti. Změřeno skutečným
+stavěním: na desce 1 stanovisko, v počítadle 2. Teď sedí: 1 → 1, 6 → 6.
+
+**Třetí cíl každého území nově sedí k tomu území.** Vybíral se výpočtem z pořadí
+mapy, takže „ani jeden průnik" chtěla hra na třech územích, „bez metod" na jednom
+a s prostředím to nemělo nic společného. Teď má katastrální rovina „ani jeden
+průnik", přehrada a městská zástavba „malou četu" (na hladinu a mezi domy se
+skoro nedá stavět), důl „bez měřických metod", letiště „rychlé zahájení".
+Tvrdé cíle stojí jen tam, kde je na ně místo — ověřeno robotem, který bez jediného
+průniku dohrál právě území 1, 2, 4, 5, 6, 7 a 8. **O hvězdy, které už máš, nepřijdeš:**
+počet hvězd se drží jako maximum a na území se třemi hvězdami se všechny tři cíle
+ukazují splněné.
 
 ### Čeho se tahle verze nedotýká
 

@@ -9889,10 +9889,26 @@ const GOALS=[
  {id:'rich', n:'Skonči s 200 rozpočtu',   d:'Neutrať všechno do posledního.'},
  {id:'fast', n:'Rychlé zahájení 5×',      d:'Pětkrát spusť etapu s bonusem za rychlost.'}
 ];
-function mapGoals(mi){
- const extra=['clean','lean','noabil','merge','rich','fast','clean','lean'];
- return ['win','acc',extra[mi%extra.length]];
-}
+// Treti cil uzemi. Do verze 93 se vybiral jako extra[mi % 8], takze se opakoval
+// mechanicky - "ani jeden prunik" chtela hra na TRECH uzemich, "bez metod" na
+// jednom - a s prostredim nemel nic spolecneho. Ted kazdemu sedi jeho uzemi.
+// Tvrde cile ("ani jeden prunik", "mala ceta") stoji jen tam, kde je na ne
+// misto: robot dohral bez jedineho pruniku na uzemich 0,1,3,4,5,6,7.
+const CIL3=[
+ 'clean',   // Katastralni uzemi - rovina a dlouhe zamery, nic nesmi projit
+ 'lean',    // Udolni prehrada - na hladinu se skoro neda stavet
+ 'rich',    // Raseliniste - suchych mist je malo, nech si rezervu
+ 'clean',   // Lomova stena - z hran je videt do cele jamy
+ 'lean',    // Mestska zastavba - malo volnych rohu pro stanoviska
+ 'noabil',  // Dulni dilo - pod zemi bez signalu, spolehni se na optiku
+ 'fast',    // Letecka plocha - na provozni plose se ceka na okno
+ 'clean',   // Zeleznicni koridor - na trati v provozu neprojde nic
+ 'merge',   // Zatopova oblast - misto neni, tak slucuj
+ 'merge',   // Rozcesti siti - dve vetve chteji silnejsi pristroje, ne vic jich
+ 'rich',    // Mostni konstrukce - na moste si nech rezervu
+ 'fast'     // Vysokohorska sit - v horach se pocita cas
+];
+function mapGoals(mi){ return ['win','acc',CIL3[mi]||'clean']; }
 function goalDone(id){
  if(!S)return false;
  switch(id){
@@ -10209,10 +10225,33 @@ function finaleRysy(){
 // Kolikrat vic nez svou odolnost vliv vazi. Rusicka umlci stanoviska kolem sebe,
 // lecitel drzi celou vlnu, zakryt srazi poskozeni vsem sousedum - vymenit je za
 // stejnou odolnost v sumu NENI vymena jedna ku jedne, a bez tohohle nasobku by
-// uzemni smes tise ztezovala hru. Zmereno robotem, viz NAVOD k verzi 93.
+// uzemni smes tise ztezovala hru.
+//
+// POZOR, uz to zkouseno bylo. Cisla nize jsou ODHAD, ktery je overeny na
+// vysledku hry - ne primo namerena sila druhu.
+//
+// Balancova session silu vlivu pozdeji ZMERILA (mereni/vlna.py: nesmrtelne cile
+// jednoho druhu na trase; o kolik min prace obrana odvede nez proti Chybe
+// odectu) a vysla ji jina cisla: rusicka 3,24 · drift 2,0 · preklep 1,1 ·
+// hruba chyba 1,05 · multipath 1,2 · sedani 1,1. Dosadil jsem je - a A/B
+// robotem je ODMITLO: 9,0 vyhry z 12 proti 9,7 s temito odhady (zaklad 10,3).
+// Sila druhu proti prazdne trase zjevne neni totez co jeho prinos uvnitr
+// michane vlny. Nez to nekdo prepise, at ma A/B, ktere ukazuje opak.
+//
+// U lecitele a zakrytu navic to mereni ma slepe misto: pousti vlnu z JEDINEHO
+// druhu, takze lecitel lecil jen lecitele a zakryt kryl jen zakryty. Ve smisene
+// vlne chrani i sedani (150 hp) a zakryt (170 hp), tedy prave to, po cem obrana
+// strili nejdele - jejich 1,05 a 1,11 je dolni mez, ne hodnota.
+//
+// A jeste jedno cislo do stejneho radku: ucinek NENI na poctu linearni. Tri
+// lecitele jsou skoro neznatelni (1,05), dvacet jich vyleci 133x vic, nez obrana
+// stihne ubrat. Hra ale nikdy neposle vic nez pet, takze pro nas plati ten dolni
+// konec rozsahu.
 const SILA={jam:2.2,heal:2.5,cover:2.0,jump:1.4,drift:1.35,blun:1.2,multi:1.15,subs:1.1};
 // Jak vyhranena uzemi jsou: 1 = plne podle tabulky `mix`, 0 = vsude stejne.
-// Nizsi cislo znamena mensi rozdily mezi uzemimi, ale i mensi dopad na obtiznost.
+// Zmereno: zmirneni na 0,55 dalo TENTYZ prumer (9,7 vyhry z 12) jako 0,7,
+// takze zbyly rozdil proti zakladu na sile smesi nestoji - a neni duvod
+// uzemi zeslabovat. Kdyby je nekdo chtel vyhranenejsi, meni se tady jedno cislo.
 const MIX_SILA=.7;
 function vahaVlivu(k){ return E[k].hp*(SILA[k]||1); }
 function mixUzemi(l){
@@ -15709,7 +15748,7 @@ function boardTap(ev){
    for(let i=0;i<8;i++){const a=Math.random()*6.283,v=30+Math.random()*45;
      S.fx.push({type:'part',x:cx(c),y:cy(rw),vx:Math.cos(a)*v,vy:Math.sin(a)*v-30,
        c:T[k].c,t:.4,d:.4,r:1.5+Math.random()*1.8});}
-   S.hoverCell=null;S.built++;S.maxTowers=Math.max(S.maxTowers||0,pocetStanovisek()+1);S.shop[S.placing]=null;S.placing=null;recalcBuffs();snd('place');vib(12);
+   S.hoverCell=null;S.built++;S.maxTowers=Math.max(S.maxTowers||0,pocetStanovisek());S.shop[S.placing]=null;S.placing=null;recalcBuffs();snd('place');vib(12);
    if(SAVE.tut===1)SAVE.tut=2;
    ui();return;
  }
@@ -18783,7 +18822,9 @@ function openLevel(i){
  else bf.classList.add('hide');
  const gm=(SAVE.goals&&SAVE.goals[i])||{};
  const gl=$('lvGoals');gl.innerHTML=mapGoals(i).map(g=>{
-   const def2=GOALS.find(x=>x.id===g), done=!!gm[g];
+   // Tri hvezdy znamenaji, ze vsechny tri cile uz jednou padly naraz. Kdyz se
+   // cil uzemi zmenil, nema hrac videt "tri hvezdy, a pritom cil nesplneny".
+   const def2=GOALS.find(x=>x.id===g), done=!!gm[g]||(SAVE.stars[i]||0)>=3;
    return '<div class="lvG'+(done?' ok':'')+'"><i>'+(done?'✓':'★')+'</i><div><b>'+def2.n+
      '</b><s>'+def2.d+'</s></div></div>';
  }).join('');
