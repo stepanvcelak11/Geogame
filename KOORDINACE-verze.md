@@ -6,9 +6,40 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VERZE 94 (6. 9. večer, session „vizuál") — VZHLED DESKY A OKEN
+## AKTUÁLNÍ STAV: VERZE 96 (6. 9., session „připomínky") — SEZNAM PŘIPOMÍNEK HRÁČE
 
-**Číslo 94 je zabrané, další si berte 95.** Větev **`vizual-v94`**, vlastní
+**Číslo 96 je zabrané, další si berte 97.** Větev **`pripominky-v96`**, vlastní
+git worktree `Desktop\geogame-pripominky-v96`.
+Na main to ZATÍM NEJDE — vydání si drží uživatel.
+
+### Čeho se to týká
+
+Prakticky celého `index.html`: obchod (mezníky, denní nabídka, vzhledy s tvarem),
+vybavení (mřížkový výběr, zdroj přístrojů, hrdinové), terén (mapa nahoru,
+krajina podle území, profil do rohu, ozubené kolo), laborka (6 → 11 vylepšení),
+kariéra (cesty obráceně, sezónní cesta v okně) a bitva (rychlá lišta, panel
+jedné výšky, Karty a ? pryč, síť a služby).
+
+**Herní čísla, na která JSEM sáhl** — kdo dělá balanc, ať to ví:
+`NET` (položka `cap` zrušena, přibyly `rate` a `cheap`), `META` (6 → 11 položek,
+u původních poloviční krok a dvojnásobek úrovní se STEJNÝM stropem),
+`capMax()` (přestal číst `S.net.cap`), `priceOf`, `dmgOf`, `rngOf`, `rateOf`,
+`critOf`, nouzová oprava 8 → 4 %, `T` (tři přístroje a dva hrdinové navíc),
+`ABIL` (tři metody navíc), `AREN` (tři odměny přehozené na metody),
+`MAPS[0].unlock`. **`waveScale` ani `waveComp` NE.**
+
+⚠ **Testovací režim je nově ZAPNUTÝ pro novou hru** (na výslovné přání hráče,
+aby si mohl projít i Příslušenství). Vypíná se v Nastavení — a ten přepínač
+až doteď vůbec nefungoval, zapisoval do `SAVE.opts.testAll`, zatímco
+`hasType`/`hasAbil`/`accOpen` čtou `SAVE.testAll`.
+
+Změřeno robotem, 3 kola × 12 území: **10/12 výher u v95 i u v96**, etap bez
+ztráty 87,3 % → 90,5 % (s vypnutým testovacím režimem 89,3 %). Obtížnost se
+tedy prakticky nehnula.
+
+---
+
+## Předchozí: VERZE 94 (6. 9. večer, session „vizuál") — VZHLED DESKY A OKEN Větev **`vizual-v94`**, vlastní
 git worktree `C:\Users\stepa\Desktop\geogame-vizual-v93` (jméno složky je
 starší než přečíslování a nic neznamená).
 

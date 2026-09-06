@@ -1,4 +1,4 @@
-# GeoGame — verze 95
+# GeoGame — verze 96
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=95;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=96;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v95-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v96-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -54,6 +54,163 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 96
+
+Celá verze vznikla z jednoho dlouhého seznamu připomínek hráče — od obchodu
+přes vybavení a terén až po samotnou bitvu.
+
+### Okna jsou celá obrazovka, ne obdélník uprostřed
+
+Mapa („Celá trasa“), trofejní cesta, sezónní cesta i výběr režimu byly
+obdélníky s rámečkem, kolem kterých prosvítal rozostřený podklad. Teď jdou od
+okraje k okraji a **roluje jejich vnitřek**, ne překryv — tah prstem tedy už
+nemůže skončit na podkladu a okno zavřít.
+
+### Mapa světa se leze nahoru a každé území má svou krajinu
+
+Postup vedl shora dolů; teď **začínáš dole a propracováváš se nahoru**. Stejně
+se obrátila i trofejní a sezónní cesta.
+
+Mapa byla dvanáctkrát tentýž zelený pruh. Každé území má vlastní pás: přehrada
+vodu s hrází, lom terasy, město bloky, letiště dráhu s prahovými značkami,
+železnice násyp s kolejemi, hory zasněžené štíty. Kreslí se deterministicky,
+takže mapa vypadá pokaždé stejně.
+
+### Profil vlevo nahoře, nastavení vpravo nahoře
+
+„Geodet / figurant / hodnost“ leželo dole na stránce Terén, kde to nikdo
+nehledal. Jméno v horní liště se změnilo na **odznak, který otevře celý
+profil** (hodnost, oblast, výzkum, poháry, mezníky, území, hvězdy, odehrané
+etapy). Vpravo v liště přibylo **ozubené kolo** — nastavení už není schované
+na konci Kariéry.
+
+⚠ Přitom se ukázalo, že **přepínač „Testovací režim“ nikdy nefungoval**:
+všechny přepínače v Nastavení zapisují do `SAVE.opts[id]`, jenže `hasType`,
+`hasAbil` i `accOpen` čtou `SAVE.testAll` (bez `opts`). Klepnutí tedy jen
+přehodilo hodnotu, kterou nikdo nečetl — a k Příslušenství se hráč nedostal,
+i když režim „zapnul“.
+
+### Testovací režim je od začátku zapnutý
+
+Nová hra má **odemčené všechny přístroje, hrdiny, metody i příslušenství**
+a jednorázovou zásobu 30 000 výzkumu, 1 200 mezníků a 40 karet na každý
+přístroj. **Úrovně zůstávají na nule**, aby šlo vylepšování vyzkoušet od
+začátku. Vypíná se v Nastavení.
+
+### Výběr přístrojů do sestavy je mřížka
+
+Byl to rolující sloupec, ve kterém se na obrazovku vešly tři položky z dvaceti
+a po každé volbě se okno zavřelo — postavit sestavu pěti kusů tedy znamenalo
+pětkrát otevřít a pětkrát prorolovat totéž. Teď je to **mřížka jako Sbírka**:
+klepnutím se přístroj přidá nebo vyjme a okno zůstává otevřené. Podržením se
+otevře, co přístroj dělá. Do sestavy jde přidat i přímo z karty ve Sbírce.
+
+### U každého přístroje je vidět, odkud se bere
+
+Místo „později“ stojí u zamčeného přístroje konkrétní cesta: *máš od začátku*
+/ *oblast „Katastrální úřad“ · 60 pohárů* / *dohraj „Rašeliniště“, nebo
+z bedny (20 %)*. **Bedna teď opravdu umí odemknout nový přístroj** — šance se
+řídí vzácností (běžný 34 %, vzácný 20 %, epický 10 %, legendární 4 %) a násobí
+ji třída bedny.
+
+### Hrdinové mají vlastní vzácnost
+
+Nebyli „epický“ ani „vzácný“ přístroj — mají vzácnost **Hrdina**. Okno hrdiny
+navíc přestalo lhát, že na další úroveň potřebuje karty; hrdina se nesbírá,
+roste za rozpočet přímo v terénu a okno teď píše ceny řad.
+
+Ukázka hrdiny ve vitríně **nekreslila stanovisko vůbec**, takže z Pilota roje,
+který ve hře zabírá čtyři pole, zbyl jen létající kříž. Teď se kreslí deska
+2×2 i letící jednotka týmiž tvary jako na hrací desce.
+
+### Nový obsah
+
+**Tři přístroje:** Laserová olovnice (nejrychlejší a nejlevnější ve hře, zato
+dohlédne sotva o dvě pole), Digitální planimetr (přisypává do rozpočtu a
+zabírá jediné pole) a Zenitový teleskop (v pulzech zasáhne všechno na mapě —
+slabší než InSAR, zato mnohem dřív).
+
+**Dva hrdinové:** Mobilní mapovací vůz (objíždí trasu a skenuje za jízdy, od
+700 pohárů) a Stožárová totální stanice (míří na nejsilnější cíl a ukusuje mu
+část celkové odolnosti, od 1 900 pohárů).
+
+**Tři měřické metody:** Orientace na body (+45 % dosahu na 9 s), Zpětné
+protínání (velmi tvrdý zásah šesti vlivům nejblíž nulovému bodu) a Tachymetrie
+(dvojnásobná odměna za zničený vliv na 10 s).
+
+### Vzhledy mění tvar, ne jen barvu
+
+Byly to jen jinak obarvené tytéž siluety. Rodina vzhledu teď nese i **tvar
+stroje**: historické provedení má rozkročený dřevěný stativ a ozdobný
+prstenec, moderní hranatou skříň s displejem a rovnou nohu, terénní ochranný
+rám s popruhem. Vlastní silueta přístroje zůstává, aby se na desce dál poznalo,
+co kde stojí. Každý přístroj má dosažitelný historický i moderní tvar.
+
+### V obchodě je co kupovat
+
+Za mezníky se dal koupit jen výzkum, a to jednou denně — záložka působila
+prázdně. Teď jsou tam **čtyři položky** (200 výzkumu, 10 karet, Přístrojový
+kufr, úroveň měřické metody), každá s vlastním denním stropem. V **denní
+nabídce** navíc přibyla měřická metoda — buď nová, nebo úroveň k té, kterou
+už máš.
+
+### Laboratoř: 6 → 11 druhů vylepšení
+
+Přibyly Dalekohledy (dosah), Servisní prohlídky (kadence), Měření ve dvou
+polohách (dvojnásobná rána), Údržba značek (přesnost po etapě) a Styk
+s katastrem (mezníky za dokončené území). U původních položek je **dvojnásobek
+úrovní s polovičním krokem** — strop účinku zůstává stejný, jen se cesta k němu
+dělí na drobnější kroky.
+
+### Bitva
+
+- **Rychlá lišta u vybraného stanoviska** se pod 400 px lámala do dvou řad,
+  protože v ní byl název přístroje — a ukrajovala tím z desky přes sto pixelů
+  („ucukne mi celá mapa dozadu“). Název šel pryč (je na desce i v záhlaví
+  panelu), zůstal čtvercový znak a čtyři tlačítka **na jedné řadě** i na 320 px.
+- **Panel pod třemi čárkami má jednu výšku.** Dřív každá záložka měřitelně
+  poskočila (Síť 470 px, Služby 250 px).
+- Záložky **Karty** a **?** jsou pryč. Karty se přesunuly do záložky **Etapa**,
+  kde patří („co na mě jde“ a „co proti tomu mám“ je jedna otázka), nápověda
+  do **Nastavení → Jak se hraje**. Náhled příští etapy nad deskou se dá klepnout.
+- Hlášky „zatím není s čím sloučit“ a „nejvyšší řada, dál už jen kalibrace“
+  se ukazovaly po každém otevření panelu. Rada ke slučování zůstává jen během
+  tutoriálu.
+- Hlavička (etapa / přesnost / rozpočet), náhled příští etapy i tlačítka
+  v panelu **zhubly**.
+- **Nouzová oprava 4 % místo 8 %.** Osm procent byla polovina toho, co sebrala
+  celá propuštěná vlna v raných etapách — opravou se dal každý průnik hned
+  zaplatit.
+- **Síť:** „Rozšíření sítě“ pryč (kapacita už sama roste za slučování, hráč za
+  ni platil podruhé), místo něj **Kadence měření** a **Rámcová smlouva**.
+- **Služby:** „Posílit četu“ pryč, místo něj tři jednorázové úkony —
+  Zrychlit měření, Dokalibrovat síť, Objednat nové vybavení.
+
+### Bedny
+
+Žlutý proužek nad oknem **přečníval přes zaoblený lem**: u čtyři pixely
+vysokého prvku CSS ořízne svislý poloměr na 4 px, roh se protáhne do elipsy
+26×4 a konce vyčnívají. Teď je z něj středový jazyk, který do rohu vůbec
+nesahá. Karty z bedny navíc **přilétají zespoda s nakloněním a přejezdem
+světla** — dřív měly animaci jen epické a legendární.
+
+### Co je změřené
+
+- **Robot, 3 kola × 12 území (`mereni/balanc.py`)**: kapacita čety klesla
+  z 15,8 na 11,8, ale postavených stanovisek přibylo (8,2 → 8,5). Zrušené
+  „Rozšíření sítě“ tedy opravdu **nikdy nic neomezovalo** — přesně jak to
+  hráč odhadl.
+- **Rozměry změřené prohlížečkou na 320 / 390 / 430 px** (`scratchpad/overit.py`):
+  sestava už nepřesahuje rámeček, panel v bitvě nemění výšku, rychlá lišta je
+  na jedné řadě. Napříč 230 etapami **žádná chyba v konzoli**.
+
+### Co zůstává na příště
+
+Tvar obtížnosti je pořád binární — kolem 90 % etap skončí beze změny jediné
+číslice a zbytek je zhroucení. Podle měření z verze 92 s tím nehne globální
+násobek odolnosti, ale **skladba vlny** (`waveComp`). Na to tahle verze
+nesahala.
 
 ## Co je nového ve verzi 95
 

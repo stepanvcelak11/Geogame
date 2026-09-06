@@ -3991,6 +3991,10 @@ html[data-theme="hc"] .rbar{background:#fff;border:2px solid #000;box-shadow:non
 html[data-theme="hc"] .rbar i{background:#06131c}
 html[data-theme="hc"] .rbar span{color:#06131c;text-shadow:none}
 html[data-theme="hc"] .rlock{background:#fff;color:#06131c}
+/* Prepinac "do sestavy" na karte ve Sbirce. */
+.rDeckBtn{width:100%;margin-top:6px;min-height:34px;padding:7px 4px;
+  font-size:calc(10.5px*var(--fs,1));letter-spacing:.02em}
+.rDeckBtn.on{--plA:var(--laserL);--plB:var(--laser);--plC:var(--laserD);color:#032b25}
 html[data-theme="hc"] #collAll,html[data-theme="hc"] .rcard button,
 html[data-theme="hc"] .rcard.ready button,html[data-theme="hc"] #accBody .up button{
   --plA:#fff;--plB:#fff;--plC:transparent;background:#fff;color:#06131c;
@@ -5516,8 +5520,10 @@ html[data-theme="hc"] #quick .qHead,html[data-theme="hc"] #quick button{
 @media (max-height:730px){ #dockBody{height:min(44vh,300px)} }
 
 /* Zalozka Etapa: nadpisy a karty mereni */
-.epNadpis{font-size:calc(10.5px*var(--fs,1));text-transform:uppercase;letter-spacing:.08em;
+.epNadpis{width:100%;flex:0 0 100%;font-size:calc(10.5px*var(--fs,1));
+  text-transform:uppercase;letter-spacing:.08em;
   color:var(--t3);font-weight:800;margin:var(--m3) 0 var(--m1)}
+.epPrazdno,.epKarta{width:100%;flex:0 0 100%}
 .epNadpis:first-child{margin-top:0}
 .epPrazdno{font-size:calc(11.5px*var(--fs,1));color:var(--t3);line-height:1.5}
 .epKarta{background:var(--s2);border:var(--w2) solid var(--stroke);border-radius:var(--r1);
@@ -7619,7 +7625,7 @@ html[data-theme="hc"] #playBar .modeChip .mcK{color:#06131c}
   box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--ak) 45%,transparent),
              0 0 22px -8px var(--ak)}
 #pickTower .rezRow.on .pn2{color:var(--ak)}
-.rezIc{flex:none;width:44px;height:44px;border-radius:var(--r2);display:grid;place-items:center;
+.rezIc{flex:none;align-self:flex-start;margin-top:2px;width:44px;height:44px;border-radius:var(--r2);display:grid;place-items:center;
   background:color-mix(in srgb,var(--ak) 17%,transparent);
   border:var(--w2) solid color-mix(in srgb,var(--ak) 42%,transparent)}
 .rezIc svg{width:25px;height:25px;fill:none;stroke:var(--ak);stroke-width:1.9;
@@ -10913,9 +10919,9 @@ const NET=[
  // "Rozsireni site" (+3 stanoviska) slo pryc: kapacita uz sama roste za
  // slucovani a hrac za ni platil podruhe. Na jeho misto prisly dve veci,
  // ktere v siti chybely - RYCHLOST mereni a levnejsi sklad.
- {id:'rate',n:'Kadence měření',d:'+6 % rychlosti měření',max:5,cost:n=>30+n*24,c:'laser',
+ {id:'rate',n:'Kadence měření',d:'+4 % rychlosti měření',max:4,cost:n=>38+n*30,c:'laser',
   ic:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5"/><path d="M12 13V8.6M9.6 2.6h4.8"/></svg>'},
- {id:'cheap',n:'Rámcová smlouva',d:'přístroje o 6 % levnější',max:4,cost:n=>36+n*30,c:'violet',
+ {id:'cheap',n:'Rámcová smlouva',d:'přístroje o 4 % levnější',max:3,cost:n=>44+n*36,c:'violet',
   ic:'<svg viewBox="0 0 24 24"><path d="M4 7.5h16v11H4z"/><path d="M8 7.5V5.5h8v2M4 12h16"/></svg>'}
 ];
 
@@ -12143,6 +12149,16 @@ function vychoziMeta(){
 
 /* ==================== ULOŽENÍ ==================== */
 const BASE_TYPES=['theo','nivel','edm','tape'], BASE_ABILS=['adjust','repair'];
+// Zasoba pro testovani. Pripise se JEDNOU (SAVE.testStash), takze se
+// prepinanim rezimu neda tocit donekonecna.
+function testZasoba(){
+ if(!SAVE.testAll||SAVE.testStash)return;
+ SAVE.testStash=1;
+ SAVE.res=(SAVE.res||0)+30000;
+ SAVE.mez=(SAVE.mez||0)+1200;
+ ORD.forEach(function(k){ SAVE.cards[k]=(SAVE.cards[k]||0)+40; });
+ try{save();}catch(e){}
+}
 function hasType(k){ return SAVE.testAll||SAVE.types.indexOf(k)>=0; }
 // vlastníš = odemčeno a máš aspoň jednu kartu (nebo úroveň)
 function ownsType(k){ return !jeHrdina(k)&&hasType(k)&&(((SAVE.cards[k]||0)>0)||((SAVE.lvl[k]||0)>0)); }
@@ -12152,7 +12168,7 @@ function accOpen(){ return SAVE.testAll||SAVE.arena>=3; }
 let SAVE={v:5,res:0,unlocked:1,best:new Array(12).fill(0),stars:new Array(12).fill(0),endless:new Array(12).fill(0),won:new Array(12).fill(0),
  tut:0,run:null,opts:{snd:1,vib:1,spd:1,mus:1,auto:0,board:1,vol:2,fs:0,theme:'day'},
  xp:0,step:0,types:BASE_TYPES.slice(),abils:BASE_ABILS.slice(),
- killed:{},presets:[[],[]],pslot:0,perk:{},ach:{},stats:{runs:0,waves:0,kills:0,merges:0,wins:0,best:0},cards:{tape:4,theo:4,nivel:3,edm:3},lvl:{},acc:{},spec:{},slots:[],deck:['tape','theo','nivel','edm'],abilDeck:['adjust','repair'],abilLvl:{},tr:0,arena:0,testAll:0,
+ killed:{},presets:[[],[]],pslot:0,perk:{},ach:{},stats:{runs:0,waves:0,kills:0,merges:0,wins:0,best:0},cards:{tape:4,theo:4,nivel:3,edm:3},lvl:{},acc:{},spec:{},slots:[],deck:['tape','theo','nivel','edm'],abilDeck:['adjust','repair'],abilLvl:{},tr:0,arena:0,testAll:1,testStash:0,
  mez:0,mezLog:[],mezDay:{d:'',res:0},skin:{},skinOn:'base',skinT:{},skinOwn:{},hrdOn:'photo',
  meta:vychoziMeta()};
 let __seqWarn=0;
@@ -12856,7 +12872,7 @@ function capMax(){if(chMod('small'))return 7;
 function priceOf(k){
  // `M('cheap')` je karta z mereni, `S.net.cheap` nova polozka site
  // (Ramcova smlouva), `meta.disc` trvale vylepseni z laborky.
- const f=Math.max(.42,1-.15*M('cheap')-.06*((S&&S.net&&S.net.cheap)||0)-.03*(SAVE.meta.disc||0));
+ const f=Math.max(.42,1-.15*M('cheap')-.04*((S&&S.net&&S.net.cheap)||0)-.03*(SAVE.meta.disc||0));
  return Math.max(4,Math.round(T[k].cost*1.25*f));
 }
 function pathOf(pi){ return PATHS[pi||0]||PATHS[0]; }
@@ -12932,7 +12948,7 @@ function globalRate(){
  S.towers.forEach(g=>{ if(g.k==='basecal'&&hasPerk(g,'ballrate'))m=Math.max(m,1.15); });
  // Kadence mereni ze site (trvala do konce uzemi) a docasne zrychleni
  // koupene ve sluzbach (plati dve etapy).
- m*=(1+.06*((S.net&&S.net.rate)||0))*(1+.02*(SAVE.meta.rate||0));
+ m*=(1+.04*((S.net&&S.net.rate)||0))*(1+.02*(SAVE.meta.rate||0));
  if(S.spdBoost&&S.wave<=S.spdBoost.do)m*=(1+S.spdBoost.v);
  return m;
 }
@@ -17517,7 +17533,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=95;
+const VERZE=96;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -18972,7 +18988,7 @@ function abilOdkud(id){
 function openAbilPick(idx){
  const L=$('ptList');L.innerHTML='';
  const mam=ownedAbils().length;
- ptNadpis('Vyber přístroj');
+ ptNadpis('Vyber měřickou metodu');
  $('ptLead').textContent='Do měření si bereš dvě metody. Znáš '+mam+' ze '+ABIL.length+
    ((mam<ABIL.length)?' — zbylé se odemykají postupem v Kariéře.':' — máš všechny.');
  // Nejdriv to, co hrac umi; zamcene pod tim, at je videt, ze existuji.
@@ -19168,17 +19184,32 @@ function startDemo(k){
     if(D.cd<=0){D.cd=.5;
       near().forEach(f=>{ if(Math.abs(f.x-dr.x)<24){hitFoe(f,.34);} });
       D.fx.push({type:'ring',x:dr.x,y:h*.34,r:24,c:col,t:.25,d:.25});}
-    g.save();g.translate(dr.x,kind==='drone'?h*.12:h*.56);
-    g.strokeStyle=col;g.lineWidth=2;
-    if(kind==='drone'){g.beginPath();g.moveTo(-7,-5);g.lineTo(7,5);g.moveTo(7,-5);g.lineTo(-7,5);g.stroke();
-      g.fillStyle=col;[[-7,-5],[7,-5],[-7,5],[7,5]].forEach(o=>{g.beginPath();
-        g.ellipse(o[0],o[1],5,1.6,D.t*20,0,7);g.fill();});}
-    else{g.beginPath();g.rect(-6,-7,12,12);g.stroke();
-      g.beginPath();g.arc(0,-11,3.4,0,7);g.stroke();}
+    const dy=(kind==='drone')?h*.12:h*.56;
+    // lanko ke stanovisku a aura dosahu - stejne jako na desce
+    g.strokeStyle=col;g.globalAlpha=.25;g.setLineDash([2,4]);g.lineWidth=1;
+    g.beginPath();g.moveTo(tx,ty);g.lineTo(dr.x,dy);g.stroke();
+    g.setLineDash([]);
+    g.globalAlpha=.10;g.fillStyle=col;
+    g.beginPath();g.arc(dr.x,dy,22,0,7);g.fill();
+    g.globalAlpha=1;
+    g.save();g.translate(dr.x,dy);
+    const sD=9;
+    g.strokeStyle=col;g.lineWidth=1.8;
+    if(kind==='drone'){
+      g.beginPath();g.moveTo(-sD,-sD);g.lineTo(sD,sD);
+      g.moveTo(sD,-sD);g.lineTo(-sD,sD);g.stroke();
+      g.fillStyle=col;
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(o=>{g.beginPath();
+        g.ellipse(o[0]*sD,o[1]*sD,sD*.55,sD*.16,D.t*14*o[0]*o[1],0,7);g.fill();});
+    } else {
+      g.beginPath();g.rect(-sD*.8,-sD*.9,sD*1.6,sD*1.5);g.stroke();
+      g.beginPath();g.arc(0,-sD*1.3,sD*.42,0,7);g.stroke();
+      g.beginPath();g.arc(-sD*.6,sD*.8,sD*.32,0,7);g.stroke();
+      g.beginPath();g.arc(sD*.6,sD*.8,sD*.32,0,7);g.stroke();
+    }
+    g.fillStyle=P().tile;g.strokeStyle=col;g.lineWidth=1.8;
+    g.beginPath();g.arc(0,0,sD*.62,0,7);g.fill();g.stroke();
     g.restore();
-    g.strokeStyle=col;g.globalAlpha=.25;g.setLineDash([3,4]);
-    g.beginPath();g.moveTo(tx,ty);g.lineTo(dr.x,kind==='drone'?h*.12:h*.56);g.stroke();
-    g.setLineDash([]);g.globalAlpha=1;
   } else if(kind==='sweep'){
     D.ang+=2.0*dt;D.cd-=dt;
     const R=52;
@@ -19265,15 +19296,25 @@ function startDemo(k){
       } else D.cd=.1;
     }
   }
-  // přístroj
-  if(kind!=='drone'&&kind!=='walker'){
+  // přístroj. Hrdina stoji na ctvercove desce 2x2, ostatni na jednom poli -
+  // ukazka to musi ukazat, jinak nesedi s tim, co hrac vidi na desce.
+  {
+    const velky=!!(T[k].sz&&T[k].sz>1);
+    const pol=velky?25:17;
     g.save();
     g.fillStyle=P().plinth;g.strokeStyle=P().plinthEdge;g.lineWidth=1.4;
     g.beginPath();
-    if(g.roundRect)g.roundRect(tx-17,ty-17,34,34,9);else g.rect(tx-17,ty-17,34,34);
+    if(g.roundRect)g.roundRect(tx-pol,ty-pol,pol*2,pol*2,velky?12:9);
+    else g.rect(tx-pol,ty-pol,pol*2,pol*2);
     g.fill();g.stroke();
+    if(velky){
+      // naznak ctyr poli, aby bylo videt, ze hrdina zabira ctyri mista
+      g.globalAlpha=.35;g.beginPath();
+      g.moveTo(tx,ty-pol);g.lineTo(tx,ty+pol);
+      g.moveTo(tx-pol,ty);g.lineTo(tx+pol,ty);g.stroke();g.globalAlpha=1;
+    }
     if(k==='theo'&&D.face){g.translate(tx,ty);g.scale(-1,1);g.translate(-tx,-ty);}
-    glyph(g,k,tx,ty,30,DEMO.lv,col);
+    glyph(g,k,tx,ty,velky?40:30,DEMO.lv,col);
     g.restore();
   }
   D.raf=requestAnimationFrame(step);
@@ -19438,11 +19479,20 @@ function openTinfo(k){
    }
  }
  const up=$('tiUp');up.innerHTML='';
+ if(jeHrdina(k)){
+   const ceny=(T[k].up||[]).map(function(c,i){return (i+1)+'. řada '+
+     (i===0?'zdarma':Math.round(c*(1-.018*(SAVE.meta.disc||0)))); });
+   up.innerHTML='<div style="margin-top:12px;font-size:11.5px;color:var(--dim)">'+
+     'Hrdina se nesbírá z karet — postavíš ho zdarma na začátku měření a '+
+     'roste za rozpočet přímo v terénu: <b style="color:var(--paper)">'+
+     ceny.join(' · ')+'</b>.</div>';
+ } else {
  const cost=cardCost(k), have=SAVE.cards[k]||0;
  if(cost){
    up.innerHTML='<div style="margin-top:12px;font-size:11.5px;color:var(--dim)">'+
      'Na úroveň '+(lv+1)+' potřebuješ <b style="color:var(--paper)">'+have+' / '+cost.cards+
      ' karet</b> a '+cost.res+' výzkumu.</div>';
+ }
  }
  const tiZnovu=$('tinfo').classList.contains('on')&&window.__tiK===k;
  window.__tiK=k;
@@ -19614,9 +19664,22 @@ KRAJ.prehrada.b='#0e3346';
 // Deterministicky sum: stejne cislo pokazde, at mapa nemrka.
 function kSum(i,j){ return Math.abs(Math.sin(i*127.13+j*311.7)*43758.5453)%1; }
 
+// Motiv mapy: den nechava barvy, noc je stmivá, kontrastni odbarvuje.
+function krajMotiv(){
+ const t=(SAVE&&SAVE.opts&&SAVE.opts.theme)||'day';
+ if(t==='night')return {mix:'#060e1c',sila:.46,lem:'rgba(255,255,255,.07)'};
+ if(t==='hc')   return {mix:'#f2f2f2',sila:.62,lem:'#000'};
+ return {mix:null,sila:0,lem:'rgba(255,255,255,.10)'};
+}
+function krajBarva(c){
+ const m=krajMotiv();
+ return m.mix?skMix(c,m.mix,m.sila):c;
+}
 // Jeden pas krajiny. Kresli se do orezu, takze nic nepretece k sousedovi.
 function kresliKraj(g,w,y0,y1,typ,semeno){
- const d=KRAJ[typ]||KRAJ.pole, vy=y1-y0;
+ const d0=KRAJ[typ]||KRAJ.pole;
+ const d={n:d0.n,a:krajBarva(d0.a),b:krajBarva(d0.b),neb:krajBarva(d0.neb)};
+ const vy=y1-y0;
  g.save();
  g.beginPath();g.rect(0,y0,w,vy);g.clip();
  // zaklad pasu
@@ -19762,7 +19825,7 @@ function kresliKraj(g,w,y0,y1,typ,semeno){
  g.fillStyle=st;g.fillRect(0,y1-vy*.34,w,vy*.34);
  g.restore();
  // predel mezi uzemimi
- g.strokeStyle='rgba(255,255,255,.10)';g.lineWidth=1.5;
+ g.strokeStyle=krajMotiv().lem;g.lineWidth=1.5;
  g.beginPath();g.moveTo(0,y1);g.lineTo(w,y1);g.stroke();
 }
 
@@ -20225,6 +20288,9 @@ function applyTheme(){
  const m=$('tcolor'); if(m)m.setAttribute('content',
    SAVE.opts.theme==='night'?'#050b16':SAVE.opts.theme==='hc'?'#ffffff':'#0c1030');
  if(S)buildBG();
+ // Mapa sveta ma vlastni barvy pasu, takze se po zmene motivu musi
+ // prekreslit - jinak by v noci zustala denni.
+ try{ if(typeof drawWorld==='function')drawWorld(); }catch(e){}
  resize();
 }
 function rwText(rw){
@@ -20980,6 +21046,27 @@ function renderColl(){
    }
    card.appendChild(btn);
    card.onclick=()=>{snd('ui');openTinfo(k);};
+   // Prepinac "do sestavy" primo na karte ve Sbirce - jinak se musel hrac
+   // vracet na zalozku Sestava a otevirat vyber.
+   if(owned){
+     const sb=document.createElement('button');
+     sb.className='rDeckBtn'+(inDeck?' on':'');
+     sb.type='button';
+     sb.textContent=inDeck?'V SESTAVĚ ✓':'DO SESTAVY';
+     sb.onclick=e=>{
+       e.stopPropagation();
+       const i=SAVE.deck.indexOf(k);
+       if(i>=0){SAVE.deck.splice(i,1);snd('ui');}
+       else{
+         if(SAVE.deck.filter(Boolean).length>=DECKMAX)
+           return toast2('Sestava je plná. Nejdřív z ní něco vyjmi.');
+         SAVE.deck.push(k);snd('merge');
+       }
+       SAVE.deck=SAVE.deck.filter(Boolean).slice(0,DECKMAX);
+       save();renderColl();renderDeck();
+     };
+     card.appendChild(sb);
+   }
    grid.appendChild(card);
  });
  b.appendChild(grid);
@@ -21072,7 +21159,8 @@ function renderOpts(){
   {id:'backup',n:'Záloha postupu',d:'Zkopíruj kód a vlož ho v nové verzi hry',act:'backup'},
   {id:'restore',n:'Obnovit ze zálohy',d:'Vlož kód z jiné verze nebo zařízení',act:'restore'},
   // Vyvojarsky prepinac patri na konec, ne mezi prvni veci, ktere hrac vidi.
-  {id:'testAll',n:'Testovací režim',d:'Odemkne všech 20 přístrojů, 3 hrdiny a 7 metod bez sbírání karet'}
+  {id:'testAll',n:'Testovací režim',d:'Odemkne všechny přístroje, hrdiny, metody i příslušenství. '+
+   'Úrovně zůstávají na nule, aby šlo vylepšování vyzkoušet od začátku.'}
  ];
  // Zachranne polozky se ukazuji jen tehdy, kdyz je co zachranovat.
  if(typeof CHYBY!=='undefined'&&CHYBY.length)
@@ -21401,10 +21489,19 @@ function renderOpts(){
        if(it.id==='board'){applyTheme();if(S)resize();}
        renderOpts();};
    }else{
-     btn.textContent=SAVE.opts[it.id]?'ZAPNUTO':'VYPNUTO';
-     btn.className=SAVE.opts[it.id]?'yes':'';
-     btn.onclick=()=>{SAVE.opts[it.id]=SAVE.opts[it.id]?0:1;save();snd('ui');
+     // Testovaci rezim nesedi v SAVE.opts, ale primo v SAVE - cte ho
+     // hasType/hasAbil/accOpen. Bez teto vyjimky se prepinal klic,
+     // ktery nikdo necetl.
+     const vObecnem=(it.id!=='testAll');
+     const hodnota=vObecnem?SAVE.opts[it.id]:SAVE.testAll;
+     btn.textContent=hodnota?'ZAPNUTO':'VYPNUTO';
+     btn.className=hodnota?'yes':'';
+     btn.onclick=()=>{
+       if(vObecnem)SAVE.opts[it.id]=SAVE.opts[it.id]?0:1;
+       else {SAVE.testAll=SAVE.testAll?0:1;testZasoba();}
+       save();snd('ui');
        if(it.id==='mus')musicSync();
+       if(!vObecnem){renderTitle();}
        renderOpts();};
    }
    row.append(t,btn);b.appendChild(row);
@@ -22185,6 +22282,9 @@ document.querySelectorAll('.verTxt,#verOpt').forEach(e=>{e.textContent=VERZE;});
 (async()=>{ try{ await load();
  // Dokud si to hrac nenastavi sam, ridi se hra systemovym omezenim pohybu.
  if(SAVE.opts.lowmo===undefined){ SAVE.opts.lowmo=prefersLowMotion()?1:0; save(); }
+ // V testovacim rezimu se JEDNOU pripise zasoba karet a vyzkumu, aby slo
+ // vylepsovani opravdu vyzkouset (odemcene je uz vse).
+ testZasoba();
  applyTheme(); initPager(); goPage(2,false); renderTitle();
  setTimeout(()=>{
    if(!SAVE.intro){showIntro(0);return;}
