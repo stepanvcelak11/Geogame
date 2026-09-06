@@ -8,7 +8,8 @@ dá změřit, co udělá změna balancu. Vzniklo 4. 9. 2026.
 | soubor | k čemu |
 |---|---|
 | `bot.js` | robot, který hru odehraje bez člověka |
-| `vlna.py` | měřidlo „projde vlna“ — síla přístrojů a síla vlivů |
+| `vlna.py` | měřidlo „projde vlna“ — síla přístrojů, přínos schopností vlivů |
+| `sestava.py` | je soustředěná vlna obtížnost, nebo úkol pro výběr sestavy? |
 | `ab.py` | pustí ho na jeden nebo víc souborů hry a vypíše srovnání |
 | `male-pismo.md` | naměřený seznam všech míst s písmem pod 12 px |
 
@@ -88,6 +89,29 @@ Poučení: sílu druhu nejde měřit mimo vlnu, do které patří. Proto `prinos
   121 vypuštěných (Hrubá chyba se rozpadá na šumy) — vlna je přes obranu tak
   moc, že se na ní přínos schopností změřit nedá a všechno vyjde kolem 1,00×.
   Použitelné jsou etapy, ve kterých obrana ještě něco zvládá.
+
+## Soustředěná vlna a výběr sestavy (`sestava.py`)
+
+Když se ve vlně přelije 40 % odolnosti do jediného druhu, je to zvýšení
+obtížnosti, nebo úkol pro výběr sestavy? Skript pustí robota na tutéž
+soustředěnou vlnu dvakrát — jednou se **začáteční sestavou**, jednou se
+sestavou **vybranou proti tomu soustředění**.
+
+Naměřeno (území 7–10, 8 běhů na řádek):
+
+| soustředěno na | začáteční sestava | vybraná sestava |
+|---|---|---|
+| bez soustředění | 8/8 při 84 % | — |
+| Sedání bodu (pancíř) | 8/8 při 98 % | 8/8 při 96 % |
+| Šum měření (roj) | 8/8 při 96 % | 8/8 při 98 % |
+| **Rušička signálu** | **0/8 při 0 %** | **6/8 při 69 %** |
+
+Závěr: **soustředění je úkolem pro výběr sestavy jen u rušičky.** U pancíře
+a u roje nezmění nic — začáteční sestava je zvládne, a soustředění na pomalé
+Sedání bodu vlnu dokonce **usnadní** (98 % proti 84 % bez soustředění).
+U rušičky je to naopak rozdíl mezi nedohratelným územím a slušným během.
+Sedí to s tím, co říká `vlna.py prinos`: umlčování stanovisek je jediná
+schopnost, která s výsledkem vlny hne.
 
 ## Co robot umí a co ne
 
