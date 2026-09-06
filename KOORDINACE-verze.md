@@ -106,6 +106,24 @@ daleko při dosahu 2,2). Se správným umístěním přidá hranol +12 %, GNSS +
 termokamera +24 %, etalon +24 % — proti +13,5 % za deváté pásmo. **Roster je
 v pořádku; chyba byla v měřidle.**
 
+⚠⚠ **A druhá půlka téže pasti: „škoda na 1 rozpočtu" NEUNESE tvrzení „tenhle
+přístroj je moc silný".** Balancová session jím naměřila, že hrdina (dron) je
+8× nad křivkou — a pak si to sama vyvrátila odehraným během: 12 území × 2 kola,
+jediný rozdíl přítomnost hrdiny, vyšlo **19/24 výher s ním proti 20/24 bez něj**
+(průměrná přesnost 73,0 % proti 78,1 %). Hrdina tedy nepřidává nic, spíš mírně
+škodí — zabírá čtyři stavební místa u trasy a rozpočet na jeho vylepšení nejde
+do stanovisek, což měřidlo nevidí.
+
+Příčina omylu: měřidlo staví cíle **nazmrzlo a hustě za sebou**, aby šlo sečíst
+čisté poškození. To systematicky **nadhodnocuje všechno, co bije po ploše** —
+a dron s pěti stroji, které pulzují každý zvlášť, je z toho nejcitlivější.
+
+**Pravidlo, které z toho plyne:** „škoda na 1 rozpočtu" je dobrá na odhalení
+přístroje, který nedělá NIC (tak se našel mrtvý gravimetr), a na srovnání téhož
+přístroje se sebou samým (tak se našla past v kalibraci — nadhodnocení ploch
+tam působí na obě strany stejně). **Na tvrzení „je moc silný" platí jedině
+odehraný běh.**
+
 ⚠ **Syntaktickou chybu ve sdíleném souboru** (chybějící čárka mezi dvěma
 položkami `QUIZ`) neodhalí `check_js` ani boot přes `file://` — ten hlásí jen
 „Script error." bez čísla řádku. Funguje tohle: vytáhnout velký `<script>` do
