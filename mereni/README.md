@@ -41,15 +41,32 @@ vysokou odolností, že nikdo neumře; poškození se sbírá obalením `hurt()`
 se nic neztratí ani na cíli, který mezitím projde. Dělí se cenou → *škoda na
 1 rozpočtu*.
 
-**`vlivy`** postaví pevnou obranu, postaví proti ní **nesmrtelné cíle jednoho
-druhu, které stojí na místě**, a měří jedinou věc: **kolik poškození obrana za
-daný čas netto odvede**. Tím z měření vypadne práh „došel / nedošel“ i vliv
-rychlosti, a zbude přesně to, co má vyjadřovat násobek síly vlivu — co ten druh
-dělá **navíc k tomu, co váží jeho odolnost**: umlčování stanovisek, krytí okolí,
-léčení, regenerace, pancíř. Rychlost se měří **zvlášť** jako čistý čas na trase.
+**`prinos`** odpovídá na otázku *co ten druh vlivu přidává navíc k tomu, co váží
+jeho odolnost*. Pustí vlnu, jaká na daném území a v dané etapě **opravdu chodí**,
+dvakrát: jednou tak, jak je, a jednou s **vypnutou schopností** jednoho druhu.
+Tytéž kusy, táž odolnost, táž rychlost — liší se jen ta schopnost, takže rozdíl
+je čistě její přínos.
 
-Měří se při **třech i dvaceti kusech**, protože účinek není na počtu lineární —
-tři rušičky nejsou pětina dvaceti.
+### Zrušený režim `vlivy` — čtyři pokusy, čtyři různé odpovědi
+
+Býval tu režim, který pouštěl proti pevné obraně vlnu z **jediného druhu**.
+Je zrušený a tohle je důvod, ať ho nikdo nestaví znovu:
+
+1. **Stejná odolnost všem** — past. V téhle hře je mezi odolností a rychlostí
+   korelace **−0,59**, takže pomalé druhy jsou právě ty odolné (Zákryt má 4,7×
+   odolnost Chyby odečtu). Srovnáním se jim sebere jediná věc, kterou přežívají:
+   Zákryt, Sedání i Drift vyšly 0,00×. A nekazí to jen ty nuly — mění se i doba,
+   po kterou obrana kvůli vlivu nestřílí, což je právě to, co má rušička říkat.
+2. **Skutečná odolnost, stejný rozpočet odolnosti vlny** — lepší, ale saturuje:
+   nahoře skoro všechno propouštělo 80–100 % a čísla se slila.
+3. **Nesmrtelné cíle (odolnost ×400)** — léčení i regenerace se ve hře počítají
+   z **maximální** odolnosti (`o.mhp*.013*dt`), takže nafouknutá odolnost je
+   nafoukne se stejným násobkem, zatímco poškození stanovisek zůstane. Léčitel
+   vyšel **137×** silnější, než ve skutečnosti je.
+4. **Skutečná odolnost + oživování** — oživení na plnou odolnost se započítalo
+   jako léčení a čísla se rozsypala (Překlep 6,27× na jednom kuse).
+
+Poučení: sílu druhu nejde měřit mimo vlnu, do které patří. Proto `prinos`.
 
 ### Na co si u něj dát pozor
 
@@ -64,19 +81,13 @@ tři rušičky nejsou pětina dvaceti.
   postavený „co nejblíž trase“ vypadá slabě, postavený podle osy udělá o 40 %
   víc. Hranol vyšel jako „nedělá nic“, protože stál 2,24 pole daleko při
   dosahu 2,2.
-- **Nesrovnávat vlivům odolnost.** První verze tohohle režimu dala všem druhům
-  tutéž odolnost, „aby se lišily jen chováním“. Je to past: v téhle hře je mezi
-  odolností a rychlostí korelace **−0,59**, takže pomalé druhy jsou právě ty
-  odolné (Zákryt má 4,7× odolnost Chyby odečtu). Srovnáním odolnosti se jim
-  sebere jediná věc, kterou přežívají — Zákryt, Sedání i Drift pak vyšly na
-  0,00× a vypadaly jako neškodné. Nepoužitelná přitom byla celá tabulka, ne jen
-  ty nuly: se srovnanou odolností se mění i to, jak dlouho po vlivu obrana
-  střílí, a to je právě ta veličina, kterou má rušička nebo léčitel vyjadřovat.
 - **Rozdíl dvou různých měření nerozloží hrozbu na „odolnost × chování“.**
   Odčítat složky jde jen tam, kde se násobí; tady je mezi nimi práh dojití,
   a přes práh se rozdíl číst nedá.
-- **Režim `vlivy` je vlna z jediného druhu.** Zákryt tedy kryje jen zákryty a
-  léčitel léčí jen léčitele; v míchané vlně to dopadne jinak.
+- **U `prinos` hlídat saturaci.** Na 12. území ve 24. etapě projde 133 kusů ze
+  121 vypuštěných (Hrubá chyba se rozpadá na šumy) — vlna je přes obranu tak
+  moc, že se na ní přínos schopností změřit nedá a všechno vyjde kolem 1,00×.
+  Použitelné jsou etapy, ve kterých obrana ještě něco zvládá.
 
 ## Co robot umí a co ne
 

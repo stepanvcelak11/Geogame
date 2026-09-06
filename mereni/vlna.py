@@ -6,12 +6,17 @@ na rozdíl od zmrazených cílů tedy umí ocenit dosah i zpomalení.
 
   pristroje  kolik poškození přístroj skutečně stihne udělit, než vlna projde
              (cíle jsou nesmrtelné, sčítá se udělené poškození přes obalený hurt)
-  vlivy      jak silný je který vliv proti PEVNÉ obraně, při stejném tlaku
-             (stejná odolnost za sekundu) — výsledkem je naměřený násobek
+  prinos     co přidává SCHOPNOST vlivu uvnitř skutečné míchané vlny — tatáž
+             vlna, tytéž kusy, jen jednou s vypnutou schopností jednoho druhu
 
 Použití:
-    python vlna_nastroj.py vlivy      [cesta-k-index.html]
-    python vlna_nastroj.py pristroje  [cesta-k-index.html]
+    python vlna.py prinos     [cesta-k-index.html]
+    python vlna.py pristroje  [cesta-k-index.html]
+
+Býval tu i režim `vlivy`, který pouštěl proti pevné obraně vlnu z jediného
+druhu. Je ZRUŠENÝ — čtyři různá provedení dala čtyři různé odpovědi a každé
+měřilo něco jiného než sílu druhu; podrobně v README. Na tuhle otázku
+odpovídá `prinos`.
 """
 import sys, os, statistics
 from playwright.sync_api import sync_playwright
@@ -90,20 +95,63 @@ SETUP = r"""
  //   - léčení a regenerace (léčitel, drift)   → část se vrátí zpět
  //   - pancíř                                 → míň z rány projde
  // Rychlost se měří ZVLÁŠŤ (čistý čas na trase), ne smíchaná dohromady.
- window.__vliv=function(druh,obrana,l,pocet,sekund){
-   __zaklad(0);
-   if(!__postav(obrana,l))return {chyba:'obrana se nevešla'};
+ // --- REZIM PRINOS: co PRIDAVA SCHOPNOST druhu v michane vlne ----------
+ // Pusti se vlna, jaka na danem uzemi a v dane etape opravdu chodi, dvakrat:
+ // jednou tak, jak je, a jednou s VYPNUTOU schopnosti jednoho druhu. Tytez
+ // kusy, tataz odolnost, tataz rychlost - lisi se jen ta schopnost.
+ //
+ // Prvni pokus tenhle rezim delal nahradou druhu za Chybu odectu o teze
+ // odolnosti. Nefungovalo to: 12 Sedani bodu se nahradi 50 Chybami odectu,
+ // takze se meril hlavne POCET TEL, ne schopnost - a vsechny druhy vysly pod
+ // 1,0, protoze mnoho drobnych a rychlych propusti vic nez par tezkych.
+ const SCHOPNOSTI={heal:['heal'],cover:['shield'],jam:['jam'],drift:['regen'],
+                   jump:['jump'],blun:['split']};
+ window.__prinos=function(mapa,etapa,obrana,l,vypnout){
+   __zaklad(mapa);
+   if(!__postav(obrana,l))return {chyba:'obrana se nevesla'};
    recalcBuffs();
-   const puvodniSp=E[druh].sp;
-   E[druh].sp=0;                       // stoji na miste
-   const L=pathOf(0).length-1;
-   for(let i=0;i<pocet;i++) spawnAt(druh,1+(i/pocet)*(L-2),400,false,0);
-   S.enemies.forEach(e=>{e.hp=e.mhp;e.el=null;});
-   const pred=S.enemies.reduce((a,e)=>a+e.mhp,0);
-   let t=0; while(t<sekund){ step(1/60); t+=1/60; }
-   const po=S.enemies.reduce((a,e)=>a+Math.max(0,e.hp),0);
-   E[druh].sp=puvodniSp;
-   return {netto:Math.round(pred-po), zbylo:S.enemies.length};
+   const zalohy=[];
+   if(vypnout&&SCHOPNOSTI[vypnout])
+     SCHOPNOSTI[vypnout].forEach(vl=>{ zalohy.push([vypnout,vl,E[vypnout][vl]]); E[vypnout][vl]=0; });
+   S.wave=etapa;
+   let comp=waveComp(etapa);
+   if(typeof dveTrasy==='function')comp=dveTrasy(comp);
+   const scale=waveScale();
+   const fronta=[]; let off=0;
+   comp.forEach(([k,n,gap])=>{ for(let i=0;i<n;i++)fronta.push({k,t:off+i*(gap||1)}); off+=.6; });
+   fronta.sort((a,b)=>a.t-b.t);
+   let udeleno=0;
+   const puvodniHurt2=window.hurt;
+   window.hurt=function(e,amount,pierce,crit,src){
+     const pred=e.hp; puvodniHurt2(e,amount,pierce,crit,src);
+     udeleno+=Math.max(0,pred-e.hp);
+   };
+   S.leaked=0; S.waveDm=1; S.waveLoss=0;
+   let t=0,vyp=0;
+   while(t<220&&(vyp<fronta.length||S.enemies.length)){
+     while(vyp<fronta.length&&t>=fronta[vyp].t){ spawnAt(fronta[vyp].k,0,scale,false,0); vyp++; }
+     step(1/60); t+=1/60;
+   }
+   window.hurt=puvodniHurt2;
+   zalohy.forEach(([k,vl,hod])=>{ E[k][vl]=hod; });
+   return {proslo:S.leaked,vypusteno:fronta.length,udeleno:Math.round(udeleno),sekund:Math.round(t)};
+ };
+ // Nejvyssi pocet kusu jednoho druhu, jaky hra kdy posle - vytazeno z HRY
+ // (prochazi se waveComp pres vsechna uzemi a vsechny etapy), ne opsano do
+ // skriptu. Kdyz se skladba vln zmeni, meridlo se posune s ni.
+ window.__maxPocty=function(){
+   const out={};
+   for(let m=0;m<MAPS.length;m++){
+     newRun(m,false,null,false);
+     const posl=lastWaveOf();
+     for(let w=1;w<=posl;w++){
+       S.wave=w;
+       let comp=waveComp(w);
+       if(typeof dveTrasy==='function')comp=dveTrasy(comp);
+       comp.forEach(([k,n])=>{ out[k]=Math.max(out[k]||0,n); });
+     }
+   }
+   return out;
  };
  // Rychlost zvlast: cisty cas, za ktery druh projde trasu bez odporu.
  window.__rychlost=function(druh){
@@ -138,7 +186,36 @@ def spust(cesta, rezim):
                     "SAVE.opts.snd=0;SAVE.opts.mus=0;SAVE.testAll=1;")
         pg.evaluate(SETUP)
 
-        if rezim == "pristroje":
+        if rezim == "prinos":
+            KDE = [(9, 22), (11, 24), (7, 20)]     # uzemi (index), etapa
+            SCH = ['jam', 'heal', 'cover', 'drift', 'jump', 'blun']
+            print("CO PRIDAVA SCHOPNOST DRUHU V MICHANE VLNE")
+            print("obrana: %s (3. rada)" % ", ".join(OBRANA))
+            print("tataz vlna, tytez kusy - jen s vypnutou schopnosti jednoho druhu")
+            print()
+            for mapa, etapa in KDE:
+                z = [pg.evaluate("a=>window.__prinos(a[0],a[1],a[2],a[3],a[4])",
+                                 [mapa, etapa, OBRANA, 2, None]) for _ in range(3)]
+                if any("chyba" in x for x in z):
+                    print("uzemi %d: %s" % (mapa + 1, z[0].get("chyba"))); continue
+                zp = statistics.mean(x["proslo"] for x in z)
+                zu = statistics.mean(x["udeleno"] for x in z)
+                print("uzemi %d, etapa %d — vsechno zapnute: proslo %.1f z %d, obrana odvedla %.0f"
+                      % (mapa + 1, etapa, zp, z[0]["vypusteno"], zu))
+                print("   %-12s %14s %14s %12s" %
+                      ("vypnuto", "proslo", "obrana odvede", "PRINOS"))
+                for k in SCH:
+                    v = [pg.evaluate("a=>window.__prinos(a[0],a[1],a[2],a[3],a[4])",
+                                     [mapa, etapa, OBRANA, 2, k]) for _ in range(3)]
+                    if any("chyba" in x for x in v): continue
+                    bp = statistics.mean(x["proslo"] for x in v)
+                    bu = statistics.mean(x["udeleno"] for x in v)
+                    prinos = (zp / bp) if bp else float("inf")
+                    print("   %-12s %14.1f %14.0f %11.2fx" % (k, bp, bu, prinos))
+                print()
+            print("PRINOS = kolikrat vic projde, kdyz je schopnost ZAPNUTA.")
+            print("1,00x znamena, ze schopnost s vysledkem vlny nehne.")
+        elif rezim == "pristroje":
             print("PROJDE VLNA — poškození na 1 rozpočtu (4 stanoviska, 27 nesmrtelných cílů)")
             print("%-10s %6s | %8s %8s | %8s %8s" % ("přístroj", "cena", "3. řada", "4. řada", "/kredit3", "/kredit4"))
             for k in PRISTROJE:
@@ -150,46 +227,11 @@ def spust(cesta, rezim):
                 s4 = statistics.mean(x["skoda"] for x in r4); c4 = r4[0]["cena"]
                 print("%-10s %6d | %8.0f %8.0f | %8.1f %8.1f"
                       % (k, pg.evaluate("k=>priceOf(k)", k), s3, s4, s3 / c3, s4 / c4))
-        else:
-            SEKUND = 30
-            print("PROJDE VLNA - namerena sila vlivu (verze s vypnutym umiranim)")
-            print("obrana: %s (3. rada)" % ", ".join(OBRANA))
-            print("Nesmrtelne cile jednoho druhu stoji na trase, meri se %d s." % SEKUND)
-            print("NASOBEK = o kolik odvede obrana min prace nez proti Chybe odectu.")
-            print("Meri se pri TREH i pri DVACETI kusech, protoze u umlcovani a leceni")
-            print("neni ucinek na poctu linearni - tri rusicky nejsou petina dvaceti.")
-            print("Rychlost je zvlast, neni v tom zamichana.")
-            print()
-            print("%-22s %10s %8s | %10s %8s | %9s %8s" %
-                  ("vliv", "NETTO 3", "nasobek", "NETTO 20", "nasobek", "trasa (s)", "rychlost"))
-            radky = []
-            for k in VLIVY:
-                mer = {}
-                for n in (3, 20):
-                    v = [pg.evaluate("a=>window.__vliv(a[0],a[1],a[2],a[3],a[4])",
-                                     [k, OBRANA, 2, n, SEKUND]) for _ in range(3)]
-                    if any("chyba" in x for x in v): mer = None; break
-                    mer[n] = statistics.mean(x["netto"] for x in v)
-                if mer is None:
-                    print("%-22s -" % k); continue
-                cas = pg.evaluate("k=>window.__rychlost(k)", k)["sekund"]
-                radky.append((k, mer[3], mer[20], cas))
-            z3 = next((x[1] for x in radky if x[0] == 'err'), 1) or 1
-            z20 = next((x[2] for x in radky if x[0] == 'err'), 1) or 1
-            zc = next((x[3] for x in radky if x[0] == 'err'), 1) or 1
-            for k, n3, n20, cas in radky:
-                print("%-22s %10.0f %7.2fx | %10.0f %7.2fx | %9.1f %7.2fx"
-                      % (k, n3, z3 / n3 if n3 else 0, n20, z20 / n20 if n20 else 0,
-                         cas, zc / cas if cas else 0))
-            print()
-            print("Nasobek > 1 = obrana proti tomu druhu odvede min prace nez proti")
-            print("Chybe odectu; to je ta cast hrozby, kterou NENESE odolnost.")
-            print("Nasobek 0 znamena, ze obrana neodvedla nic (uplne umlcena).")
         print("\nchyby JS:", errs[:4])
         b.close()
 
 
 if __name__ == "__main__":
-    rezim = sys.argv[1] if len(sys.argv) > 1 else "vlivy"
+    rezim = sys.argv[1] if len(sys.argv) > 1 else "prinos"
     cesta = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(__file__), "..", "index.html")
     spust(cesta, rezim)
