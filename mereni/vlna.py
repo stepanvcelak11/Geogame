@@ -167,8 +167,11 @@ SETUP = r"""
 
 VLIVY = ['err','refr','noise','subs','multi','blun','jam','drift','heal','cover','jump']
 OBRANA = ['tape','tape','theo','theo','edm','edm','nivel','nivel']   # startovní sestava
-PRISTROJE = ['tape','theo','edm','nivel','lidar','compass','sonar','penta','quadrant',
-             'backpack','machine','gpr','gravi','multi','insar']
+# Seznam se NEPISE rucne. Ve v96 pribyly tri pristroje (olovnice, planimetr,
+# zenital) a v tomhle seznamu chybely - merilo se tedy jen to stare a nikdo si
+# toho nevsiml. Bere se rovnou ze hry: vsechno z ORD, co vubec deli poskozeni,
+# plus hrdinove (ti jsou v ORD zamerne schvalne az za nim).
+PRISTROJE = None   # doplni se ze hry v spust()
 
 
 def spust(cesta, rezim):
@@ -216,9 +219,16 @@ def spust(cesta, rezim):
             print("PRINOS = kolikrat vic projde, kdyz je schopnost ZAPNUTA.")
             print("1,00x znamena, ze schopnost s vysledkem vlny nehne.")
         elif rezim == "pristroje":
+            seznam = pg.evaluate("""() => {
+              const bije = k => T[k] && (T[k].dmg||[]).some(x => x > 0);
+              const zakl = ORD.filter(bije);
+              const hrd = (window.HRDINOVE||[]).filter(k => bije(k) && !zakl.includes(k));
+              return zakl.concat(hrd);
+            }""")
             print("PROJDE VLNA — poškození na 1 rozpočtu (4 stanoviska, 27 nesmrtelných cílů)")
+            print("měřeno %d přístrojů (seznam se bere ze hry, ne z tohohle skriptu)" % len(seznam))
             print("%-10s %6s | %8s %8s | %8s %8s" % ("přístroj", "cena", "3. řada", "4. řada", "/kredit3", "/kredit4"))
-            for k in PRISTROJE:
+            for k in seznam:
                 r3 = [pg.evaluate("a=>window.__pristroj(a[0],a[1],a[2],a[3])", [k, 4, 2, 180]) for _ in range(2)]
                 r4 = [pg.evaluate("a=>window.__pristroj(a[0],a[1],a[2],a[3])", [k, 4, 3, 180]) for _ in range(2)]
                 if any("chyba" in x for x in r3 + r4):

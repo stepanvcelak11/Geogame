@@ -79,6 +79,43 @@ window.__botInit=function(){
   if(did)recalcBuffs();
   return did;
  };
+ // ---- MERICKE METODY ----------------------------------------------------
+ // Robot je dosud neumel, a proto o desiti metodach ve hre neexistovalo ani
+ // jedno mereni. Bez nich meri obranu, ktera ma na etapu dva nevyuzite naboje.
+ // Politika je zamerne prosta a pro vsechny metody STEJNA, aby se jednotlive
+ // metody daly mezi sebou porovnat: pal, jakmile je na trase dost cilu.
+ // Vyjimka je Nivelacni porad - ten se pali podle ztracene presnosti, protoze
+ // pri plne presnosti hra naboj vraci a mereni by stalo na miste.
+ window.__botZivych=function(){
+   return S.enemies.reduce((n,e)=>n+(e.dead?0:1),0);
+ };
+ window.__botMetody=function(prah){
+   if(!S||S.phase!=='combat')return false;
+   const met=(typeof myAbils==='function')?myAbils():[];
+   if(!met.length)return false;
+   const zivych=__botZivych();
+   let pal=false;
+   met.forEach((a,i)=>{
+     if(!a)return;
+     S.ammo=S.ammo||{};
+     if(S.ammo[a.id]===undefined)S.ammo[a.id]=abilMax(a.id);
+     if(S.ammo[a.id]<=0)return;
+     if(a.id==='repair'){ if(S.acc>94)return; }
+     else if(zivych<(prah||8))return;
+     useAbil(i);pal=true;
+   });
+   return pal;
+ };
+ // Odehraje jednu etapu vcetne metod. Metody se zkousi dvakrat za sekundu -
+ // castejc to nema smysl, hra sama je pousti klepnutim.
+ window.__botEtapa=function(prah){
+   let t=0,u=0;
+   while(S.phase==='combat'&&!S.over&&t<900){
+     step(1/60);t+=1/60;u+=1/60;
+     if(u>=.5){u=0;if(prah)__botMetody(prah);}
+   }
+   return t;
+ };
  window.__bot=function(mapIdx,hard,merge){
    newRun(mapIdx,false,null,!!hard);
    const log=[];let g=0;
@@ -148,8 +185,11 @@ window.__bot2=function(mapIdx,hard){
    if(window.__botHrdVylep)__botHrdVylep();
    const before=S.acc;
    startWave();
-   let t=0;
-   while(S.phase==='combat'&&!S.over&&t<900){step(1/60);t+=1/60;}
+   // Metody jsou ZAMERNE vypnute, dokud si je nekdo nezapne (`window.__botPrah`).
+   // Duvod: vsechna drivejsi mereni obtiznosti vznikla bez metod a robot s nimi
+   // je o kus silnejsi - kdyby se zapnuly potichu, vypadala by hra nahle lehci
+   // a nekdo by podle toho pritvrdil vlny.
+   const t=__botEtapa(window.__botPrah||0);
    log.push({w:S.wave,acc:Math.round(S.acc),ztrata:Math.round(before-S.acc),vezi:S.towers.length,
              cap:capMax(),cr:Math.round(S.cr),sec:Math.round(t),
              maxL:S.towers.reduce((m,x)=>Math.max(m,x.l),0),

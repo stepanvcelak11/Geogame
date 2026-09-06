@@ -10,6 +10,7 @@ dá změřit, co udělá změna balancu. Vzniklo 4. 9. 2026.
 | `bot.js` | robot, který hru odehraje bez člověka |
 | `vlna.py` | měřidlo „projde vlna“ — síla přístrojů, přínos schopností vlivů |
 | `sestava.py` | je soustředěná vlna obtížnost, nebo úkol pro výběr sestavy? |
+| `metody.py` | co přidává měřická metoda (od v97) |
 | `ab.py` | pustí ho na jeden nebo víc souborů hry a vypíše srovnání |
 | `male-pismo.md` | naměřený seznam všech míst s písmem pod 12 px |
 
@@ -125,15 +126,84 @@ rozdíl mezi nulou a slušným během.
 Sedí to s tím, co říká `vlna.py prinos`: umlčování stanovisek je jediná
 schopnost, která s výsledkem vlny hne.
 
+## Přínos měřické metody (`metody.py`)
+
+Deset metod, do měření se berou dvě — a **do verze 97 je nikdo nikdy neměřil**,
+protože robot je neuměl použít. Skript postaví pevnou obranu, pustí vlnu, jaká na
+daném území a v dané etapě opravdu chodí, a spočítá, kolik vlivů projde
+k nulovému bodu — jednou bez metody, jednou s ní.
+
+```
+python metody.py ..\index.html
+OPAK=6 python metody.py ..\index.html      # víc opakování
+KDE=5:16,7:20 python metody.py ..\index.html
+```
+
+### ⚠ Dvě slepé uličky, kterými to prošlo
+
+**1. „Nech robota odehrát území s metodou a bez ní."** Nefunguje. Přesnost je
+skoro pořád 100 % a jednou za čas se běh rozsype na nulu, takže průměr neměří
+metodu, ale to, kolikrát z dvanácti běhů padla nula. Polygonový pořad takhle
+vyšel při jednom opakování **+29 bodů** a při čtyřech **−15 bodů** — a metoda
+přitom nemůže hru zhoršit. Měřítko musí být **spojité** (kolik projde), ne
+prahové (dohrál / nedohrál).
+
+**2. Nepárované srovnání.** I s dobrým měřítkem vyšla chyba průměru **±5 kusů**
+na rozdíly kolem 1–3 kusů, tedy samý šum — protože **skladba vlny se losuje** a
+rozptyl mezi vlnami je větší než celý měřený rozdíl. Řešení není víc opakování
+(potřeboval by jich pětadvacetkrát víc), ale **párování**: vlna se vylosuje
+jednou a tatáž se pustí na základ i na všechny metody. Chyba spadla na **±1**.
+
+Ponaučení pro každé další měřidlo v téhle hře: **než začneš porovnávat čísla,
+spočítej si chybu průměru.** Bez ní se z šumu snadno vyrobí závěr.
+
+### Naměřeno ve verzi 97 (území 4, 6, 8, 10 · párově · hvězdička = není šum)
+
+| metoda | zastaví navíc | na jeden výstřel |
+|---|---|---|
+| Orientace na body | +3,9 ± 1,1 * | 1,95 |
+| Zpětné protínání | +2,8 ± 1,3 * | 1,40 |
+| Statické měření | +2,6 ± 0,9 * | 0,87 |
+| Uzávěr pořadu | +2,0 ± 1,2 | 0,67 |
+| Protínání vpřed | +1,6 ± 1,6 | 0,80 |
+| Kontrolní měření | +0,9 ± 1,8 | 0,45 |
+| Vytyčení bodů | +0,4 ± 1,4 | 0,13 |
+| Nivelační pořad | −0,3 ± 1,4 | *(nejde tu změřit)* |
+| Polygonový pořad | −1,0 ± 1,4 | — |
+| Tachymetrie | −1,9 ± 1,8 | *(nejde tu změřit)* |
+
+Podle toho se od v97 liší **počet nábojů**: tři nejsilnější mají dva, zbytek tři.
+
+### Co tohle měřidlo NEUMÍ ocenit
+
+- **Nivelační pořad** vrací přesnost a **Tachymetrie** rozpočet. Ani jedno se
+  v tomhle měřidle nepočítá (přesnost je vypnutá, aby průnik neukončil měření),
+  takže obě vyjdou na nulu. To není jejich hodnocení.
+- **Zpomalení proti nasycené obraně nic nepřidá.** Když má každé stanovisko
+  pořád na co střílet, je celkové poškození obrany dané její kadencí, ne tím,
+  jak dlouho cíl na trase stojí. Naměřeno přímo: Polygonový pořad zvedne
+  „obrana odvede" o 2 %, ale průniky nesníží. V řídké vlně (a v `vlna.py
+  pristroje`, kde stanoviska čekají na cíl) je zpomalení naopak nejsilnější věc
+  ve hře. **Obojí je pravda a záleží na hustotě vlny.**
+- **Čas, který metoda koupí hráči.** Obrana je tu pevná; člověk ale za
+  zmrazenou vlnu staví, slučuje a kalibruje. Tuhle hodnotu měřidlo nevidí
+  vůbec — proto se ze samotného „−1,0" nesmí udělat závěr „metoda je k ničemu".
+
 ## Co robot umí a co ne
 
 **Umí:** staví z nabídky skladu na pole s nejlepším pokrytím trasy, slučuje všechny
 dvojice stejného druhu a řady, kupuje vylepšení sítě a kalibruje nejvyšší řady,
 dokud má z čeho.
 
-**Neumí:** měřické metody, nouzovou opravu přesnosti, přehazování nabídky za
-rozpočet, výběr sestavy, přesouvání stanovisek ani prodej. Startuje vždy s čistým
-postupem — bez karet, bez laboratoře, bez trofejní cesty.
+**Neumí:** nouzovou opravu přesnosti, přehazování nabídky za rozpočet, výběr
+sestavy, přesouvání stanovisek ani prodej. Startuje vždy s čistým postupem —
+bez karet, bez laboratoře, bez trofejní cesty.
+
+**Měřické metody umí od v97**, ale jsou **ZÁMĚRNĚ VYPNUTÉ**. Zapínají se
+`window.__botPrah = 8` (kolik živých cílů metodu spustí). Důvod pro vypnuto:
+všechna dřívější měření obtížnosti vznikla bez metod a robot s nimi je o kus
+silnější — kdyby se zapnuly potichu, vypadala by hra najednou lehčí a někdo by
+podle toho přitvrdil vlny.
 
 **Proto:** je to model *slušného, ale ne skvělého hráče bez nasbíraného postupu*.
 Čísla z něj se hodí na **srovnání dvou verzí mezi sebou**, ne jako absolutní
