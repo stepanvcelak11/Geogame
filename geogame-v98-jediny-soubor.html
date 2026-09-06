@@ -9487,17 +9487,19 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
   #game #hud .k{font-size:calc(11px*var(--fs,1));letter-spacing:.01em}
 }
 
-/* Krizek tutorialu mel terc 44x34, tedy pod 40 px na vysku. Vysku mu NELZE
-   jen pridat - resize() z ni pocita velikost pole desky (CS = floor(min(
-   availW/COLS, availH/ROWS)), availH = VH - (hud+8+pprev+6) - (lower+6)),
-   takze kazdy pixel navic ubira z hraci plochy. Terc se proto roztahuje
-   neviditelne, pres pseudoprvek - sazba i vyska desky zustavaji stejne.
-   Pruh #pprev (22 px) takhle resit nejde: ma overflow:hidden a pseudoprvek
-   by orizl. Je siroky pres celou obrazovku a vede jen na zalozku Etapa,
-   dostupnou i z panelu - zustava beze zmeny. */
-#game #tut .tuX{position:relative}
-#game #tut .tuX:after{content:'';position:absolute;left:0;right:0;
-  top:-6px;bottom:-6px}
+/* Krizek tutorialu mel terc 44x34, tedy pod 40 px na vysku. Pravidlo, ktere
+   to uz melo resit (#game .tuX{min-height:44px}), prebiji #game #tut .tuX
+   o kus vys - ma vyssi specificitu a nastavuje min-height:34px.
+   Krizek je position:absolute, tedy MIMO sazbu, takze zvetseni nic nestoji:
+   deska si svou velikost pocita z vysky HUD, #pprev a spodniho ovladani
+   (CS = floor(min(availW/COLS, availH/ROWS))), a zadneho z nich se to netyka.
+   POZOR: prepsat mu position na relative NELZE - krizek vypadne do textu
+   bubliny a na 320 px se posadi pod hlasku doleva.
+   Pruh #pprev (22 px) se nechava: ma overflow:hidden, takze neviditelne
+   zvetseni terce by orizl, a vysku mu pridat nejde, protoze z ni deska
+   pocita velikost pole. Je siroky pres celou obrazovku a vede jen na zalozku
+   Etapa, dostupnou i z panelu. */
+#game #tut .tuX{min-height:44px;height:44px}
 </style>
 </head>
 <body>
@@ -16817,7 +16819,7 @@ function ui(){
  // nazev ("Pilot roje") potreboval merene 62 px pri pismu 12 px.
  const mezera=5*Math.max(0,zivych+prazdnych-1);
  const naKartu=((sh.clientWidth||300)-mezera-22*prazdnych)/Math.max(1,zivych);
- sh.dataset.uz=naKartu>=70?'0':naKartu>=60?'1':naKartu>=55?'2':naKartu>=52?'3':'4';
+ sh.dataset.uz=naKartu>=75?'0':naKartu>=67?'1':naKartu>=61?'2':naKartu>=56?'3':'4';
  if(hrdKarta){
    const k=S.hrd;
    const d=document.createElement('div');d.className='card hrdCard';
