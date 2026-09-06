@@ -1,4 +1,4 @@
-# GeoGame — verze 96
+# GeoGame — verze 100
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=96;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=100;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v96-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v100-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v95-jediny-soubor.html
+copy index.html geogame-v100-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -54,6 +54,79 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 100
+
+Verze se dívala na to, co je ve hře **kolem** kampaně: režimy navíc, denní
+výzva, denní úkoly, úspěchy, přihlašovací řada a texty. Každý nález je změřený
+robotem nebo v prohlížeči, ne odhadnutý.
+
+### Co bylo rozbité
+
+- **„Štědrá zakázka" nedělala nic.** Modifikátor výzvy slibuje dvojnásobný
+  rozpočet za etapu, jenže na `chMod('rich')` se ve hře neptal ani jeden řádek.
+  Změřeno na území 4 přes čtyři etapy: s modifikátorem i bez něj vyšla dotace
+  82 / 92 / 133 / 163 — do poslední koruny stejně. Tentýž modifikátor si bere
+  režim **Rychlé měření**, takže ani ten nedával, co má na kartě.
+- **Panel „Co teď" se nikdy nevykreslil.** Funkce `renderTodo()` existuje, volá
+  se, styly pro ni jsou napsané včetně vlastního bloku pro terénní kartu — jen
+  prvek `#todoBox` v HTML nikdo nepřidal, takže funkce skončila hned na prvním
+  řádku. Nadpis té zastávky přitom slibuje „Co teď a Zakázka dne".
+- **Přihlašovací řada se zasekla na sedmém dni.** Osmý den přišlo znovu finále
+  (epická bedna, 250 výzkumu, 6 karet) — a pak už každý další den navždy. Teď
+  je to týdenní kolo a okno u sedmého dne řekne, že zítra začíná znovu.
+- **Prohra v poslední etapě denní výzvy navždy přebila téhož dne výhru.**
+  Záznam dne se přepisoval jen při vyšším čísle etapy, jenže výzva má pevný
+  počet etap. Kdo v poslední etapě jednou padnul, měl tam „etapa 12" i po
+  vyhrané výzvě.
+- **Úspěch „Výzvař" šel zpátky.** Počítal se ze sedmidenního okna historie:
+  3/3 spadlo na 0/3 po týdnu hraní. Teď je to trvalý čítač a rozehrané hry
+  o nic nepřijdou (bere se vyšší z obou).
+- **Úspěch „Kompletní výbava" byl nesplnitelný.** Cílem bylo všech 23 přístrojů,
+  ale ke dvěma z nich (digitální planimetr, zenitový teleskop) nevedla žádná
+  cesta — hra to o nich sama psala: „zatím nedostupný". Cíl teď počítá jen
+  přístroje, ke kterým cesta vede, a sám se posune, až nějaká přibude.
+- **Okénko denní výzvy posílalo pro historii do Kariéry**, kde žádná nikdy
+  nebyla (na kartě je schovaná stylem). Historie je teď přímo v tom okénku.
+- **Skloňování v brífinku:** „2 splněný denní úkol", „2 úspěch k vyzvednutí",
+  „Máš 3 hvězd", „2 bedna k otevření", „5 přístroje", „Z terénu ti přišlo
+  2 beden". Přibyl pomocník `pocet(n, jedna, dvě, pět)` vedle `cardWord`
+  a `pokusy`, které ve hře už byly — jen je nikdo nepoužil všude.
+- **Brífink sliboval za denní výzvu epickou bednu** i tomu, kdo měl vybranou
+  lehkou obtížnost. Bedna se řídí stupněm (kufr / trezor / sejf) a text to teď
+  říká i se jménem stupně.
+- **„Jiná dvojice pravidel každý den"** neplatila 46 dnů z 365 — když oba
+  výpočty padly na tentýž modifikátor, výzva měla jen jeden. Teď jsou vždy dva
+  různé; různých dvojic je 26 z 28 možných.
+
+### Bossová smršť konečně stojí za tu bednu
+
+Byl to **nejlehčí režim ve hře**, přestože za něj padá legendární bedna: robot
+ho prošel devětkrát z devíti a osmkrát z toho se stoprocentní přesností.
+V desáté etapě šli **tři** bossové a **žádný neměl jediný rys** — byly to holé
+pytle odolnosti.
+
+- Bossů je teď `2 + 0,7 × etapa` místo `1 + etapa/4`. Vybráno ze čtyř hustot,
+  měřených zvlášť za začátečníka na území 2 a za koncovku na území 12, pět
+  běhů na kombinaci: začátečníka, který si režim právě odemkl, to nezastaví,
+  na koncovém území už ale stojí přesnost, ne jen čas.
+- Bossové nesou **rysy z téže tabulky `RYS`** jako fináloví bossové území
+  a jejich cena se stejně jako tam odečítá z odolnosti — není to tiše přidaná
+  obtížnost, ale jiná. Pořadí je pevné, ne náhodné, takže se režim dá naučit.
+
+### Bedny za režimy mají denní strop
+
+Bossová smršť i Rychlé měření dávaly svou bednu za **každou** výhru a žádný
+strop na ně nebyl — legendární sejf (230–330 výzkumu) šel točit dokola. Teď je
+slíbená bedna za první dokončení dne, za opakování je terénní; denní výzva svůj
+strop po stupních měla už dřív. Karty režimů to říkají.
+
+### Čím je to podložené
+
+Kampaň robotem po všech změnách: **232 etap, 0 chyb v konzoli, 11 z 12 území**.
+Šest oprav má vlastní měřenou kontrolu (`scratchpad/kontrola.py`), režimy jsou
+navíc projité **klepáním jako hráč** — Bossová smršť, Rychlé měření i těžký
+stupeň výzvy se z terénní stránky spustí správně.
 
 ## Co je nového ve verzi 96
 
