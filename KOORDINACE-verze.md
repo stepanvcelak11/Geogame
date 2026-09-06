@@ -52,9 +52,14 @@ Herní čísla a obsah, ne vzhled. Celý seznam je v `NAVOD.md`, sekce
 
 - ar-geodet-ce: v rychlé liště se řežou názvy („Pilot…", „Teod…"); při vybraném
   stanovisku ztratí ostatní záložky panelu popisky; panel má dole ~150 px prázdna.
-- ar-geodet-51: sdílené `.page{padding-bottom:150px}` je proti výšce
-  `#podstavec` (208 px) **o 22 px krátké** — poslední proužek každé stránky
-  leží pod lištou. Není to vada Terénu, je to jedno místo pro všech pět stránek.
+- ar-geodet-51: ~~sdílené `.page{padding-bottom}` je o 22 px krátké~~ —
+  **TENHLE NÁLEZ BYL MŮJ OMYL, neopravovat.** Měřil jsem odsazení proti výšce
+  `#podstavce` (208 px), jenže `#podstavec` je z větší části **průhledný stín**
+  (`pointer-events:none`, horních 34 px má nulové krytí). Neprůhledná je až
+  deska `#podDeska`. Přeměřeno při plném odrolování Terénu: poslední prvek
+  stránky končí **12 px nad** deskou na 390×780, 390×844 i 360×640 — nic se
+  nezakrývá. ⚠ Poučení: **odsazení se počítá proti tomu, co kryje, ne proti
+  tomu, co je fixed.**
 
 ---
 
