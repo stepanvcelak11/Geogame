@@ -1,4 +1,4 @@
-# GeoGame — verze 93
+# GeoGame — verze 94
 
 ## Co nahrát na hosting
 
@@ -26,7 +26,7 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=93;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=94;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
@@ -54,6 +54,62 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 94
+
+Vzhled hrací desky. Menu, obchod a vybavení už dřív dostaly tmavý „přístrojový"
+vzhled — modré desky, silné obrysy, svítící značky. Deska, na které se hraje,
+u toho ale zůstala stát: bledá louka se **světlými čtverci**. Přístroje na ní
+vypadaly jako nálepky přilepené na cizí obrázek a nepřátelé v ní mizeli.
+Tahle verze desku dotahuje ke zbytku hry. **Do pravidel se nesahalo** — žádné
+číslo, které rozhoduje o obtížnosti, se nezměnilo.
+
+- **Stanoviska stojí na téže tmavé destičce jako karty ve Vybavení.** Byl to
+  bílý zaoblený čtverec s vlasovým obrysem; teď je to deska se světlem shora,
+  silným obrysem, vrženým stínem a **vnitřním lemem v barvě přístroje**, takže
+  druh poznáš, i když je značka zakrytá. Značka svítí už od první řady — na
+  tmavém podkladu je z ní bez záře jen plochá skvrna.
+- **Zem, cesta a přístroj mají tři různé světlosti.** Dřív byly skoro stejné,
+  takže deska splývala sama se sebou a bledé vlivy (Šum měření, Chyba odečtu)
+  na ní nebyly vidět. Louka je sytější, cesta výrazně tmavší hlína.
+- **Terénní pole konečně respektují motiv.** Les, vyvýšenina, skála a voda si
+  nesly barvu natvrdo v sobě, takže v **nočním** motivu svítily denními
+  barvami — světle zelený les a pískově žlutý kopec na tmavé desce.
+- **V noci jde poznat cesta od vody.** Obojí mělo skoro týž modrozelený odstín.
+  Cesta je teď hnědošedá: tatáž hlína jako ve dne, jen za měsíce.
+- **Deska je zapuštěná do rámu**, ne nalepená: pod rámečkem má stín a zem má
+  slabý přechod shora dolů. Vnitřní lem rámu byl natvrdo bílý a v noci zářil.
+- **Míň hluku.** Na každém volném poli stál oranžový trojúhelník na půl krytí —
+  přes šedesát značek, které byly hlasitější než přístroje a nepřátelé. Pás už
+  ohraničuje žlutá čára, značka stačí tišší. Sedmdesát „chomáčů trávy" leželo
+  v **pravidelné mříži** přes celou desku a četlo se to jako údaj; teď jsou
+  rozházené podle území a je jich 44.
+- **Na úzkém telefonu jde poznat, na co jsi klepl.** Lišta rychlých akcí
+  smáčkla na 320 px hlavičku na 24 px, takže jméno přístroje zmizelo celé.
+  Pod 400 px má teď hlavička vlastní řádku a tlačítka se srovnají pod ni.
+- **Kontrastní motiv zůstal beze změny** — tam je kontrast přednější než
+  sladění, takže podstavce jsou dál bílé s černým obrysem, značky nezáří
+  a značky volných polí zůstaly silné.
+
+### A okna, která hráč vidí nejčastěji
+
+- **Nezískaná hvězda přestala vypadat jako cena.** Měla výplň skoro bílou,
+  takže na tmavé ploše byla nejsvětlejším prvkem obrazovky: po **prohře**
+  svítily tři hvězdy a nerozehrané území vypadalo jako dohrané na tři.
+  Teď je to prázdné lůžko a zlatá je jen ta získaná. Táž vada byla na dvou
+  místech — v okně výsledku a v okně území.
+- **Prohra přestala vypadat jako oslava.** Měla mosazný proužek v záhlaví,
+  mosaznou záři kolem okna i svatozář za ním — přesně jako výhra; odlišoval
+  ji jediný odznak s odečtenými poháry. Teď je celé okno červené.
+- **Výběr karty po etapě**: tři nabídky vypadaly jako tři stejné ploché
+  obdélníky. Vzácnost šla poznat jen podle 5px proužku u okraje a odznaku,
+  který měl u běžné karty šedou na šedé. Teď nese barvu vzácnosti celá karta
+  a vzácnější k tomu září. Místo tiché věty „máš 0/3" jsou to **pipy** jako
+  v Laboratoři.
+
+Ověřeno: 9 kombinací (320/390/1440 × den/noc/kontrastní), pokaždé menu, náhled
+přístroje v obchodě, bitva, všech pět záložek panelu, okno výběru karty
+a okno výsledku — **0 chyb**.
 
 ## Co je nového ve verzi 93
 

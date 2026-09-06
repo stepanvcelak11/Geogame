@@ -6,7 +6,83 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VERZE 93 (6. 9. odpoledne, session „obsah") — OBSAH ÚZEMÍ A FINÁLE
+## AKTUÁLNÍ STAV: VERZE 94 (6. 9. večer, session „vizuál") — VZHLED DESKY A OKEN
+
+**Číslo 94 je zabrané, další si berte 95.** Větev **`vizual-v94`**, vlastní
+git worktree `C:\Users\stepa\Desktop\geogame-vizual-v93` (jméno složky je
+starší než přečíslování a nic neznamená).
+
+### Co je v 94
+
+Vzhled, nic jiného. Podrobně v `NAVOD.md`. Dvě kola:
+
+1. **Deska bitvy.** Menu, obchod a Laborka už měly tmavý „přístrojový" vzhled,
+   ale deska u toho zůstala stát: bledá louka se světlými čtverci. Podstavce
+   stanovisek jsou teď tatáž tmavá destička jako karty ve Vybavení; zem, cesta
+   a přístroj mají tři odlišné světlosti; terénní pole a rám desky konečně
+   berou barvu z palety (v noci svítily denními barvami); v noci jde poznat
+   cesta od vody; ubralo se šedesát oranžových značek a mříž „trávy".
+2. **Okna, která hráč vidí nejčastěji.** Nezískaná hvězda měla výplň skoro
+   bílou — po **prohře** svítily tři hvězdy a nerozehrané území vypadalo jako
+   dohrané na tři (táž vada na dvou místech: `.rstars` a `.stIco`). Prohra
+   měla mosazné záhlaví i záři jako výhra. Výběr karty po etapě byly tři
+   stejné ploché obdélníky.
+
+**Na pravidla se nesáhlo.** `waveScale`, `waveComp`, `capMax`, `E`, `T`, `NET`,
+`CARDS` ani odměny nebyly otevřeny — grep na herní čísla v celém diffu vrátil
+nulu. Proto se tahle větev s balancem, gameplayem ani obsahem nemá kde potkat;
+jediný konflikt v `index.html` byl při každém rebase řádek `const VERZE=`.
+
+### Čím je to podložené
+
+- 9 kombinací (320/390/1440 × den/noc/kontrastní) × menu, náhled přístroje
+  v obchodě, bitva, pět záložek panelu, okno výběru karty a okno výsledku:
+  **0 chyb**.
+- Robot `mereni/ab.py`: 229 etap, **0 chyb**.
+- Lišta rychlých akcí přeměřena **klepnutím na stanovisko** ve čtyřech šířkách
+  (320/360/390/430): 0 překryvů, 0 přetečení, hlavička **24 → 300 px**.
+
+### ⚠⚠ Trojí past na měření vzhledu
+
+Třikrát jsem se na snímku spletl a pokaždé mě opravilo až měření. Kdo bude
+posuzovat vzhled ze snímků, ať si to přečte, ušetří si to hodinu:
+
+1. **„Tlačítko překrývá jméno přístroje"** — byl to *zakázaný* prvek na 40 %
+   krytí, přes který prosvítal text za ním. `getBoundingClientRect`: 0 překryvů.
+2. **„V okně výsledku je velká prázdná díra"** — okno se odkrývá **po částech**
+   (`setTimeout` po krocích). Snímek po 900 ms ukazuje díru, po 3 s je obsah
+   celý (pod posledním prvkem 54 px u výhry i prohry). **Nic se neopravovalo.**
+   ⚠ Ale při čekání 3,5 s se nad výsledek otevře okno „Nové oblasti" a nafotíš
+   JE — je nutné ostatní `.ov.on` zhasnout.
+3. **„Laborka a encyklopedie jsou prázdné"** — obrazovky **nejdou otevřít přes
+   `show('lab')`**, obsah jim dodává až `renderLab()`/`renderCodex()`/
+   `renderOpts()`. A `#bLab`/`#bCdx` sedí v podzáložkách `.lbSec`, které jsou
+   `display:none`, dokud se neklepne na záložku v `#lbTabs`.
+
+A jednou lhala i moje vlastní kontrola: po zavedení zalomení lišty hlásila
+překryv, protože porovnávala prvky ze **dvou různých řad**. Kontrola překryvu
+musí číst `r.top`.
+
+### ⚠ Co se poučit ze slučování
+
+- **⚠⚠ `git checkout --theirs` při rebase vrací TVOJI verzi, ne cizí.** Sáhl
+  jsem po něm při konfliktu v `NAVOD.md` a tiše z něj vypadla celá cizí sekce
+  o verzi 92. Konfliktní `.md` je jistější **postavit znovu** z
+  `git show origin/main:<soubor>` a svoje přilepit nahoru.
+- **✅ Vlastní worktree je jediné, co při tomhle souběhu fungovalo.** Za celý
+  den ani jeden konflikt v kódu; pět rebase na cizí vydání, pokaždé jen řádka
+  s verzí. Kdo dělá na `Desktop\geogame` spolu s ostatními, sdílí s nimi
+  i **stagovací plochu** — `git worktree add` jako PRVNÍ krok.
+- **⚠ Kontrola po rebase musí hlídat OBĚ strany.** Můj skript na `NAVOD.md`
+  má seznam klíčových kusů od každé session a při jiném než jednom výskytu
+  kotvy skončí — díky tomu se chytlo, že sekce 92 byla v souboru dvakrát.
+- **⚠ Jednosouborovou kopii při rebase NEPŘEJMENOVÁVAT** — vyrobí to zbytečný
+  rename/rename konflikt při každém kole. Dělá se až nakonec z hotového
+  `index.html`.
+
+---
+
+## PŘEDCHOZÍ STAV: VERZE 93 (6. 9. odpoledne, session „obsah") — OBSAH ÚZEMÍ A FINÁLE
 
 **Číslo 93 je moje.** Souběžně běžely další tři session a čísla jsme si rozdělili
 zprávami: **92** balanc (capMax, slučování na ★, uzávěr etapy + dřívější commit

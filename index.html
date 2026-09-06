@@ -1408,12 +1408,23 @@ html[data-theme="night"] .crCard .crR{color:#06111a}
 #buffChip span{background:var(--scrim);border:1px solid var(--bcx);border-radius:999px;
   padding:5px 11px;font-size:calc(11px*var(--fs,1));box-shadow:var(--elev1);color:var(--bcx)}
 #buffChip b{color:var(--paper);font-weight:700;margin-right:5px}
+/* Lista se smi zalomit do dvou rad. Bez toho se na 320 px sesypala hlavicka
+   na 24 px - z ceho pristroje zbyl kus ikony a jmeno zmizelo uplne, takze
+   hrac klepnul na stanovisko a nedozvedel se, na ktere klepl. Lista je
+   ukotvena zespodu, takze druha rada roste nahoru a nic nezakryje. */
 #quick{position:absolute;left:10px;right:10px;z-index:5;display:none;gap:6px;align-items:stretch;
-  max-width:540px;margin:0 auto}
+  flex-wrap:wrap;max-width:540px;margin:0 auto}
 #quick.on{display:flex}
-#quick .qHead{flex:1;min-width:0;display:flex;align-items:center;gap:7px;background:var(--scrim);
+#quick .qHead{flex:1 1 132px;display:flex;align-items:center;gap:7px;background:var(--scrim);
   border:1px solid var(--grid);border-radius:var(--r1);padding:7px 9px;box-shadow:var(--elev2);
-  min-width:0}
+  min-width:132px}
+/* Na uzkem telefonu se ctyri tlacitka a jmeno pristroje na jednu radu nevejdou.
+   Misto toho, aby se hlavicka smackla (na 320 px z ni zbylo 24 px), dostane
+   celou prvni radu a tlacitka se srovnaji pod ni. Nad 400 px zustava vse
+   v jedne rade jako dosud. */
+@media (max-width:400px){
+  #quick .qHead{flex:1 1 100%}
+}
 #quick .qHead canvas{width:26px;height:26px;flex:none}
 #quick .qHead b{font-size:calc(11px*var(--fs,1));font-weight:700;display:block;line-height:1.15;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -9931,6 +9942,16 @@ const TER={
  hill :{n:'Vyvýšenina',  c:'#c9a45c', build:true,  rng:.20,  note:'Rozhled: přístroje tu mají o 20 % delší dosah.'}
 };
 const WATEROK=['sonar','photo','backpack','meteo'];
+// Barva terenniho pole. V TER zustava `c` jako barva do SEZNAMU a napovedy,
+// na desce se ale bere odsud - jinak by pole nesla denni barvu do noci.
+function terBarva(druh,p){
+ return druh==='rock'?p.terRock:druh==='wood'?p.terWood:
+        druh==='water'?p.terWater:p.terHill;
+}
+function terKresba(druh,p){
+ return druh==='rock'?p.terDetailRock:druh==='wood'?p.terDetailWood:
+        druh==='water'?p.terDetailWater:p.terDetailHill;
+}
 function terAt(c,r){ return (S&&S.ter)?S.ter[c+','+r]:null; }
 function banned(k){ return S&&S.ban&&S.ban.indexOf(k)>=0; }
 function isOpen(c,r){ return !S||!S.open||S.open.has(c+','+r); }
@@ -11844,22 +11865,54 @@ async function save(){
 }
 
 /* ==================== PALETA ==================== */
+/* Paleta desky. Klice tile* a ter* pribyly ve verzi 93: podstavce pristroju
+   a terenni pole si driv nesly barvu SAMY V SOBE, takze v nocnim motivu
+   svitily dennimi barvami a v dennim byly bile jako papir. Ted je barva
+   vzdycky odsud a deska mluvi stejnou reci jako zbytek appky.
+   Klic plinth zustava - drzi ho nahledy MIMO desku (obchod, uvod, ikonky). */
 const PALS={
  hc:{bg:'#f4f8fa',c1:'#9fb2bd',c2:'#6d8492',water:'#63b4dd',waterL:'#2f8fc4',
    forest:'#2b8a3e',grid:'rgba(6,19,28,.14)',road:'#5c6b76',roadIn:'#e2eaef',
    dash:'#ffffff',ink:'#06131c',label:'rgba(6,19,28,.55)',
    plinth:'#ffffff',plinthEdge:'#3d5464',hpOk:'#0a7a3c',
-   outline:'#000000',hpBg:'rgba(255,255,255,.95)',marker:'#a35a00',scan:'rgba(6,19,28,.09)'},
+   outline:'#000000',hpBg:'rgba(255,255,255,.95)',marker:'#a35a00',scan:'rgba(6,19,28,.09)',
+   tile:'#ffffff',tileTop:'#ffffff',tileEdge:'#000000',tileRim:'rgba(0,0,0,.45)',tileDark:0,
+   tileShadow:'rgba(6,19,28,.30)',
+   terRock:'#7d8b93',terWood:'#2b8a3e',terHill:'#a8792c',terWater:'#63b4dd',
+   terDetailWood:'#0d3a18',terDetailRock:'#3b4b54',terDetailHill:'rgba(6,19,28,.65)',
+   terDetailWater:'rgba(255,255,255,.85)',
+   frameOut:'#06131c',frameIn:'rgba(6,19,28,.55)',tuft:'rgba(40,90,45,.30)'},
+ /* Noc: cesta byla #1e4b58/#2a6070, tedy skoro tyz modrozeleny odstin jako
+    voda (#123a4d/#1b5570) - na desce nesla poznat vysypana cesta od rybnika.
+    Ted je cesta odbarvena do hnedosede: je to tataz hlina jako ve dne,
+    jen za mesice. */
  night:{bg:'#0c1e28',c1:'#153a46',c2:'#1d4c5b',water:'#123a4d',waterL:'#1b5570',
-   forest:'#14392f',grid:'rgba(232,241,236,.05)',road:'#1e4b58',roadIn:'#2a6070',
+   forest:'#14392f',grid:'rgba(232,241,236,.05)',road:'#2b2722',roadIn:'#544a3e',
    dash:'rgba(232,241,236,.34)',ink:'#e8f1ec',label:'rgba(232,241,236,.35)',
    plinth:'rgba(7,18,26,.55)',plinthEdge:'rgba(232,241,236,.18)',hpOk:'#2fe3c8',
-   outline:'#04101c',hpBg:'rgba(7,18,26,.75)',marker:'#e5b455',scan:'rgba(232,241,236,.10)'},
- day:{bg:'#cfe0b0',c1:'#b6c894',c2:'#9cb277',water:'#6cbde0',waterL:'#3f9dcb',
-   forest:'#4f9c47',grid:'rgba(40,50,30,.16)',road:'#5e5648',roadIn:'#b9a982',
-   dash:'#f6efdc',ink:'#1c2a30',label:'rgba(255,255,255,.75)',
-   plinth:'#ffffff',plinthEdge:'#9fb8a6',hpOk:'#22b06a',
-   outline:'#0b1236',hpBg:'rgba(255,255,255,.85)',marker:'#f5911e',scan:'rgba(20,60,80,.08)'}
+   outline:'#04101c',hpBg:'rgba(7,18,26,.75)',marker:'#e5b455',scan:'rgba(232,241,236,.10)',
+   tile:'#0a2130',tileTop:'#1a4054',tileEdge:'#03101a',tileRim:'rgba(190,235,225,.28)',tileDark:1,
+   tileShadow:'rgba(2,8,14,.55)',
+   terRock:'#2c3e48',terWood:'#123528',terHill:'#4a3b20',terWater:'#123a4d',
+   terDetailWood:'#2c7a54',terDetailRock:'#61747f',terDetailHill:'rgba(226,190,120,.42)',
+   terDetailWater:'rgba(190,235,245,.45)',
+   frameOut:'#04101c',frameIn:'rgba(160,215,205,.30)',tuft:'rgba(90,170,140,.14)'},
+ /* Den: driv to byla bleda louka (#cfe0b0) se svetlymi ctverci - zem, cesta
+    i pristroje mely skoro stejnou svetlost, takze deska splyvala sama se sebou
+    a bledi nepratele (sum merení, chyba odectu) v ni mizeli uplne.
+    Ted maji tri urovne tri jasne odlisne svetlosti: zem stredni, cesta tmava
+    hneda, pristroj temne modry jako zbytek appky. */
+ day:{bg:'#9dbd80',c1:'#8aa96f',c2:'#6f8f57',water:'#3f9fd4',waterL:'#1c6d9e',
+   forest:'#3c7f43',grid:'rgba(11,18,54,.17)',road:'#4a3d2c',roadIn:'#ad9770',
+   dash:'#fff3d6',ink:'#101a3a',label:'rgba(255,255,255,.80)',
+   plinth:'#ffffff',plinthEdge:'#9fb8a6',hpOk:'#1c9a5c',
+   outline:'#0b1236',hpBg:'rgba(11,18,54,.80)',marker:'#ffb02e',scan:'rgba(11,18,54,.10)',
+   tile:'#232c52',tileTop:'#3d4b85',tileEdge:'#0b1236',tileRim:'rgba(255,255,255,.22)',tileDark:1,
+   tileShadow:'rgba(11,18,54,.45)',
+   terRock:'#8d8a84',terWood:'#3c7f43',terHill:'#c39a4e',terWater:'#3f9fd4',
+   terDetailWood:'#17491f',terDetailRock:'#54504a',terDetailHill:'rgba(74,48,12,.60)',
+   terDetailWater:'rgba(255,255,255,.80)',
+   frameOut:'#0b1236',frameIn:'rgba(255,255,255,.30)',tuft:'rgba(52,104,52,.26)'}
 };
 function P(){
  if(S&&S.pal==='night')return PALS.night;
@@ -12614,7 +12667,8 @@ function drawDrone(g,t,dr){
    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(o=>{
      g.beginPath();g.ellipse(q.x+o[0]*s,q.y+o[1]*s,s*.55,s*.16,a*o[0]*o[1],0,7);g.fill();});
  }
- g.fillStyle=P().plinth;g.strokeStyle=c;g.lineWidth=1.4;
+ // Telo dronu: driv bila placka, ted stejny tmavy material jako podstavce.
+ g.fillStyle=P().tile;g.strokeStyle=c;g.lineWidth=1.8;
  g.beginPath();g.arc(q.x,q.y,s*.62,0,7);g.fill();g.stroke();
  g.restore();
 }
@@ -12994,7 +13048,12 @@ function glyphBody(g,k,s,l){
 function rnd(seed){let x=Math.sin(seed*9301+49297)*233280;return x-Math.floor(x);}
 function terrain(g,W,H,seed,small){
  const p=P();
- g.fillStyle=p.bg;g.fillRect(0,0,W,H);
+ // Driv plocha jedne barvy. Slaby prechod shora dolu dela ze zeme povrch,
+ // po kterem jde svetlo - bez nej deska pusobila jako vybarveny papir.
+ {const zg=g.createLinearGradient(0,0,0,H);
+  zg.addColorStop(0,shade(p.bg,.045));zg.addColorStop(1,shade(p.bg,-.055));
+  g.fillStyle=zg;}
+ g.fillRect(0,0,W,H);
  // vodní plocha
  if(!small){
  g.save();g.beginPath();
@@ -13004,10 +13063,14 @@ function terrain(g,W,H,seed,small){
  g.restore(); }
  // travnaté chomáče
  if(!small){
-   g.strokeStyle='rgba(70,140,70,.28)';g.lineWidth=1.2;g.lineCap='round';
-   for(let i=0;i<70;i++){
-     const x=(i*137.5)%W, y=((i*89.3)%H);
-     g.beginPath();g.moveTo(x,y);g.lineTo(x-2,y-5);g.moveTo(x,y);g.lineTo(x+2,y-6);g.stroke();
+   // Driv (i*137.5)%W a (i*89.3)%H, coz na desce vyrobilo PRAVIDELNOU mriz
+   // sedmdesati stejnych "v" znacek. Ctlo se to jako udaj, ne jako trava.
+   // Ted rozhozene podle seedu mapy a o poznani tisseji.
+   g.strokeStyle=p.tuft;g.lineWidth=1.1;g.lineCap='round';
+   for(let i=0;i<44;i++){
+     const x=rnd(seed+i*3.1+41)*W, y=rnd(seed+i*5.7+17)*H, s2=.7+rnd(seed+i)*.6;
+     g.beginPath();g.moveTo(x,y);g.lineTo(x-2*s2,y-5*s2);
+     g.moveTo(x,y);g.lineTo(x+2*s2,y-6*s2);g.stroke();
    }
  }
  // lesní porost
@@ -13042,14 +13105,34 @@ function terrainFull(g,W,H,seed){
  g.fillRect(0,0,W,OY);g.fillRect(0,OY+ROWS*CS,W,H-OY-ROWS*CS);
  g.fillRect(0,OY,OX,ROWS*CS);g.fillRect(OX+COLS*CS,OY,W-OX-COLS*CS,ROWS*CS);
  g.restore();
- // rám kolem mřížky, aby deska působila jako fyzická podložka
- g.strokeStyle='#101a44';g.lineWidth=6;
+ // Ram kolem mrizky, aby deska pusobila jako fyzicka podlozka.
+ // Vnitrni lem byl natvrdo bily a v nocnim motivu proto zaril jako neon.
+ g.strokeStyle=p.frameOut;g.lineWidth=6;
  g.strokeRect(OX-3,OY-3,COLS*CS+6,ROWS*CS+6);
- g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2;
+ g.strokeStyle=p.frameIn;g.lineWidth=2;
  g.strokeRect(OX-1,OY-1,COLS*CS+2,ROWS*CS+2);
  g.strokeStyle=p.grid;g.lineWidth=1;
  for(let c=0;c<=COLS;c++){g.beginPath();g.moveTo(OX+c*CS,OY);g.lineTo(OX+c*CS,OY+ROWS*CS);g.stroke();}
  for(let r=0;r<=ROWS;r++){g.beginPath();g.moveTo(OX,OY+r*CS);g.lineTo(OX+COLS*CS,OY+r*CS);g.stroke();}
+ // Stin pod rameckem. Zbytek appky stoji na tlustych obrysech a zapustenych
+ // plochach; deska byla proti tomu placka. Ctyri uzke prechody u okraju ji
+ // posadi dovnitr ramu. V kontrastnim motivu se vynechava - tam by jen
+ // ubiral kontrast na krajnich polich.
+ if(!(SAVE.opts&&SAVE.opts.theme==='hc')){
+   const GX=OX,GY=OY,GW2=COLS*CS,GH2=ROWS*CS,d=Math.min(CS*1.1,26);
+   // x,y,w,h je obdelnik pruhu; sx,sy je jeho STINOVANY roh (odtud se tmavne)
+   const pruh=(x,y,w,h,sx,sy,ex,ey)=>{
+     const lg=g.createLinearGradient(sx,sy,ex,ey);
+     lg.addColorStop(0,'rgba(4,8,26,.26)');lg.addColorStop(1,'rgba(4,8,26,0)');
+     g.fillStyle=lg;g.fillRect(x,y,w,h);
+   };
+   g.save();
+   pruh(GX,GY,d,GH2,             GX,GY,        GX+d,GY);        // zleva
+   pruh(GX+GW2-d,GY,d,GH2,       GX+GW2,GY,    GX+GW2-d,GY);    // zprava
+   pruh(GX,GY,GW2,d,             GX,GY,        GX,GY+d);        // shora
+   pruh(GX,GY+GH2-d,GW2,d,       GX,GY+GH2,    GX,GY+GH2-d);    // zdola
+   g.restore();
+ }
 }
 
 let BG=null;
@@ -13089,11 +13172,15 @@ function buildBG(){
    g.setLineDash([6,4]); g.lineWidth=hc?3:2;
    g.strokeStyle=hc?p.ink:tma?'rgba(255,200,92,.70)':'rgba(255,194,31,.85)';
    g.stroke(); g.setLineDash([]);
-   // 3) meznik uprostred kazdeho pole pasu - OBRYSOVY (plny znamena "teď to jde")
-   g.strokeStyle=hc?p.ink:p.marker; g.globalAlpha=hc?.8:.5; g.lineWidth=1.6;
+   // 3) Meznik uprostred kazdeho pole pasu. Byl kresleny na .5 kryti a o
+   // velikosti CS*.15, takze na desce stalo pres sedesat oranzovych trojuhelniku
+   // a byly to nejvyraznejsi tvary v celem obraze - hlasitejsi nez pristroje
+   // a nepratele, kteri o neco jdou. Pas uz stejne ohranicuje zluta cara,
+   // znacka staci jako tichy doplnek. V kontrastnim motivu zustava silna.
+   g.strokeStyle=hc?p.ink:p.marker; g.globalAlpha=hc?.8:.24; g.lineWidth=hc?1.6:1.2;
    g.beginPath();
    S.open.forEach(k=>{const [c,r]=k.split(',').map(Number),
-     x=OX+c*CS+CS/2, y=OY+r*CS+CS/2, s=CS*.15;
+     x=OX+c*CS+CS/2, y=OY+r*CS+CS/2, s=CS*(hc?.15:.11);
      g.moveTo(x,y-s); g.lineTo(x+s*.92,y+s*.7); g.lineTo(x-s*.92,y+s*.7); g.closePath();});
    g.stroke(); g.globalAlpha=1;
    g.restore();
@@ -13117,30 +13204,34 @@ function buildBG(){
    Object.keys(S.ter).forEach(key=>{
      const [c,r]=key.split(',').map(Number), d=TER[S.ter[key]];
      if(!d)return;
-     const x=OX+c*CS, y=OY+r*CS;
+     const x=OX+c*CS, y=OY+r*CS, dr=S.ter[key];
+     // Barvy pol driv sedely v TER natvrdo (denni odstiny), takze v nocnim
+     // motivu zustaval les svitive zeleny a vyvysenina piskove zluta.
+     const zakl=terBarva(dr,p), kresba=terKresba(dr,p);
      g.save();
-     g.fillStyle=d.c;g.globalAlpha=.55;
+     g.fillStyle=zakl;g.globalAlpha=.62;
      g.beginPath();g.roundRect?g.roundRect(x+1,y+1,CS-2,CS-2,5):g.rect(x+1,y+1,CS-2,CS-2);
      g.fill();
-     g.globalAlpha=.9;g.strokeStyle=d.c;g.lineWidth=1.2;
-     if(S.ter[key]==='wood'){
+     // slaby lem, aby pole melo hranu i tam, kde je podobne zemi
+     g.globalAlpha=.5;g.strokeStyle=zakl;g.lineWidth=1.4;g.stroke();
+     g.globalAlpha=.92;g.strokeStyle=kresba;g.fillStyle=kresba;g.lineWidth=1.2;
+     if(dr==='wood'){
        for(let i=0;i<3;i++){const px=x+CS*(.25+i*.25),py=y+CS*(.35+(i%2)*.28);
-         g.fillStyle='#2f7a35';g.beginPath();
+         g.beginPath();
          g.moveTo(px,py-CS*.14);g.lineTo(px+CS*.10,py+CS*.08);g.lineTo(px-CS*.10,py+CS*.08);
          g.closePath();g.fill();}
-     } else if(S.ter[key]==='rock'){
-       g.fillStyle='#7d746c';
+     } else if(dr==='rock'){
        g.beginPath();g.moveTo(x+CS*.2,y+CS*.75);g.lineTo(x+CS*.42,y+CS*.28);
        g.lineTo(x+CS*.62,y+CS*.75);g.closePath();g.fill();
        g.beginPath();g.moveTo(x+CS*.5,y+CS*.75);g.lineTo(x+CS*.68,y+CS*.42);
        g.lineTo(x+CS*.85,y+CS*.75);g.closePath();g.fill();
-     } else if(S.ter[key]==='water'){
-       g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=1.4;
+     } else if(dr==='water'){
+       g.lineWidth=1.4;
        for(let i=0;i<2;i++){g.beginPath();
          g.moveTo(x+CS*.2,y+CS*(.42+i*.24));
          g.quadraticCurveTo(x+CS*.5,y+CS*(.32+i*.24),x+CS*.8,y+CS*(.42+i*.24));g.stroke();}
      } else {
-       g.strokeStyle='rgba(90,60,20,.5)';g.lineWidth=1.4;
+       g.lineWidth=1.4;
        g.beginPath();g.arc(x+CS*.5,y+CS*.55,CS*.24,Math.PI,0);g.stroke();
        g.beginPath();g.arc(x+CS*.5,y+CS*.55,CS*.13,Math.PI,0);g.stroke();
      }
@@ -13270,6 +13361,39 @@ function chevrons(g){
  });
  g.globalAlpha=1;
 }
+/* Podstavec stanoviska. Do verze 92 to byl BILY zaobleny ctverec: na svetle
+   zelene desce mel skoro nulovy kontrast a se zbytkem appky - tmave modre
+   desticky s nasvicenym znakem - nemel nic spolecneho, takze pristroje
+   vypadaly jako nalepky prilepene na cizi obrazek.
+   Ted je to tataz desticka jako v obchode: tmavy podklad se svetlem shora,
+   silny obrys a vnitrni lem v barve pristroje. V kontrastnim motivu zustava
+   bila s cernym obrysem - tam je kontrast prednejsi nez sladeni. */
+function podstavec(g,x,y,S2,col,jam){
+ const p=P(), r=Math.max(2,S2*.22), w=S2-5, bx=x-S2/2+2.5, by=y-S2/2+2.5;
+ const tvar=function(o){
+   g.beginPath();
+   if(g.roundRect)g.roundRect(bx+o,by+o,w-o*2,w-o*2,Math.max(1,r-o));
+   else g.rect(bx+o,by+o,w-o*2,w-o*2);
+ };
+ g.save();
+ // vrzeny stin - desticka ma lezet NA desce, ne byt do ni vyriznuta
+ g.save();g.translate(0,Math.max(1.5,S2*.05));g.fillStyle=p.tileShadow;
+ tvar(0);g.fill();g.restore();
+ // telo se svetlem shora
+ const gr=g.createLinearGradient(0,by,0,by+w);
+ gr.addColorStop(0,p.tileTop);gr.addColorStop(1,p.tile);
+ g.fillStyle=gr;tvar(0);g.fill();
+ // silny obrys, stejny jazyk jako maji tlacitka v appce
+ g.strokeStyle=jam?'#ff8ad4':p.tileEdge;g.lineWidth=Math.max(1.6,S2*.045);
+ tvar(0);g.stroke();
+ // vnitrni lem v barve pristroje: druh se pozna i kdyz je znak prekryty
+ g.globalAlpha=.6;g.strokeStyle=col;g.lineWidth=Math.max(1,S2*.03);
+ tvar(Math.max(2,S2*.08));g.stroke();g.globalAlpha=1;
+ // odlesk horni hrany
+ g.strokeStyle=p.tileRim;g.lineWidth=1.2;
+ g.beginPath();g.moveTo(bx+r*.75,by+1.2);g.lineTo(bx+w-r*.75,by+1.2);g.stroke();
+ g.restore();
+}
 function drawTower(g,t){
  const p=P(),col=T[t.k].c;
  let x=tcx(t),y=tcy(t);
@@ -13280,8 +13404,6 @@ function drawTower(g,t){
  const bob=Math.sin(tAnim*2.2+t.c*1.7+t.r)*CS*.012;
  y+=bob;
  g.save();
- if(p.plinth==='#fdfbf4'){g.shadowColor='rgba(60,50,30,.30)';g.shadowBlur=4;g.shadowOffsetY=1.5;}
- g.fillStyle=p.plinth;g.strokeStyle=t.jam?'#ff8ad4':p.plinthEdge;g.lineWidth=1;
  // podstavec podle řady
  if(t.l>=1){
    g.save();
@@ -13305,16 +13427,19 @@ function drawTower(g,t){
     g.beginPath();g.arc(x,y,CS*.53,0,7);g.stroke();
     g.setLineDash([]);g.restore();
   }}
- const bx=x-CS/2+2.5, by=y-CS/2+2.5;
- g.beginPath();
- if(g.roundRect)g.roundRect(bx,by,CS-5,CS-5,CS*.22); else g.rect(bx,by,CS-5,CS-5);
- g.fill();g.stroke();
+ podstavec(g,x,y,CS,col,t.jam);
  if(fl>0){ g.globalAlpha=Math.min(.55,fl*3);g.fillStyle=col;
    g.beginPath();g.arc(x,y,CS*.52,0,7);g.fill();g.globalAlpha=1; }
  g.restore();
  if(t.buffD>0){g.strokeStyle=T.gnss.c;g.globalAlpha=.7;
    g.strokeRect(x-CS/2+4.5,y-CS/2+4.5,CS-9,CS-9);g.globalAlpha=1;}
- if(t.l>=2){g.save();g.shadowColor=col;g.shadowBlur=6+t.l*3+fl*40;
+ // Zar znaku. Driv byla az od druhe rady, protoze na bilem podstavci nemela
+ // co delat. Na tmavem podstavci je potreba hned - bez ni je znak plocha
+ // skvrna. V kontrastnim motivu se nezari vubec (tileDark=0).
+ if(p.tileDark&&(t.l>=1||!lowMotion())){
+   g.save();g.shadowColor=col;g.shadowBlur=3+t.l*3+fl*40;
+   glyph(g,t.k,x,y-CS*.04,CS*.50,t.l,col);g.restore();
+ } else if(t.l>=2){g.save();g.shadowColor=col;g.shadowBlur=6+t.l*3+fl*40;
    glyph(g,t.k,x,y-CS*.04,CS*.50,t.l,col);g.restore();}
  if(t.k==='theo'&&t.face){
    g.save();g.translate(x,y-CS*.04);g.scale(-1,1);g.translate(-x,-(y-CS*.04));
@@ -16670,7 +16795,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=93;
+const VERZE=94;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -17264,11 +17389,7 @@ function skHraStart(k,id){
      g.beginPath();g.arc(tx,ty,S2*.53,0,7);g.stroke();
      g.setLineDash([]);g.restore();
    }
-   g.fillStyle=p.plinth;g.strokeStyle=p.plinthEdge;g.lineWidth=1;
-   g.beginPath();
-   const bx=tx-S2/2+2.5, by=ty-S2/2+2.5;
-   if(g.roundRect)g.roundRect(bx,by,S2-5,S2-5,S2*.22); else g.rect(bx,by,S2-5,S2-5);
-   g.fill();g.stroke();
+   podstavec(g,tx,ty,S2,col,0);
    g.restore();
    const zal=SKPRE; SKPRE={k:k,id:id};
    try{ glyphKresli(g,k,tx,ty-S2*.04,S2*.50,D.l,col); }catch(e){}
@@ -20685,7 +20806,10 @@ function placeQuick(){
  if(!q||!lower)return;
  const tu=$('tut'), tuH=(tu&&tu.classList.contains('on'))?tu.offsetHeight+7:0;
  q.style.bottom=(lower.offsetHeight+6+tuH)+'px';
- if(fd)fd.style.bottom=(lower.offsetHeight+tuH+(q.classList.contains('on')?54:8))+'px';
+ // Driv natvrdo 54 px. Lista se ted muze zalomit do dvou rad, takze se jeji
+ // vyska musi PREMERIT, jinak by hlaseni lezela na tlacitkach.
+ if(fd)fd.style.bottom=(lower.offsetHeight+tuH+
+   (q.classList.contains('on')?(q.offsetHeight+8):8))+'px';
 }
 function setDock(open){
  DOCK=open;
