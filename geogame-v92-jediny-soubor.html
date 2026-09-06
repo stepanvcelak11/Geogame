@@ -9107,6 +9107,10 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
 .pasR.zam .pasOd,.pasR.zam .pasNm{opacity:1}
 .pasR.zam .karDlT s{color:var(--t3)}
 
+.hDet{margin-top:6px;width:100%;min-height:44px;border-radius:10px;
+  font-size:calc(11px*var(--fs,1));font-weight:800;letter-spacing:.02em;
+  color:var(--skyT,var(--sky));padding:0 2px}
+.hslot.lock .hDet{opacity:.75}
 </style>
 </head>
 <body>
@@ -10760,6 +10764,26 @@ const rarOf=k=>RAR[TRAR[k]||'c'];
    Zabírá 2x2 pole, takže se za něj platí i místem. */
 const HRDINOVE=['photo','rotlaser','mensula'];
 function jeHrdina(k){ return !!(T[k]&&T[k].hero); }
+/* SILA HRDINY. Hrdina zabira ctyri policka u trasy, takze ma odvadet praci
+   ctyr stanovisek - jinak je to jen hezci vez, ktera stoji misto.
+   ZMERENO na odehranych bezich (dmgDone hrdiny proti prumeru bezneho
+   stanoviska, 12 uzemi): dron zastal 1,33 stanoviska, rotacni laser 2,47,
+   mensula 0,65. S hrdinou proti behu bez nej vyslo 11/12 ku 11/12 vyhram -
+   hrdina tedy nepridaval prakticky nic a jen zabiral misto.
+
+   ⚠ MENSULA nema malo poskozeni, ma malo PRILEZITOSTI: je to jednocilovy
+   pristroj s kadenci kolem 1/s, takze od jisteho bodu uz jen prestreluje.
+   Merenim se zastavila na 2,2 stanoviska pri nasobku 3,4 i 6,2 - dalsi
+   poskozeni s tim nehne. Proto ma navic nasobek kadence, ktery zaroven zvysi
+   jeji prisun do rozpoctu (plati za zasah), tedy presne to, cim ma byt.
+
+   ⚠ PRI LADENI: "skoda na 1 rozpoctu" merena na zmrazenych cilech tuhle
+   otazku NEZODPOVI - nadhodnocuje vse, co bije po plose, a dron s peti stroji
+   je z toho nejcitlivejsi. Plati jedine odehrany beh, a mereni je vratke:
+   merit tri kola a brat median, ne jedno kolo. */
+const HRD_SILA={photo:{dmg:5.5}, rotlaser:{dmg:4.8}, mensula:{dmg:4.2,rate:1.9}};
+function hrdSila(k){ return (HRD_SILA[k]&&HRD_SILA[k].dmg)||1; }
+function hrdKadence(k){ return (HRD_SILA[k]&&HRD_SILA[k].rate)||1; }
 function hrdOdemcen(k){ return SAVE.testAll||((SAVE.tr||0)>=(T[k].tr||0)); }
 function hrdAktivni(){
  const k=SAVE.hrdOn;
@@ -12089,6 +12113,7 @@ function dmgOf(t){
       *(1+.90*(t.plus||0))*(hasPerk(t,'econdmg')?1.5:1)*(hasPerk(t,'globdmg')?1.45:1)
       *(hasPerk(t,'g_dmg')?1.25:1)*(1+.08*vetOf(t))*((S&&S.check>0)?1.7:1);
  if(k==='theo')m*=1+.22*M('theo_dmg');
+ if(T[k].hero)m*=hrdSila(k);
  return T[k].dmg[t.l]*m;
 }
 function perkRng(t){
@@ -12126,7 +12151,7 @@ function globalRate(){
  S.towers.forEach(g=>{ if(g.k==='basecal'&&hasPerk(g,'ballrate'))m=Math.max(m,1.15); });
  return m;
 }
-function rateOf(t){return T[t.k].rate[t.l]*perkRate(t)*globalRate()*(1+(t.buffT||0))*(1+(specHas(t.k,'rate')?.15:0))
+function rateOf(t){return T[t.k].rate[t.l]*(T[t.k].hero?hrdKadence(t.k):1)*perkRate(t)*globalRate()*(1+(t.buffT||0))*(1+(specHas(t.k,'rate')?.15:0))
  *(1+.08*M('rate'))*(1+condEff('rate'))*(S.rush>0?1.6:1);}
 function critOf(t){
  let c=.08*M('crit')+accEff(t.k,'crit')+(specHas(t.k,'crit')?.10:0)+(hasPerk(t,'g_crit')?.15:0);
@@ -12145,12 +12170,49 @@ function critOf(t){
 // at vi, ze to je zmena balancu, ne preklep k opraveni mimochodem.
 function auraR(t){return T.gnss.rng[t.l]*(1+.07*S.net.rng)*(1+.12*M('range'))*(1+accEff('gnss','rng'))*CS;}
 function calCost(t){
- const base=(16+t.cal*15)*(1+t.l*1.1);
- return Math.max(5,Math.round(base*(1-.30*M('calib'))));
+ // Kalibrace stoji PODIL Z CENY SVEHO pristroje. Driv byla cena na druhu
+ // pristroje nezavisla - (16+cal*15)*(1+l*1.1) - takze plna kalibrace pasma
+ // stala 662 rozpoctu, ackoli pasmo ctvrte rady stoji 88.
+ // ZMERENO (27 cilu, 20 s, skoda na 1 rozpoctu): stavet dal je dokonale
+ // linearni, 4 i 8 i 12 i 16 pasem da 40,0. Kalibrovat davalo 8,5; u nivelaku
+ // 15,9 proti 122 za stavbu. Kalibrace tedy byla DESETKRAT horsi nez postavit
+ // dalsi, cili past - kazdy rozpocet, ktery do ni hrac dal, byl vyhozeny.
+ // Ted vychazi na ~0,20 ucinnosti stavby: druha volba, ne past. Plati se tim,
+ // ze nepotrebuje misto na desce, kapacitu cety ani stesti v nabidce - a je
+ // to jedina cesta, jak zesilit, kdyz je ceta plna.
+ // HRDINA sem NEPATRI a zustava na stare cene. Za prve ma byt podle zadani
+ // drazsi, ne levnejsi. Za druhe nema rady ze slucovani - roste pres
+ // hrdUpCost (60/150/340/760) - takze priceOf*2^l u nej vubec nepopisuje,
+ // co do nej hrac dal. Tuhle vetev dopisuje soubezna session spolu s
+ // vyvazenim hrdinu; nesahat na ni bez toho vyvazeni.
+ if(typeof jeHrdina==='function'&&jeHrdina(t.k)){
+   // Hrdina nema rady ze slucovani, roste pres hrdUpCost - proto se cena
+   // pocita z toho, CO UZ DO NEJ HRAC NALIL (sectene ceny rad), ne z pausalu.
+   // Driv stala jeho kalibrace tolik co u pasma, ackoli +18 % pocita
+   // z nekolikanasobne vetsiho cisla: u dronu 4. rady 662 rozpoctu za totez,
+   // co u pasma za 662. Ted 1 648 - hrdina ma byt silny, ale zaplaceny.
+   const u=T[t.k].up||[60];
+   let vlozeno=0; for(let i=0;i<Math.min(t.l,u.length);i++)vlozeno+=u[i];
+   const zaklad=(vlozeno+u[0])*(.45+.15*t.cal);
+   return Math.max(5,Math.round(zaklad*(1-.30*M('calib'))));
+ }
+ const zaklad=priceOf(t.k)*Math.pow(2,t.l)*(.65+.15*t.cal);
+ return Math.max(5,Math.round(zaklad*(1-.30*M('calib'))));
 }
 function prepCost(){ return Math.round(55+S.wave*14); }
-function sellVal(t){const f=M('refund')?1:.5;let v=priceOf(t.k)*Math.pow(2.1,t.l)*f;
- for(let i=0;i<t.cal;i++)v+=(9+i*7)*(1+t.l*.9)*f;
+function sellVal(t){const f=M('refund')?1:.5;
+ // Zaklad je 2^rada - PRESNE tolik, kolik stanovisko te rady stalo (kazda
+ // rada je slouceni dvou nizsich). Drive tu bylo 2.1^rada; s kartou "Vykup
+ // pristroju" (vraci 100 %) to znamenalo +10 % za 2. radu, +21 % za 3. a
+ // +33 % za 4. - tedy stroj na penize, ktery dosud maskovala jen predrazena
+ // kalibrace. Zmereno po jejim zlevneni: 15 vydelecnych kombinaci.
+ let v=priceOf(t.k)*Math.pow(2,t.l)*f;
+ // Kalibrace se vraci podle TEZE ceny, jakou stala. Drive to bylo vlastni
+ // cislo (9+i*7)*(1+l*.9), ktere s cenou kalibrace nijak nesouviselo; po
+ // jejim zlevneni by vracelo vic, nez do ni hrac dal - stejny stroj na
+ // penize, jaky hlida radek s mistrovskou radou o kus niz.
+ const ck={k:t.k,l:t.l,cal:0};
+ for(let i=0;i<t.cal;i++){ ck.cal=i; v+=calCost(ck)*f; }
  // Mistrovska rada se vraci podle ZAPLACENYCH KREDITU, ne podle poctu hvezd.
  // Hvezda ze slouceni je zdarma, takze za ni prodej vratit nic nesmi - jinak
  // by slouceni dvou pasem 4. rady (dohromady za 204) dalo hvezdu prodejnou
@@ -13991,7 +14053,6 @@ function fire(t){
    // PENTAGONALNI HRANOL: meri jen v pravem uhlu - po rade nebo po sloupci.
    // Vybere osu s vetsim poctem cilu a projde ji celou; nic mimo osy nevidi.
    const sirka=def.sirka[t.l]*CS*(hasPerk(t,'orthowide')?1.7:1);
-   const osy=hasPerk(t,'ortho2')?['x','y']:['x','y'];
    const nase={x:[],y:[]};
    cand.forEach(e=>{ const q=pathPos(e.p,e.pi);
      if(Math.abs(q.y-ty)<=sirka)nase.x.push(e);
@@ -14369,7 +14430,7 @@ function startWave(){
    punch(7,'#ff9a6c');
    snd('s_boss');
    duck(.6,1.2);
-   setTimeout(()=>{ if(S&&S.phase==='combat')feed('<b>'+S.bossInfo.n+'</b> — '+S.bossInfo.d,'var(--tape)'); },900);
+   setTimeout(()=>{ if(S&&S.phase==='combat'&&S.bossInfo)feed('<b>'+S.bossInfo.n+'</b> — '+S.bossInfo.d,'var(--tape)'); },900);
  }
  snd('wave');
  if(SAVE.tut===4){SAVE.tut=5;save();}
@@ -15623,15 +15684,19 @@ function ui(){
    mk('qmv','přesun',Math.max(4,Math.round(sv*.4)),S.cr<Math.max(4,Math.round(sv*.4)),()=>{
      S.moving=t;S.mergeMode=false;setDock(false);
      toast('Klepni na volné pole — přístroj se přesune.');snd('ui');ui();});
+   // "Vratit" vraci porizovaci cenu - musi vratit i to, co hrac mezitim dal
+   // za mistrovskou radu, jinak mu ji tohle tlacitko spolkne (namereno 260
+   // pryc). Sloucenou hvezdu to nevraci: `mistrCr` jsou jen ZAPLACENE kredity.
    const fresh=t.built&&performance.now()-t.built<10000&&!t.dmgDone;
+   const vratit=(t.paid||0)+(t.mistrCr||0);
    if(jeHrdina(t.k)){
      // Hrdinu nejde prodat - je jen jeden a merenim s nim stojis a padas.
      mk('qs','nelze','—',true,()=>{});
    } else
-   mk('qs',fresh?'vrátit':'zrušit',fresh?('+'+t.paid):('+'+sv),false,()=>{
+   mk('qs',fresh?'vrátit':'zrušit',fresh?('+'+vratit):('+'+sv),false,()=>{
      if(fresh){
-       S.cr+=t.paid;S.towers=S.towers.filter(x=>x!==t);S.sel=null;S.moving=null;
-       recalcBuffs();snd('ui');feed('Stanovisko vráceno · <b>+'+t.paid+'</b>','var(--sky)');ui();return;
+       S.cr+=vratit;S.towers=S.towers.filter(x=>x!==t);S.sel=null;S.moving=null;
+       recalcBuffs();snd('ui');feed('Stanovisko vráceno · <b>+'+vratit+'</b>','var(--sky)');ui();return;
      }
      S.cr+=sv;S.towers=S.towers.filter(x=>x!==t);S.sel=null;S.mergeMode=false;
      recalcBuffs();snd('place');ui();});
@@ -17576,6 +17641,14 @@ function renderHrd(){
    sub.textContent=ok?def.n[0]:('od '+def.tr+' pohárů');
    d.appendChild(sub);
    if(akt){const b=document.createElement('div');b.className='hon';b.textContent='V TERÉNU';d.appendChild(b);}
+   // Hrdinu neslo do verze 92 vubec rozkliknout: klepnuti ho jen vybralo a
+   // zadna cesta k jeho podrobnostem ani k tomu, jak roste, neexistovala.
+   // Bezne pristroje maji '?' v nabidce sestavy, hrdinove nemeli nic.
+   const det=document.createElement('button');
+   det.className='hDet';det.textContent='Detail';
+   det.setAttribute('aria-label','Podrobnosti o hrdinovi '+(def.hn||def.n[0]));
+   det.onclick=e=>{e.stopPropagation();snd('ui');openTinfo(k);};
+   d.appendChild(det);
    d.onclick=()=>{
      if(!ok)return toast2('Odemkne se na '+def.tr+' pohárech. Máš '+(SAVE.tr||0)+'.');
      SAVE.hrdOn=k;save();snd('ui');renderHrd();
@@ -17838,15 +17911,23 @@ function openTinfo(k){
  glyph(g,k,70,70,68,Math.min(3,lv?Math.min(3,lv-1):0),def.c);
  $('tiName').textContent=def.n[0];
  $('tiRar').textContent=rr.n;
- $('tiSub').innerHTML=[(lv?'úroveň <b>'+lv+'</b><i>/8</i>':''),
-   'cena <b>'+priceOf(k)+'</b>',
-   (SUP.indexOf(k)>=0?'podpůrný':'útočný'),
-   'karet <b>'+(SAVE.cards[k]||0)+'</b>'
- ].filter(Boolean).map(x=>'<span>'+x+'</span>').join('');
+ // Hrdina se nekupuje ze skladu ani nesbira karty - 1. rada je zdarma a dal
+ // roste za rozpocet primo v mereni. Ukazovat u nej 'cena' a 'karet' lhalo.
+ $('tiSub').innerHTML=(jeHrdina(k)
+   ?['<b>hrdina</b>','zabírá <b>4 pole</b>','1. řada <b>zdarma</b>','nelze sloučit']
+   :[(lv?'úroveň <b>'+lv+'</b><i>/8</i>':''),
+     'cena <b>'+priceOf(k)+'</b>',
+     (SUP.indexOf(k)>=0?'podpůrný':'útočný'),
+     'karet <b>'+(SAVE.cards[k]||0)+'</b>']
+ ).filter(Boolean).map(x=>'<span>'+x+'</span>').join('');
  $('tiDemoNote').textContent=DEMONOTE[k]||def.d;
  // pruhy vlastností
  const maxD=Math.max(...ORD.map(x=>T[x].dmg?T[x].dmg[3]*(T[x].rate?T[x].rate[3]:1):0));
- const dps=def.dmg?def.dmg[3]*(def.rate?def.rate[3]:1):0;
+ // U hrdiny se do pruhu musi promitnout jeho nasobek sily, jinak ukazuji
+ // mensi cislo, nez jake hrac na desce doopravdy dostane.
+ const hsB=(jeHrdina(k)&&typeof hrdSila==='function')?hrdSila(k):1;
+ const hrB=(jeHrdina(k)&&typeof hrdKadence==='function')?hrdKadence(k):1;
+ const dps=def.dmg?def.dmg[3]*hsB*(def.rate?def.rate[3]*hrB:1):0;
  const maxR=Math.max(...ORD.map(x=>T[x].rng[3]));
  const maxRate=Math.max(...ORD.map(x=>T[x].rate?T[x].rate[3]:1));
  const bars=[['Poškození',dps/maxD,dps?Math.round(dps):'—'],
@@ -17858,10 +17939,36 @@ function openTinfo(k){
  $('tiPrax').textContent=inf.p;
  $('tiFact').textContent=inf.f;
  const tt=$('tiTiers');tt.innerHTML='';
+ const hs=(jeHrdina(k)&&typeof hrdSila==='function')?hrdSila(k):1;
+ const hr=(jeHrdina(k)&&typeof hrdKadence==='function')?hrdKadence(k):1;
  def.n.forEach((nm,i)=>{
    const d=document.createElement('div');d.className='tiTier';
-   let val=def.dmg&&def.dmg[i]?('pošk. '+Math.round(def.dmg[i]*(1+.08*lv))+' · dosah '+def.rng[i].toFixed(1)+
-     (def.rate?' · '+def.rate[i].toFixed(2)+'/s':'')):('dosah '+def.rng[i].toFixed(1)+' · podpora');
+   let val=def.dmg&&def.dmg[i]?('pošk. '+Math.round(def.dmg[i]*hs*(1+.08*lv))+' · dosah '+def.rng[i].toFixed(1)+
+     (def.rate?' · '+(def.rate[i]*hr).toFixed(2)+'/s':'')):('dosah '+def.rng[i].toFixed(1)+' · podpora');
+   // U hrdiny je videt, co dalsi rada stoji a co v ni pribude - jinak hrac
+   // nema jak zjistit, ze se vylepsuje az v mereni a za kolik.
+   if(jeHrdina(k)){
+     const u=def.up||[];
+     val+=i===0?' · <b>zdarma</b>':(u[i-1]?' · vylepšení za <b>'+u[i-1]+'</b>':'');
+     const pr=(typeof HPERK==='object'&&HPERK[k])?HPERK[k][i]||[]:[];
+     const nove=pr.filter(id=>(HPERK[k][i-1]||[]).indexOf(id)<0);
+     if(nove.length){
+       // POZOR: treeFor() vraci OBJEKT {t1,t2,t3}, ne pole - iterovat pres nej
+       // spadne a shodi cely openTinfo. Jmeno se hleda v ploche tabulce perku
+       // sveho druhu a teprve pak v obecnych (GEN).
+       // Hledat je nutne ve VSECH tabulkach PERKS, ne jen u sveho druhu:
+       // 'markperm' ma dron v HPERK, ale definovany je u znackovaciho druhu.
+       const plocha=[];
+       if(typeof PERKS==='object')Object.keys(PERKS).forEach(kd=>
+         (PERKS[kd]||[]).forEach(r2=>(r2||[]).forEach(o=>{ if(o&&o.id)plocha.push(o); })));
+       const jm=nove.map(id=>{
+         const o=plocha.find(x=>x.id===id);
+         if(o)return o.n;
+         return (typeof GEN==='object'&&GEN[id]&&GEN[id].n)||id;
+       });
+       val+='<br>nově: '+jm.join(', ');
+     }
+   }
    d.innerHTML='<div class="tb">'+(i+1)+'</div><div class="tt">'+nm+'<div class="tv">'+val+'</div></div>';
    tt.appendChild(d);
  });
@@ -19366,6 +19473,20 @@ function renderOpts(){
          showHint(
            'GeoGame '+VERZE+'\n\n'+
            'CO SE ZMĚNILO PROTI 91\n'+
+           '• HRDINA KONEČNĚ STOJÍ ZA SVÁ Čtyři pole. Zabírá čtyři stanoviště u trasy,\n'+
+           '  ale odváděl práci jednoho: změřeno na odehraných bězích zastal dron 1,3\n'+
+           '  stanoviska, rotační laser 2,5 a mensula 0,7. Běh s hrdinou i bez něj\n'+
+           '  vycházel stejně, takže to bylo jen hezčí místo na desce. Teď zastane\n'+
+           '  dron 3,8, rotační laser 3,6 a mensula 2,8 — a mensula k tomu\n'+
+           '  přisype ještě kolem 2 100 do rozpočtu za běh\n'+
+           '• HRDINU JDE ROZKLIKNOUT. Ve výběru hrdiny přibylo tlačítko Detail — do teď\n'+
+           '  šlo hrdinu jen vybrat a nikde nebylo vidět, co umí ani jak roste.\n'+
+           '  V detailu je u každé řady cena vylepšení a schopnost, která v ní přibude\n'+
+           '• KALIBRACE HRDINY ZDRAŽILA (662 → 1 648 až 1 918 za plnou). Stála tolik co\n'+
+           '  u pásma, ačkoli těch +18 procent počítá z několikanásobně většího čísla\n'+
+           '  — hrdina má být silný, ale zaplacený\n'+
+           '• Tlačítko VRÁTIT u čerstvě postaveného stanoviska už nespolkne to, co jsi\n'+
+           '  mezitím dal za mistrovskou hvězdu\n'+
            '• UZÁVĚR ETAPY. Každá etapa teď končí číslem: jak daleko po trasách se\n'+
            '  dostal nejhlubší vliv. Dokud jsi neztrácel přesnost, hra mlčela — a tys\n'+
            '  nevěděl, jestli to bylo o vlas, nebo o tři třídy. Uzávěr to řekne dopředu\n'+

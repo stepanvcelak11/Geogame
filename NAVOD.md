@@ -55,6 +55,84 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
 
+## Co je nového ve verzi 92
+
+### Hrdinové
+
+**Hrdina konečně stojí za svá čtyři pole.** Zabírá čtyři stanoviště u trasy,
+ale odváděl práci jednoho. Změřeno na odehraných bězích (odvedené poškození
+hrdiny proti průměru běžného stanoviska, 12 území × 3 kola): dron zastal
+**1,3** stanoviska, rotační laser **2,5**, mensula **0,7** — a běh s hrdinou
+vycházel stejně jako běh bez něj, takže to bylo jen hezčí místo na desce.
+Teď zastane dron **3,8**, rotační laser **3,6** a mensula **2,8**;
+mensula k tomu přisype ještě kolem **2 100** rozpočtu za běh a sama posune
+výsledek z 8,7 na 10,3 vyhraných území z dvanácti.
+
+⚠ Síla se ladí na jednom místě — konstanta `HRD_SILA` v `index.html`. Kdo ji
+bude přelaďovat: **„škoda na 1 rozpočtu" měřená na zmrazených cílech tuhle
+otázku nezodpoví** (nadhodnocuje všechno, co bije po ploše, a dron s pěti
+stroji je z toho nejcitlivější). Platí jedině odehraný běh, a měřidlo je
+vratké — tři kola a medián, ne jedno kolo.
+
+⚠ Mensula nemá málo poškození, má málo **příležitostí**: je to jednocílový
+přístroj s kadencí kolem 1/s, takže od jisté hranice už jen přestřeluje.
+Při násobku 3,4 i 6,2 se zastavila na 2,2 stanoviska. Pohnul s ní až násobek
+**kadence** — ten zároveň zvyšuje její přísun do rozpočtu, tedy přesně to,
+čím má být.
+
+**Hrdinu jde rozkliknout.** Ve výběru hrdiny přibylo tlačítko **Detail**.
+Do teď šlo hrdinu jen vybrat: běžné přístroje mají v nabídce sestavy `?`,
+hrdinové neměli nic — a okno detailu u nich navíc lhalo, ukazovalo „cena"
+a „karet", ačkoli hrdina se nekupuje ze skladu ani nesbírá karty. Teď je
+u každé řady vidět cena vylepšení a schopnost, která v ní přibude.
+
+**Kalibrace hrdiny zdražila** z 662 na 1 648 až 1 918 za plnou. Stála tolik
+co u pásma, ačkoli těch +18 % počítá z několikanásobně většího čísla — u hrdiny
+to tedy bylo několikanásobně víc síly za tutéž cenu. Cena teď vychází z toho,
+co už do něj hráč nalil (sečtené ceny řad), ne z paušálu.
+
+**Uzávěr etapy.** Každá etapa teď končí číslem: jak daleko po trase se dostal
+nejhlubší vliv. Dokud jsi neztrácel přesnost, hra mlčela — a tys nevěděl, jestli
+to bylo o vlas, nebo o tři třídy. Změřeno robotem: **86 % etap skončilo beze změny
+jediné číslice.** Uzávěr to řekne dopředu (v prohraném území roste z 39 % na 100 %
+už čtyři etapy před první ztrátou) a čím dál od nulového bodu obranu udržíš, tím
+větší dotace.
+
+**Mistrovská řada ★ až ★★★.** Čtvrtá řada bývala strop, na který se dosáhne kolem
+desáté etapy — a tím růst skončil, zatímco vlny rostly dál. „Mistrovská varianta"
+sice existovala, ale byla to jediná hvězda a bylo na ni potřeba **osm** přístrojů
+téhož druhu; robot na ni za celý běh došel třikrát ze sedmdesáti etap. Teď nad
+čtvrtou řadou vede žebřík tří hvězd, každá **+90 % poškození**, a vedou k ní dvě
+cesty: sloučit dva stejně označené přístroje (zdarma), nebo hvězdu koupit
+(260 / 900 / 1 900). Tlačítko je tam, kde bývalo SLOUČIT, jakmile není s čím slučovat.
+
+**Koupená hvězda přežije POKRAČOVAT.** `plus` se neukládalo do snímku rozehrané
+hry už od doby, kdy vzniklo — po načtení se mistrovská řada tiše ztratila i s tím,
+co za ni hráč zaplatil. Změřeno: ★★ za 1 160 rozpočtu → po načtení **267 poškození
+místo 746**.
+
+**Kapacita čety konečně něco znamená.** Rostla na 43–46 stanovisek, zatímco na
+desce jich stálo 8–14 — to číslo v HUDu za celý běh nikdy nic neomezilo. Hlavní
+příčina: +1 za každé třetí sloučení bez stropu, ačkoli sloučení už samo jedno
+místo uvolňuje. Teď má strop. Podíl etap, kdy je četa plná, u hráče, který
+neslučuje: **33 % → 51 %**; u toho, kdo slučuje, zůstává skoro nulový. Slučování
+je tím konečně to, čím má být — cesta ven z nedostatku místa.
+
+**Příjem drží krok s vlnami.** Dotace přestávala růst ve 12. etapě a odměna za
+zničený vliv nerostla vůbec, ale odolnost vln mezi 12. a 24. etapou vyroste 22×.
+Nebyl to strop síly, ale peněz.
+
+**Gravimetr konečně ubírá.** Celé jeho poškození jde přes vír a ten je uděloval
+po snímcích — zlomek bodu, ze kterého pancíř sebral všechno. Sedání bodu,
+Multipath, Rušička ani boss od něj nedostávali **nic**, a přitom je držel na
+místě, takže etapa neměla jak skončit.
+
+**Pásmo mělo zdarma průbojnost**, kterou popisek slibuje jen teodolitu. Teodolit
+za dvojnásobek ceny byl proto horší nákup skoro ve všem.
+
+**Tlak je rovnoměrnější.** První třetina území už není na všech dvanácti stejná
+a poslední třetina už není zeď.
+
 ## Co je nového ve verzi 91
 
 Verze podle připomínek hráče. Prošel novou podobu hry obrazovku po obrazovce —
@@ -449,49 +527,6 @@ co bylo rozbité — včetně dvou věcí, které braly hráči postup.
 - Obtížnost: přesnost klesá plynule podle toho, kolik vlny projde, vlny nerostou
   na konci tak strmě a v Nastavení přibylo **Omezit pohyb**.
 
-## Co je nového ve verzi 92
-
-**Uzávěr etapy.** Každá etapa teď končí číslem: jak daleko po trase se dostal
-nejhlubší vliv. Dokud jsi neztrácel přesnost, hra mlčela — a tys nevěděl, jestli
-to bylo o vlas, nebo o tři třídy. Změřeno robotem: **86 % etap skončilo beze změny
-jediné číslice.** Uzávěr to řekne dopředu (v prohraném území roste z 39 % na 100 %
-už čtyři etapy před první ztrátou) a čím dál od nulového bodu obranu udržíš, tím
-větší dotace.
-
-**Mistrovská řada ★ až ★★★.** Čtvrtá řada bývala strop, na který se dosáhne kolem
-desáté etapy — a tím růst skončil, zatímco vlny rostly dál. „Mistrovská varianta"
-sice existovala, ale byla to jediná hvězda a bylo na ni potřeba **osm** přístrojů
-téhož druhu; robot na ni za celý běh došel třikrát ze sedmdesáti etap. Teď nad
-čtvrtou řadou vede žebřík tří hvězd, každá **+90 % poškození**, a vedou k ní dvě
-cesty: sloučit dva stejně označené přístroje (zdarma), nebo hvězdu koupit
-(260 / 900 / 1 900). Tlačítko je tam, kde bývalo SLOUČIT, jakmile není s čím slučovat.
-
-**Koupená hvězda přežije POKRAČOVAT.** `plus` se neukládalo do snímku rozehrané
-hry už od doby, kdy vzniklo — po načtení se mistrovská řada tiše ztratila i s tím,
-co za ni hráč zaplatil. Změřeno: ★★ za 1 160 rozpočtu → po načtení **267 poškození
-místo 746**.
-
-**Kapacita čety konečně něco znamená.** Rostla na 43–46 stanovisek, zatímco na
-desce jich stálo 8–14 — to číslo v HUDu za celý běh nikdy nic neomezilo. Hlavní
-příčina: +1 za každé třetí sloučení bez stropu, ačkoli sloučení už samo jedno
-místo uvolňuje. Teď má strop. Podíl etap, kdy je četa plná, u hráče, který
-neslučuje: **33 % → 51 %**; u toho, kdo slučuje, zůstává skoro nulový. Slučování
-je tím konečně to, čím má být — cesta ven z nedostatku místa.
-
-**Příjem drží krok s vlnami.** Dotace přestávala růst ve 12. etapě a odměna za
-zničený vliv nerostla vůbec, ale odolnost vln mezi 12. a 24. etapou vyroste 22×.
-Nebyl to strop síly, ale peněz.
-
-**Gravimetr konečně ubírá.** Celé jeho poškození jde přes vír a ten je uděloval
-po snímcích — zlomek bodu, ze kterého pancíř sebral všechno. Sedání bodu,
-Multipath, Rušička ani boss od něj nedostávali **nic**, a přitom je držel na
-místě, takže etapa neměla jak skončit.
-
-**Pásmo mělo zdarma průbojnost**, kterou popisek slibuje jen teodolitu. Teodolit
-za dvojnásobek ceny byl proto horší nákup skoro ve všem.
-
-**Tlak je rovnoměrnější.** První třetina území už není na všech dvanácti stejná
-a poslední třetina už není zeď.
 
 ## Co je nového ve verzi 83
 

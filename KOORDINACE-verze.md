@@ -94,6 +94,51 @@ koupených ★1 sečte investici na 520 a nezdvojnásobí ji.
 `snapshot()` i `loadRun()`. **Kdykoli přidáváš stav na věž, projdi obě funkce** —
 `snapshot()` má vlastní ruční seznam polí a tiše zahodí všechno, co v něm není.
 
+### Hrdinové: síla za čtyři pole (druhé zadání uživatele k 92)
+
+Uživatel: *„vybalancuj hrdiny tak, aby silou dali za 4 postavičky (zabírají
+4 políčka)… ve výběru u decku si nemůžu rozkliknout ani vylepšit hrdinu…
+a kalibrace je u hrdiny levná, tak ji zdraž, protože hrdina má být silnější
+a speciální."*
+
+**Naměřený výchozí stav** (odvedené poškození hrdiny proti průměru běžného
+stanoviska, odehrané běhy, 12 území × 3 kola): dron **1,33**, rotační laser
+**2,47**, mensula **0,65** stanoviska. Běh s hrdinou i bez něj vycházel na
+11/12 výher — hrdina nepřidával prakticky nic a jen zabíral čtyři pole.
+**Po vyvážení:** dron 3,8, rotační laser 3,6, mensula 2,8 (+ ~2 100 rozpočtu za běh).
+
+⚠⚠ **Že „s hrdinou" a „bez hrdiny" vyjde po vyvážení STEJNĚ, je správný
+výsledek, ne chyba.** Hrdina má stát právě za ta čtyři stanoviště, která
+zabírá — takže když se výhry nezmění, je vyvážený přesně na svou cenu.
+Metrika „kolik stanovisek zastane" je ta, která na tuhle otázku odpovídá;
+počet výher na ni odpovědět neumí, protože u robota saturuje kolem 10,7/12.
+
+⚠⚠ **Metrika je podíl na PEVNÉM koláči, takže saturuje.** Celkové poškození
+za běh je dané odolností vln; když hrdina udělá víc, běžná stanoviska udělají
+míň a průměr, kterým se dělí, klesne. Zdvojnásobení násobku proto zdaleka
+nezdvojnásobí výsledek — z ×3,0 na ×6,2 se dron pohnul jen z 2,5 na 5,1.
+Ladit iterativně a měřit, ne dopočítávat trojčlenkou.
+
+⚠ **Mensula nemá málo poškození, má málo PŘÍLEŽITOSTÍ.** Jednocílový přístroj
+s kadencí ~1/s od jisté hranice jen přestřeluje: při násobku 3,4 i 6,2 se
+zastavila na 2,2 stanoviska. Pohnul s ní až násobek KADENCE — ten zároveň
+zvedá její přísun do rozpočtu, tedy přesně to, čím má být.
+
+⚠ **`treeFor()` vrací OBJEKT `{t1,t2,t3}`, ne pole.** Iterace přes něj
+(`for…of`) shodí celý `openTinfo()` a okno se vůbec neotevře. Jména vylepšení
+se musí hledat ve **všech** tabulkách `PERKS`, ne jen u svého druhu —
+`markperm` má dron v `HPERK`, ale definovaný je u značkovacího druhu.
+
+⚠ **Hrdinu nešlo do 92 vůbec rozkliknout** a `openTinfo()` u něj lhal:
+ukazoval „cena" a „karet", ačkoli hrdina se nekupuje ze skladu ani nesbírá
+karty. Navíc `ORD` hrdiny neobsahuje, takže je míjí i sběratelská obrazovka
+a všechny cesty vylepšování přes karty. Roste jedině `hrdUpCost` přímo v měření.
+
+**Kalibrace hrdiny** vychází z nasčítaných `up[]` (co už do něj hráč nalil),
+ne z `priceOf*2^l` — hrdina nemá řady ze slučování, takže by ho ta mocnina
+popisovala špatně. Plná kalibrace 662 → 1 648 (dron) až 1 918 (mensula),
+zatímco běžné přístroje jdou po opravě soubežné session na 0,47–1,48násobek.
+
 ### ⚠⚠ Past v měřidle, které staví „co nejblíž trase"
 
 Nález balancové session, ať na tom nikdo nestráví hodinu znovu: robot, který
