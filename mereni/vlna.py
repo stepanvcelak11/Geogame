@@ -81,24 +81,37 @@ SETUP = r"""
  };
 
  // --- REŽIM VLIVY -----------------------------------------------------
- // Proti PEVNÉ obraně jde vlna složená z jediného druhu vlivu. Každý druh
- // dostane STEJNÝ POČET kusů i STEJNOU ODOLNOST NA KUS (násobek se dopočítá
- // z jeho základní odolnosti), takže se druhy liší UŽ JEN CHOVÁNÍM — rychlostí,
- // pancířem, regenerací, umlčováním stanovisek, léčením okolí, krytím,
- // přeskakováním trasy. Měří se, jaká část vlny projde k nulovému bodu.
- // Vypouští se ručně, ne přes S.queue, aby šla odolnost nastavit po kusech.
- window.__vliv=function(druh,obrana,l,odolnostKusu,pocet,gap){
+ // Návrh session c5, lepší než obě předchozí: VYPNOUT UMÍRÁNÍ. Cíle jsou
+ // nesmrtelné a stojí na místě, takže z měření vypadne práh „došel / nedošel"
+ // i vliv rychlosti. Měří se JEDINÁ věc: kolik poškození obrana za daný čas
+ // NETTO odvede, když proti ní stojí tenhle druh. Do toho se samo započítá
+ //   - umlčování stanovisek (rušička, boss)   → obrana míň střílí
+ //   - krytí okolí (zákryt)                   → míň poškození dopadne
+ //   - léčení a regenerace (léčitel, drift)   → část se vrátí zpět
+ //   - pancíř                                 → míň z rány projde
+ // Rychlost se měří ZVLÁŠŤ (čistý čas na trase), ne smíchaná dohromady.
+ window.__vliv=function(druh,obrana,l,pocet,sekund){
    __zaklad(0);
    if(!__postav(obrana,l))return {chyba:'obrana se nevešla'};
    recalcBuffs();
-   const scale=odolnostKusu/E[druh].hp;
-   S.waveTotal=pocet; S.waveDm=1; S.waveLoss=0; S.leaked=0;
-   let t=0, vypusteno=0, dalsi=0;
-   while(t<gap*pocet+150&&(vypusteno<pocet||S.enemies.length)){
-     if(vypusteno<pocet&&t>=dalsi){ spawnAt(druh,0,scale,false,0); vypusteno++; dalsi+=gap; }
-     step(1/60); t+=1/60;
-   }
-   return {pocet:pocet, proslo:S.leaked, podil:S.leaked/pocet, sekund:Math.round(t)};
+   const puvodniSp=E[druh].sp;
+   E[druh].sp=0;                       // stoji na miste
+   const L=pathOf(0).length-1;
+   for(let i=0;i<pocet;i++) spawnAt(druh,1+(i/pocet)*(L-2),400,false,0);
+   S.enemies.forEach(e=>{e.hp=e.mhp;e.el=null;});
+   const pred=S.enemies.reduce((a,e)=>a+e.mhp,0);
+   let t=0; while(t<sekund){ step(1/60); t+=1/60; }
+   const po=S.enemies.reduce((a,e)=>a+Math.max(0,e.hp),0);
+   E[druh].sp=puvodniSp;
+   return {netto:Math.round(pred-po), zbylo:S.enemies.length};
+ };
+ // Rychlost zvlast: cisty cas, za ktery druh projde trasu bez odporu.
+ window.__rychlost=function(druh){
+   __zaklad(0);
+   spawnAt(druh,0,400,false,0);
+   let t=0;
+   while(t<400&&S.enemies.length){ step(1/60); t+=1/60; }
+   return {sekund:+t.toFixed(1)};
  };
  return 'ok';
 }
@@ -138,40 +151,40 @@ def spust(cesta, rezim):
                 print("%-10s %6d | %8.0f %8.0f | %8.1f %8.1f"
                       % (k, pg.evaluate("k=>priceOf(k)", k), s3, s4, s3 / c3, s4 / c4))
         else:
-            # Tlak se ladí ODOLNOSTÍ NA KUS při pevném počtu. Dřív jsem ladil
-            # násobek při pevném rozpočtu odolnosti celé vlny — to jen měnilo,
-            # na kolik kusů se táž odolnost rozdělí, a sílu vlny nechalo být.
-            POCET, GAP = 24, 1.1
-            odolnost = 400
-            for _ in range(12):
-                r = pg.evaluate("a=>window.__vliv(a[0],a[1],a[2],a[3],a[4],a[5])",
-                                ['err', OBRANA, 2, odolnost, POCET, GAP])
-                if r.get("chyba"): print("CHYBA:", r["chyba"]); return
-                if r["podil"] < .20: odolnost = int(odolnost * 1.5)
-                elif r["podil"] > .45: odolnost = int(odolnost / 1.25)
-                else: break
-            print("PROJDE VLNA — naměřená síla vlivů")
-            print("obrana: %s (3. řada)" % ", ".join(OBRANA))
-            print("každý druh: %d kusů po %d odolnosti, jeden každých %.1f s —"
-                  " liší se tedy UŽ JEN CHOVÁNÍM" % (POCET, odolnost, GAP))
-            print("odolnost doladena tak, aby Chyba odectu propoustela kolem tretiny")
+            SEKUND = 30
+            print("PROJDE VLNA - namerena sila vlivu (verze s vypnutym umiranim)")
+            print("obrana: %s (3. rada)" % ", ".join(OBRANA))
+            print("Nesmrtelne cile jednoho druhu stoji na trase, meri se %d s." % SEKUND)
+            print("NASOBEK = o kolik odvede obrana min prace nez proti Chybe odectu.")
+            print("Meri se pri TREH i pri DVACETI kusech, protoze u umlcovani a leceni")
+            print("neni ucinek na poctu linearni - tri rusicky nejsou petina dvaceti.")
+            print("Rychlost je zvlast, neni v tom zamichana.")
             print()
-            print("%-22s %5s %7s %8s %9s" % ("vliv", "kusů", "prošlo", "podíl", "NÁSOBEK"))
-            zaklad = None
+            print("%-22s %10s %8s | %10s %8s | %9s %8s" %
+                  ("vliv", "NETTO 3", "nasobek", "NETTO 20", "nasobek", "trasa (s)", "rychlost"))
             radky = []
             for k in VLIVY:
-                v = [pg.evaluate("a=>window.__vliv(a[0],a[1],a[2],a[3],a[4],a[5])",
-                                 [k, OBRANA, 2, odolnost, POCET, GAP]) for _ in range(3)]
-                if any("chyba" in x for x in v):
+                mer = {}
+                for n in (3, 20):
+                    v = [pg.evaluate("a=>window.__vliv(a[0],a[1],a[2],a[3],a[4])",
+                                     [k, OBRANA, 2, n, SEKUND]) for _ in range(3)]
+                    if any("chyba" in x for x in v): mer = None; break
+                    mer[n] = statistics.mean(x["netto"] for x in v)
+                if mer is None:
                     print("%-22s -" % k); continue
-                podil = statistics.mean(x["podil"] for x in v)
-                pocet = v[0]["pocet"]
-                proslo = statistics.mean(x["proslo"] for x in v)
-                if k == 'err': zaklad = podil
-                radky.append((k, pocet, proslo, podil))
-            for k, pocet, proslo, podil in radky:
-                nas = podil / zaklad if zaklad else 0
-                print("%-22s %5d %7.1f %7.0f %% %8.2f×" % (k, pocet, proslo, podil * 100, nas))
+                cas = pg.evaluate("k=>window.__rychlost(k)", k)["sekund"]
+                radky.append((k, mer[3], mer[20], cas))
+            z3 = next((x[1] for x in radky if x[0] == 'err'), 1) or 1
+            z20 = next((x[2] for x in radky if x[0] == 'err'), 1) or 1
+            zc = next((x[3] for x in radky if x[0] == 'err'), 1) or 1
+            for k, n3, n20, cas in radky:
+                print("%-22s %10.0f %7.2fx | %10.0f %7.2fx | %9.1f %7.2fx"
+                      % (k, n3, z3 / n3 if n3 else 0, n20, z20 / n20 if n20 else 0,
+                         cas, zc / cas if cas else 0))
+            print()
+            print("Nasobek > 1 = obrana proti tomu druhu odvede min prace nez proti")
+            print("Chybe odectu; to je ta cast hrozby, kterou NENESE odolnost.")
+            print("Nasobek 0 znamena, ze obrana neodvedla nic (uplne umlcena).")
         print("\nchyby JS:", errs[:4])
         b.close()
 
