@@ -9695,6 +9695,12 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
 
     <!-- 3. zastavka: UKOLY. "Co ted" a Zakazka dne v jedne karte. -->
     <div class="tUkoly">
+     <!-- "Co ted" tu chybelo. Funkce `renderTodo()` existuje, vola se v `ui()`
+          a styly pro ni jsou napsane vcetne vlastniho bloku
+          `#pgTeren .tUkoly #todoBox`, jen PRVEK v HTML nikdo nepridal - takze
+          `$('todoBox')` vracelo null a cely panel se nikdy nevykreslil.
+          Nadpis teto zastavky pritom slibuje "Co ted a Zakazka dne". -->
+     <div id="todoBox"></div>
      <div id="dailyBox" class="dailyJob"></div>
     </div>
 
@@ -11079,6 +11085,11 @@ const TIPS=[
 // vysledek zavisi na tom, jak radici algoritmus porovnava.
 // Cesky pocet: 1 pokus / 2-4 pokusy / 5+ pokusu.
 function pokusy(n){ return n+' pokus'+(n===1?'':(n>=2&&n<=4?'y':'ů')); }
+// Cesky se pocitane podstatne jmeno ridi cislem: 1 bedna, 2-4 bedny, 5+ beden.
+// Hra to umela u karet (`cardWord`) a u pokusu, jinde mela jeden tvar natvrdo -
+// v brifinku pak stalo "2 splneny denni ukol", "2 uspech k vyzvednuti",
+// "Mas 3 hvezd" i "Z terenu ti prislo 2 beden".
+function pocet(n,jedna,dve,pet){ return n+' '+(n===1?jedna:(n>=2&&n<=4?dve:pet)); }
 function zamichej(pole){
  for(let i=pole.length-1;i>0;i--){
    const j=(Math.random()*(i+1))|0;
@@ -11566,8 +11577,13 @@ function dayHash(){
 function challengeDef(){
  const h=dayHash();
  const map=h%MAPS.length;
- const a=CHMODS[h%CHMODS.length], b=CHMODS[(h>>3)%CHMODS.length];
- const mods=a===b?[a]:[a,b];
+ const ia=h%CHMODS.length;
+ let ib=(h>>3)%CHMODS.length;
+ // Karta rezimu slibuje "jina DVOJICE pravidel" kazdy den, jenze kdyz oba
+ // vypocty padly na tentyz modifikator, vyzva mela jen jeden - zmereno
+ // 46 dnu z 365. Pri shode se bere sousedni polozka, at je dvojice vzdy.
+ if(ib===ia)ib=(ia+1+((h>>6)%(CHMODS.length-1)))%CHMODS.length;
+ const mods=[CHMODS[ia],CHMODS[ib]];
  return {map,mods,waves:12};
 }
 function chMod(id){ return S&&S.chal&&S.chal.mods.some(m=>m.id===id); }
@@ -16209,7 +16225,8 @@ function showCrate(list){
  // Nadpisek uz nerika "klepni na bednu" - to same stalo na bedne samotne.
  const lead=$('crLead');
  if(lead)lead.textContent=list.length>1
-   ?'Z terénu ti přišlo '+list.length+' beden. Otevři je jednu po druhé.'
+   ?'Z terénu ti '+(list.length===1?'přišla ':list.length<=4?'přišly ':'přišlo ')+
+     pocet(list.length,'bedna','bedny','beden')+'. Otevři je jednu po druhé.'
    :'Vybavení, které jsi vyměřil v terénu. Čím vzácnější bedna, tím lepší karty.';
  $('crOk').style.display='none';
  let opened=false;
@@ -17747,7 +17764,8 @@ const HINTS={
  abil:'Měřické metody · dvě schopnosti použitelné během etapy. Za výzkum je posílíš.',
  slots:'Bedny · čekají na otevření a odemykají se na čas. Vždy se otevírá jen jedna, čas jde zkrátit geodetickou úlohou.',
  dq:'Denní úkoly · tři každý den. Za splnění dostaneš výzkum a karty.',
- chal:'Denní výzva · jiné území a dva modifikátory každý den. Za dokončení je epická bedna.',
+ chal:'Denní výzva · jiné území a dva modifikátory každý den. '+
+   'Bedna se řídí zvoleným stupněm: lehká přístrojový kufr, střední kalibrační trezor, těžká etalonový sejf.',
  stats:'Statistiky · souhrn všeho, co jsi zatím odměřil.',
  road:'Trofejní cesta · oblasti se otevírají podle pohárů a dávají nové přístroje a metody.',
  coll:'Sbírka · karty přístrojů z beden. Za karty a výzkum zvedáš úroveň, která platí ve všech měřeních.',
@@ -18875,22 +18893,29 @@ function renderTodo(){
  const el=$('todoBox'); if(!el)return;
  const items=[];
  const rdy=(SAVE.slots||[]).filter(x=>slotState(x)==='ready').length;
- if(rdy)items.push({t:rdy+' bedna k otevření',d:'Ve skladu na tebe čeká vybavení.',p:2,go:()=>goPage(3)});
+ if(rdy)items.push({t:pocet(rdy,'bedna k otevření','bedny k otevření','beden k otevření'),
+   d:'Ve skladu na tebe čeká vybavení.',p:2,go:()=>goPage(3)});
  const idle=(SAVE.slots||[]).some(x=>slotState(x)==='idle')&&
    !(SAVE.slots||[]).some(x=>slotState(x)==='unlocking');
  if(idle)items.push({t:'Spusť odemykání bedny',d:'Žádná bedna se právě neodemyká.',p:2,go:()=>goPage(3)});
  const q=(SAVE.daily&&SAVE.daily.q||[]).filter(x=>x.prog>=x.goal&&!x.claimed).length;
- if(q)items.push({t:q+' splněný denní úkol',d:'Vyzvedni si výzkum a karty.',p:2,go:()=>goPage(3)});
- if(starRewReady())items.push({t:starRewReady()+' odměna za hvězdy',
-   d:'Máš '+starsTotal()+' hvězd — vyzvedni si, co ti náleží.',p:3,go:()=>goPage(4)});
- if(achCount())items.push({t:achCount()+' úspěch k vyzvednutí',d:'Odměny čekají na trofejní cestě.',p:3,go:()=>goPage(4)});
+ if(q)items.push({t:pocet(q,'splněný denní úkol','splněné denní úkoly','splněných denních úkolů'),
+   d:'Vyzvedni si výzkum a karty.',p:2,go:()=>goPage(3)});
+ if(starRewReady())items.push({t:pocet(starRewReady(),'odměna za hvězdy','odměny za hvězdy','odměn za hvězdy'),
+   d:'Máš '+pocet(starsTotal(),'hvězdu','hvězdy','hvězd')+' — vyzvedni si, co ti náleží.',p:3,go:()=>goPage(4)});
+ if(achCount())items.push({t:pocet(achCount(),'úspěch k vyzvednutí','úspěchy k vyzvednutí','úspěchů k vyzvednutí'),
+   d:'Odměny čekají na trofejní cestě.',p:3,go:()=>goPage(4)});
  const up=ORD.filter(k=>{const c=cardCost(k);return hasType(k)&&c&&(SAVE.cards[k]||0)>=c.cards&&SAVE.res>=c.res;});
- if(up.length)items.push({t:'Můžeš vylepšit '+up.length+' přístroj'+(up.length>1?'e':''),
+ if(up.length)items.push({t:'Můžeš vylepšit '+pocet(up.length,'přístroj','přístroje','přístrojů'),
    d:up.slice(0,3).map(k=>SHORT[k]).join(', ')+' — máš dost karet i výzkumu.',p:0,go:()=>{goPage(1);}});
  if(SAVE.daily&&SAVE.daily.quiz!==today())
    items.push({t:'Zkouška z geodézie',d:'Pět otázek, dnešní odměna čeká.',p:2,go:()=>{goPage(3);openQuiz();}});
  const ch=(SAVE.chal&&SAVE.chal.day===today()&&SAVE.chal.done);
- if(!ch)items.push({t:'Denní výzva čeká',d:'Za dokončení je epická bedna.',p:1,go:()=>goPage(2)});
+ // Bedna se ridi ZVOLENYM stupnem (lehka rare, stredni epic, tezka legend),
+ // brifink ale sliboval epickou vzdycky - i tomu, kdo ma vybranou lehkou.
+ if(!ch)items.push({t:'Denní výzva čeká',
+   d:'Za dokončení je '+CRATES[CHTIERS[chalTier()].rew].n.toLowerCase()+
+     ' · stupeň '+CHTIERS[chalTier()].n.toLowerCase()+'.',p:1,go:()=>goPage(2)});
  if(!items.length){el.innerHTML='';return;}
  el.innerHTML='<div class="todoH">Co teď</div>';
  items.slice(0,3).forEach(it=>{
@@ -18906,7 +18931,7 @@ function renderBossRush(){
  const open=SAVE.won&&SAVE.won.some(x=>x);
  el.innerHTML='<div class="spT"><div><div class="spN">Samí bossové</div>'+
    '<div class="spD">Deset etap, v každé přicházejí jen bossové a pancéřované vlivy. '+
-   'Odměnou je legendární bedna za dokončení.</div></div></div>'+
+   'Za první dokončení dne je legendární bedna.</div></div></div>'+
    (best?'<div class="spB">Nejdál: etapa '+best+'</div>':'')+
    (open?'':'<div class="spB" style="color:var(--dim)">Odemkne se po dokončení prvního území.</div>');
  if(!open)return;
@@ -18926,7 +18951,7 @@ function renderSprint(){
  const best=(SAVE.sprint&&SAVE.sprint.best)||0;
  el.innerHTML='<div class="spT"><div><div class="spN">Osm etap na čas</div>'+
    '<div class="spD">Zrychlené etapy, dvojnásobný rozpočet a hned od začátku tvrdší vlivy. '+
-   'Za dokončení vzácná bedna.</div></div></div>'+
+   'Za první dokončení dne vzácná bedna.</div></div></div>'+
    (best?'<div class="spB">Nejlepší čas: '+best.toFixed(1)+' s</div>':'');
  const btn=document.createElement('button');
  btn.className='big';btn.textContent='SPUSTIT RYCHLÉ MĚŘENÍ';
