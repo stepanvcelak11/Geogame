@@ -10600,7 +10600,21 @@ function bossRysy(mi){
 }
 // Rysy dostane jen boss POSLEDNÍ etapy území — ten, který má v mapě jméno.
 function finaleRysy(){
- if(!S||S.rush5)return [];
+ if(!S)return [];
+ // Bossova smrst: bossove v ni nemeli ANI JEDEN rys, byly to holé pytle
+ // odolnosti - robot rezim prosel tri ze tri se stoprocentni presnosti,
+ // a to je rezim za legendarni bednu. Rysy se berou z teze tabulky RYS
+ // jako u finalovych bossu uzemi a jejich cena se odecita z odolnosti
+ // (viz `cena` u vzniku vlivu), takze to neni tise pridana obtiznost,
+ // ale JINA: misto vetsiho pytle prijde neco, na co je potreba odpoved.
+ // Poradi je pevne, ne nahodne - rezim se da naucit a pripravit se na nej.
+ if(S.rush5){
+   const por=['vzdor','kryje','zrychl','rusi','rozptyl','hoji','pancir','roj'];
+   const kolik=S.wave<3?1:2;
+   const out=[];
+   for(let i=0;i<kolik;i++)out.push(RYS[por[(S.wave*2+i)%por.length]]);
+   return out.filter(Boolean);
+ }
  if(typeof lastWaveOf!=='function'||S.wave<lastWaveOf())return [];
  return bossRysy(S.map);
 }
@@ -11462,6 +11476,11 @@ function towerOdkud(k){
  if(st)return 'za hvězdy z území';
  return 'zatím nedostupný';
 }
+// Pristroje, ke kterym opravdu vede cesta. Planimetr a zenitovy teleskop jsou
+// v tabulce `T`, jdou vylepsovat a maji popis, ale nevede k nim ani uzemi, ani
+// trofejni cesta, ani hvezdy - hra o nich sama rika "zatim nedostupny".
+// Uspech "Vlastni vsechny pristroje" se o ne opiral a byl tim nesplnitelny.
+function ziskatelneTypy(){ return ORD.filter(k=>towerOdkud(k)!=='zatím nedostupný'); }
 // Kratky tvar do prouzku na karte ve sbirce - musi se vejit do jedne radky.
 function towerOdkudKratce(k){
  if(BASE_TYPES.indexOf(k)>=0)return 'od začátku';
@@ -11964,9 +11983,17 @@ const ACH=[
  {id:'tr300', n:'Stavební parcela',    d:'Nasbírej 300 pohárů',          g:300,f:()=>SAVE.tr,          r:{res:150,cards:4}},
  {id:'tr900', n:'Přehradní profil',    d:'Nasbírej 900 pohárů',          g:900,f:()=>SAVE.tr,          r:{crate:'legend'}},
  {id:'own10', n:'Sběratel',            d:'Vlastni 10 různých přístrojů', g:10, f:()=>ORD.filter(ownsType).length, r:{tower:'backpack',res:200}},
- {id:'own19', n:'Kompletní výbava',    d:'Vlastni všechny přístroje',    g:ORD.length, f:()=>ORD.filter(ownsType).length, r:{crate:'legend',res:300}},
+ // Cil je getter, ne cislo: pocita jen pristroje, ke kterym vede cesta, a sam
+ // se posune, az nejaky pribude. Funkci `ziskatelneTypy` tu jeste nejde zavolat
+ // primo - `BASE_TYPES`, ze ktereho cerpa, vznika az pod timhle seznamem.
+ {id:'own19', n:'Kompletní výbava',    d:'Vlastni všechny dostupné přístroje',
+  get g(){ return ziskatelneTypy().length; },
+  f:()=>ziskatelneTypy().filter(ownsType).length, r:{crate:'legend',res:300}},
  {id:'lvl5',  n:'Kalibrovaná řada',    d:'Dostaň přístroj na úroveň 5',  g:5,  f:()=>Math.max(0,...ORD.map(k=>SAVE.lvl[k]||0)), r:{res:250,cards:6}},
- {id:'chal3', n:'Výzvař',              d:'Dokonči 3 denní výzvy',        g:3,  f:()=>(SAVE.chalHist||[]).filter(h=>h.ok).length, r:{crate:'epic'}},
+ // Trvaly citac; `chalHist` je jen sedmidenni okno a postup z nej padal zpet.
+ // Rozehrane hry o nic neprijdou - bere se to vyssi z obou.
+ {id:'chal3', n:'Výzvař',              d:'Dokonči 3 denní výzvy',        g:3,
+  f:()=>Math.max(SAVE.chalWins||0,(SAVE.chalHist||[]).filter(h=>h.ok).length), r:{crate:'epic'}},
  {id:'star20',n:'Sběratel hvězd',   d:'Nasbírej 20 hvězd',            g:20, f:()=>starsTotal(), r:{crate:'epic',res:260}},
  {id:'perk5', n:'Vývojář',          d:'Zvol 5 větví vývoje',          g:5,
   f:()=>Object.keys(SAVE.perk||{}).reduce((a,k)=>a+(SAVE.perk[k]||[]).length,0), r:{res:240,cards:6}},
@@ -12008,7 +12035,12 @@ function checkLogin(){
  if(SAVE.login.last===t)return null;
  const y=new Date(Date.now()-86400000);
  const yst=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
- SAVE.login.streak=(SAVE.login.last===yst)?Math.min(7,SAVE.login.streak+1):1;
+ // Rada se drive zasekla na sedmi (`Math.min(7,...)`), takze kdo se prihlasil
+ // osmy den, dostal ZNOVU finale - epickou bednu, 250 vyzkumu a 6 karet -
+ // a pak uz kazdy dalsi den navzdy (zmereno: rada 7->7->7->7 s touz odmenou).
+ // Sedmy den je finale tydne, po nem zacina tyden znovu od prvniho dne.
+ const dal=(SAVE.login.last===yst)?SAVE.login.streak+1:1;
+ SAVE.login.streak=dal>7?1:dal;
  SAVE.login.last=t;
  const day=SAVE.login.streak, rw=LOGIN[day-1];
  SAVE.res+=rw.res;
@@ -12042,7 +12074,9 @@ function showLogin(info){
  $('lgLead').innerHTML='Přihlášení <b>'+info.day+'. den</b> v řadě.'+
    ' Dnešní odměna: <b>'+info.rw.res+' výzkumu</b> a '+
    info.rw.cards+cardWord(info.rw.cards)+
-   (info.rw.crate?' a bedna do skladu':'')+'.';
+   (info.rw.crate?' a bedna do skladu':'')+'.'+
+   // At hrace nezaskoci, ze osmy den je zase "1. den".
+   (info.day===7?' Tímhle týden končí — zítra začíná nový od prvního dne.':'');
  $('login').classList.add('on');snd('coin');
 }
 
@@ -13268,7 +13302,17 @@ function lastWaveOf(){ return S?(S.chal?S.chalWaves:(MAPS[S.map].waves+(S.hard?3
 function waveComp(w){
  const l=[];
  if(S&&S.rush5){
-   return [['boss',1+Math.floor(w/4),5],['multi',3+Math.round(w*.5),1.1],['subs',2+Math.round(w*.4),1.6]];
+   // Bossova smrst byla nejlehci rezim ve hre, prestoze za ni padala
+   // legendarni bedna: robot ji na koncovem uzemi prosel devetkrat z deviti
+   // a osmkrat z toho se stoprocentni presnosti. V desate etape sla jen
+   // TRI bossove. Zmereno na ctyrech hustotach, zacatecnik na uzemi 2
+   // i koncovka na uzemi 12, pet behu na kombinaci:
+   //   1+w/4 (puvodni) zacatecnik 5/5 · koncovka 5/5, presnosti 73-100
+   //   1+w/2           zacatecnik 5/5 · koncovka 4/5
+   //   2+0,7w (tady)   zacatecnik 5/5 · koncovka 5/5, presnosti 7-98
+   // Vybrana posledni: zacatecnika, ktery si rezim prave odemkl, nezastavi,
+   // ale na koncovem uzemi uz stoji presnost, ne jen cas.
+   return [['boss',2+Math.round(w*.7),5],['multi',4+Math.round(w*.8),1.1],['subs',3+Math.round(w*.6),1.6]];
  }
  const isFinal=w===lastWaveOf();
  if((w>=6&&w%5===0)||isFinal) l.push(['boss',isFinal?2:1,4.5]);
@@ -15560,6 +15604,12 @@ function endWave(){
  // vysledek: cim dal od nuloveho bodu se to zastavilo, tim vetsi dotace.
  S.uzavrBon=Math.round((1-S.uzavr/100)*(4+Math.min(S.wave,16)*.9));
  bonus+=S.uzavrBon;
+ // "Stedra zakazka" slibovala DVOJNASOBNY ROZPOCET ZA ETAPU a nedelala nic:
+ // na chMod('rich') se ve hre neptal ani jeden radek. Zmereno na uzemi 4,
+ // ctyri etapy: bez modifikatoru 82/92/133/163, s nim 82/92/133/163 - do
+ // posledni koruny stejne. Tyz modifikator si bere i rezim Rychle mereni,
+ // takze ani ten nedaval, co ma na karte napsane.
+ if(chMod('rich'))bonus*=2;
  S.cr+=bonus;
  if(S.net.rep||SAVE.meta.rep)S.acc=Math.min(100,S.acc+S.net.rep*2+(SAVE.meta.rep||0));
  if(M('regen'))S.acc=Math.min(100,S.acc+2*M('regen'));
@@ -15663,14 +15713,14 @@ function finish(win){
  if(S.chal&&S.chal.rush5){
    SAVE.bossRush=SAVE.bossRush||{};
    if(S.wave>(SAVE.bossRush.best||0))SAVE.bossRush.best=S.wave;
-   if(win)addCrate('legend');
+   if(win)denniBedna('boss','legend');
    save();
  } else if(S.chal&&S.chal.sprint){
    if(win){
      SAVE.sprint=SAVE.sprint||{};
      const tm=S.sprintT||0;
      if(!SAVE.sprint.best||tm<SAVE.sprint.best)SAVE.sprint.best=tm;
-     addCrate('rare');
+     denniBedna('sprint','rare');
    }
    save();
  } else if(S.chal){
@@ -15687,11 +15737,25 @@ function finish(win){
        SAVE.chalT.done.push(tier);
        addCrate(S.chal.rew||'epic');
      }
+     // Trvaly pocet dokoncenych vyzev. Uspech "Vyzvar" se drive pocital
+     // z `chalHist`, a ta drzi jen SEDM POSLEDNICH DNU: hraci, ktery tri
+     // vyzvy dohral a odmenu si hned nevyzvedl, spadl postup po tydnu
+     // hrani zpatky z 3/3 na 0/3 (zmereno). Cislo, ktere jde jen nahoru.
+     if(!SAVE.chalWonDays||SAVE.chalWonDays.indexOf(t)<0){
+       SAVE.chalWonDays=(SAVE.chalWonDays||[]).concat([t]).slice(-40);
+       SAVE.chalWins=(SAVE.chalWins||0)+1;
+     }
    }
    SAVE.chalHist=SAVE.chalHist||[];
    const ix=SAVE.chalHist.findIndex(h=>h.d===t);
    const rec={d:t,w:S.wave,ok:!!win,m:MAPS[S.map].n};
-   if(ix>=0){ if(S.wave>SAVE.chalHist[ix].w)SAVE.chalHist[ix]=rec; }
+   // Zaznam dne se prepisoval jen kdyz hrac dosel DAL. Vyzva ma ale pevny
+   // pocet etap, takze prohra v posledni etape ma tyz `w` jako vyhra - a kdo
+   // v posledni etape jednou padnul, tomu uz zadna dnesni vyhra do historie
+   // neprosla (zmereno: po vyhre tam stalo dal "etapa 12", ne "dokonceno").
+   // Dokonceni prebije nedokonceni vzdy, jinak rozhoduje dosazena etapa.
+   if(ix>=0){ const st=SAVE.chalHist[ix];
+     if((rec.ok&&!st.ok)||(rec.ok===st.ok&&S.wave>st.w))SAVE.chalHist[ix]=rec; }
    else SAVE.chalHist.unshift(rec);
    SAVE.chalHist=SAVE.chalHist.slice(0,7);
    save();
@@ -16089,6 +16153,24 @@ function addCrate(kind,opt){
    return false;
  }
  SAVE.slots.push({t:kind,end:0});save();return true;
+}
+// Slibena bedna PRVNI dokoncene hre dne, dal uz jen terenni.
+// Bossova smrst a Rychle mereni davaly svou bednu za KAZDOU vyhru a zadny
+// strop na ne nebyl: robot obe projel tri ze tri pokusu se stoprocentni
+// presnosti, takze legendarni sejf (230-330 vyzkumu) sel tocit dokola.
+// Denni vyzva uz svuj strop mela (`SAVE.chalT`), tyhle dve k ni dosedly.
+function denniBedna(klic,kind){
+ const t=today();
+ SAVE.denBedna=SAVE.denBedna||{};
+ if(SAVE.denBedna[klic]===t){
+   addCrate('common');
+   try{ toast2('Dnešní '+CRATES[kind].n.toLowerCase()+' za tenhle režim už máš. '+
+     'Za opakování je terénní bedna.'); }catch(e){}
+   return false;
+ }
+ SAVE.denBedna[klic]=t;
+ addCrate(kind);
+ return true;
 }
 function slotState(sl){
  if(!sl.end)return 'idle';
@@ -17538,7 +17620,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=96;
+const VERZE=100;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -17724,14 +17806,14 @@ const MODES=[
   ic:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   dd:'Každý den jiné území a jiná dvojice pravidel. Obtížnost si volíš sám, '+
      'odměnou je bedna podle zvoleného stupně.'},
- {id:'sprint',n:'Rychlé měření', d:'Osm etap na čas', c:'brass', odm:'vzácná bedna',
+ {id:'sprint',n:'Rychlé měření', d:'Osm etap na čas', c:'brass', odm:'vzácná bedna · 1× denně',
   ic:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M9.5 2h5"/></svg>',
-  dd:'Osm zrychlených etap, dvojnásobný rozpočet a měří se čas. '+
-     'Za dokončení vzácná bedna.'},
- {id:'boss',  n:'Bossová smršť', d:'Deset etap plných bossů', c:'tape', odm:'legendární bedna',
+  dd:'Osm zrychlených etap, dvojnásobná dotace za etapu a měří se čas. '+
+     'Za první dokončení dne vzácná bedna.'},
+ {id:'boss',  n:'Bossová smršť', d:'Deset etap plných bossů', c:'tape', odm:'legendární bedna · 1× denně',
   ic:'<svg viewBox="0 0 24 24"><path d="M4 8.5 12 4l8 4.5v6L12 19l-8-4.5z"/><path d="M9 11.5h6M9 14.5h6"/></svg>',
-  dd:'Deset etap, v každé jde jen boss nebo pancéřovaný vliv. '+
-     'Otevře se po dokončení prvního území, odměnou je legendární bedna.'}
+  dd:'Deset etap, v každé jde jen boss nebo pancéřovaný vliv. Otevře se po '+
+     'dokončení prvního území, za první dokončení dne je legendární bedna.'}
 ];
 // Rezim, ktery jeste nejde spustit, a duvod proc. Drive se hrac dozvedel
 // az po klepnuti, ze na nej nema.
@@ -18508,20 +18590,19 @@ const REZIM_INFO={
   d:'Deset etap a v každé přichází jen boss nebo pancéřovaný vliv — žádná drobotina.',
   l:['Otevře se po dokončení prvního území.',
      'Hraje se na posledním odemčeném území.',
-     'Za dokončení je legendární bedna.',
+     'Za první dokončení dne je legendární bedna.',
      'Nejdál dosažená etapa se ukládá jako rekord.']},
  sprintCard:{t:'Rychlé měření',
   d:'Osm etap na čas. Vlivy chodí zrychleně, zato máš od začátku dvojnásobný rozpočet.',
   l:['Osm etap, pak konec — vždy stejně dlouhé.',
      'Rychlost hry se přepne na dvojnásobek.',
      'Měří se čas; nejlepší se ukládá.',
-     'Za dokončení je vzácná bedna.']},
+     'Za první dokončení dne je vzácná bedna.']},
  chalCard:{t:'Denní výzva',
   d:'Každý den jiné území a jiná dvojice pravidel. Obtížnost si vybíráš sám.',
   l:['Území i pravidla se mění o půlnoci.',
      'Tři stupně obtížnosti, každý s jinou bednou.',
-     'Splnit jde každý stupeň jednou za den.',
-     'Poslední výzvy najdeš v Kariéře.']}
+     'Bedna padne za každý stupeň jednou za den; hrát se dá dál i bez ní.']}
 };
 function otevriRezim(id){
  const z=REZIM_INFO[id]; if(!z)return;
@@ -18537,6 +18618,15 @@ function otevriRezim(id){
      radky=['Dnes: '+MAPS[ch.map].n+' · '+ch.waves+' etap']
        .concat(ch.mods.map(function(m){return m.n+' — '+m.d;}))
        .concat(radky);
+     // Historie se na karte schovava (`.chHist{display:none}`) a okenko
+     // pritom hrace posilalo do Kariery, kde zadna nikdy nebyla. Tady je.
+     const hs=(SAVE.chalHist||[]);
+     if(hs.length){
+       radky=radky.concat(['Poslední výzvy:']).concat(hs.map(function(x){
+         return x.d.split('-').slice(1).reverse().join('.')+'. · '+x.m+' — '+
+                (x.ok?'dokončeno':'etapa '+x.w);
+       }));
+     }
    }catch(e){}
  }
  $('rzInfoL').innerHTML=radky.map(function(x){return '<div class="rzR">'+x+'</div>';}).join('');
