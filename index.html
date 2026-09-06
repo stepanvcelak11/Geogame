@@ -379,6 +379,12 @@ html[data-theme="hc"] .pgHead h2,html[data-theme="hc"] .heroTxt h1{
 .shArt{height:78px;display:flex;align-items:center;justify-content:center}
 .shArt canvas{width:50px;height:50px;filter:drop-shadow(0 3px 0 rgba(11,16,48,.3))}
 .shBox{width:44px;height:38px;position:relative}
+/* Znak mericke metody v denni nabidce - stejna plocha jako bedna. */
+.shMet{width:58px;height:58px;display:grid;place-items:center;border-radius:50%;
+  background:color-mix(in srgb,var(--rcL) 18%,transparent);
+  border:2px solid color-mix(in srgb,var(--rcL) 55%,transparent)}
+.shMet svg{width:30px;height:30px;fill:none;stroke:var(--rcL);stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
 .shBox i{position:absolute;left:2px;right:2px;bottom:0;height:24px;background:var(--cc);
   border-radius:6px;border:2px solid var(--stroke)}
 .shBox b{position:absolute;left:0;right:0;top:2px;height:12px;background:var(--cc);
@@ -9499,8 +9505,9 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
       <div class="secTitle">Výzkum za mezníky</div>
       <div id="mezRes"></div>
       <div class="secTitle">Vzhledy přístrojů <span id="skHint"></span></div>
-      <p class="pgNote">Vyber přístroj, pak jeho vzhled. Mění barvu těla,
-        obrysu i lesku — nekupuješ si za něj sílu.</p>
+      <p class="pgNote">Vyber přístroj, pak jeho vzhled. Mění barvu i TVAR stroje:
+        historické provedení má rozkročený stativ, moderní hranatou skříň
+        s displejem, terénní ochranný rám. Na sílu to nemá vliv.</p>
       <div id="mezSkins"></div>
     </div>
     <p class="pgNote">Platí se výzkumem. Nabídka se obnoví po půlnoci.</p>
@@ -11453,7 +11460,7 @@ function hrdAktivni(){
 // Kolik stojí další řada hrdiny. null = je na maximu.
 function hrdUpCost(t){
  const u=T[t.k].up; if(!u||t.l>=3)return null;
- return Math.round(u[t.l]*(1-.03*(SAVE.meta.disc||0)));
+ return Math.round(u[t.l]*(1-.018*(SAVE.meta.disc||0)));
 }
 // Řady hrdiny zapínají jeho vlastní vylepšení - proto se s každou řadou
 // viditelně změní chování, ne jen čísla.
@@ -11778,45 +11785,54 @@ function starsTotal(){ return (SAVE.stars||[]).reduce((a,b)=>a+b,0); }
 const SKINS={ base:{id:'base',n:'Tovární',rodN:'Základ',col:null,out:null,
   lesk:'rgba(255,255,255,.52)',cena:0} };
 const SKROD={
- teren: {n:'Terénní', col:'#f4801f',out:'#6d2a04',lesk:'rgba(255,226,186,.60)',cena:80, mix:.28},
- noc:   {n:'Noční',   col:'#8a97b8',out:'#070c1c',lesk:'rgba(186,218,255,.62)',cena:80, mix:.40},
- polar: {n:'Polární', col:'#e8eef7',out:'#2a4468',lesk:'rgba(255,255,255,.75)',cena:80, mix:.24},
- mosaz: {n:'Muzejní', col:'#bb861f',out:'#452d06',lesk:'rgba(255,222,150,.52)',cena:180,mix:.20},
- karbon:{n:'Karbon',  col:'#3a4157',out:'#04060d',lesk:'rgba(126,232,255,.70)',cena:180,mix:.40},
- zavod: {n:'Závodní', col:'#eceef4',out:'#a81530',lesk:'rgba(255,255,255,.72)',cena:180,mix:.20},
- mez:   {n:'Kamenná', col:'#a1937d',out:'#362e23',lesk:'rgba(255,248,232,.55)',cena:400,mix:.14},
- zlato: {n:'Zlatá',   col:'#ffc93d',out:'#64400a',lesk:'rgba(255,246,196,.78)',cena:400,mix:.12},
+ teren: {n:'Terénní', col:'#f4801f',out:'#6d2a04',lesk:'rgba(255,226,186,.60)',cena:80, mix:.28,
+   tvar:'polni',  tvarN:'terénní provedení'},
+ noc:   {n:'Noční',   col:'#8a97b8',out:'#070c1c',lesk:'rgba(186,218,255,.62)',cena:80, mix:.40,
+   tvar:'moderni',tvarN:'moderní tvar'},
+ polar: {n:'Polární', col:'#e8eef7',out:'#2a4468',lesk:'rgba(255,255,255,.75)',cena:80, mix:.24,
+   tvar:'moderni',tvarN:'moderní tvar'},
+ mosaz: {n:'Muzejní', col:'#bb861f',out:'#452d06',lesk:'rgba(255,222,150,.52)',cena:180,mix:.20,
+   tvar:'histor', tvarN:'historický tvar'},
+ karbon:{n:'Karbon',  col:'#3a4157',out:'#04060d',lesk:'rgba(126,232,255,.70)',cena:180,mix:.40,
+   tvar:'moderni',tvarN:'moderní tvar'},
+ zavod: {n:'Závodní', col:'#eceef4',out:'#a81530',lesk:'rgba(255,255,255,.72)',cena:180,mix:.20,
+   tvar:'polni',  tvarN:'terénní provedení'},
+ mez:   {n:'Kamenná', col:'#a1937d',out:'#362e23',lesk:'rgba(255,248,232,.55)',cena:400,mix:.14,
+   tvar:'histor', tvarN:'historický tvar'},
+ zlato: {n:'Zlatá',   col:'#ffc93d',out:'#64400a',lesk:'rgba(255,246,196,.78)',cena:400,mix:.12,
+   tvar:'histor', tvarN:'historický tvar'},
  // Legendarni police: ctvrta, nejvyssi. Prakticky bily kov (mix .06,
  // takze si drzi barvu pristroje jen naznakem) a hlavne vlastni efekt
  // pri strelbe - klic fx u jednotliveho vzhledu v SKINY.
- legenda:{n:'Legendární',col:'#fff3c8',out:'#6a4a05',lesk:'rgba(255,255,255,.98)',          cena:750,mix:.06,fxCol:'#ff9d1a'}
+ legenda:{n:'Legendární',col:'#fff3c8',out:'#6a4a05',lesk:'rgba(255,255,255,.98)',          cena:750,mix:.06,fxCol:'#ff9d1a',
+   tvar:'moderni',tvarN:'moderní tvar'}
 };
 // Nazev vzhledu patri k tomu pristroji, ne k rodine - proto je psany rucne.
 const SKINY={
- tape:    [['teren','Stavbařská oranž'], ['zavod','Cílová páska'],      ['mez','Kamenná ryska']],
+ tape:    [['teren','Stavbařská oranž'], ['karbon','Karbonový naviják'],['mez','Kamenná ryska']],
  theo:    [['noc','Noční směna'],        ['mosaz','Muzejní mosaz'],     ['zlato','Zlatá záměra'],     ['legenda','Zlatá osa','pecet']],
  edm:     [['teren','Výstražná oranž'],  ['karbon','Karbonový hranol'], ['mez','Žulový odraz'],       ['legenda','Ozvěna paprsku','vlna']],
  nivel:   [['polar','Polární bílá'],     ['mosaz','Mosazná libela'],    ['mez','Kamenná nula'],       ['legenda','Zlatá horizontála','pecet']],
  lidar:   [['noc','Noční sken'],         ['karbon','Karbonová hlava'],  ['zlato','Zlatý paprsek'],    ['legenda','Roj bodů','roj']],
- compass: [['teren','Lesnická oranž'],   ['mosaz','Důlní mosaz'],       ['mez','Kamenná růžice']],
+ compass: [['karbon','Karbonové pouzdro'],['mosaz','Důlní mosaz'],      ['mez','Kamenná růžice']],
  prism:   [['polar','Ledová bílá'],      ['zavod','Signální terč'],     ['zlato','Zlacené sklo']],
  gnss:    [['teren','Geodetická oranž'], ['karbon','Karbonová anténa'], ['mez','Kamenný pilíř'],      ['legenda','Družicový roj','roj']],
  thermal: [['noc','Noční vidění'],       ['karbon','Černé těleso'],     ['zlato','Zlatá clona']],
  sonar:   [['polar','Polární led'],      ['zavod','Regatní pruh'],      ['mez','Kamenné dno']],
- penta:   [['teren','Vytyčovací oranž'], ['mosaz','Mosazný pentagon'],  ['zlato','Zlatý pravý úhel']],
+ penta:   [['polar','Polární pentagon'], ['mosaz','Mosazný pentagon'],  ['zlato','Zlatý pravý úhel']],
  quadrant:[['noc','Hvězdářská noc'],     ['mosaz','Astronomická mosaz'],['mez','Kamenná observatoř']],
  backpack:[['teren','Výstražná vesta'],  ['karbon','Karbonový rám'],    ['mez','Kamenná stezka']],
- machine: [['teren','Strojní oranž'],    ['zavod','Závodní naváděč'],   ['mez','Žulová deska']],
+ machine: [['teren','Strojní oranž'],    ['karbon','Karbonový naváděč'],['mez','Žulová deska']],
  meteo:   [['polar','Polární stanice'],  ['mosaz','Mosazný barometr'],  ['zlato','Zlatá korouhev']],
  gpr:     [['noc','Podzemní šeď'],       ['karbon','Karbonový vozík'],  ['mez','Kamenná sonda']],
  gravi:   [['polar','Antarktická bílá'], ['mosaz','Kyvadlová mosaz'],   ['zlato','Zlaté závaží']],
  multi:   [['noc','Noční monitoring'],   ['zavod','Týmová bílá'],       ['zlato','Zlatý standard']],
  insar:   [['polar','Polární dráha'],    ['karbon','Karbonový panel'],  ['mez','Kamenný odražeč']],
- basecal: [['teren','Provozní oranž'],   ['mosaz','Mosazná měrka'],     ['zlato','Zlatý etalon']],
+ basecal: [['karbon','Karbonová měrka'], ['mosaz','Mosazná měrka'],     ['zlato','Zlatý etalon']],
  photo:   [['teren','Záchranářská oranž'],['zavod','Závodní dron'],     ['zlato','Zlatý roj'],        ['legenda','Ozvěna oblohy','vlna']],
  mensula: [['noc','Večerní rýsování'],   ['mosaz','Muzejní stolek'],    ['mez','Kamenná deska']],
  rotlaser:[['polar','Ledová rovina'],    ['karbon','Karbonový rotor'],  ['zlato','Zlatá rovina']],
- plumb:   [['teren','Vytyčovací zelená'],['zavod','Signální svislice'], ['mez','Kamenné závaží']],
+ plumb:   [['teren','Vytyčovací zelená'],['polar','Polární svislice'],  ['mez','Kamenné závaží']],
  planim:  [['mosaz','Mosazné rameno'],   ['karbon','Karbonový obkružník'],['zlato','Zlatý výkaz']],
  zenit:   [['noc','Hvězdářská noc'],     ['polar','Polární zenit'],     ['zlato','Zlatý zenit'],   ['legenda','Cesta hvězd','roj']],
  scanvan: [['teren','Terénní oranž'],    ['zavod','Závodní lak'],       ['karbon','Karbonová kapota']],
@@ -11839,7 +11855,8 @@ function skinDef(k,id){
  if(!par||!r){ SKCACHE.set(klic,null); return null; }
  const zk=(T[k]&&T[k].c)||r.col;
  const d={id:id,n:par[1],rodN:r.n,col:skMix(r.col,zk,r.mix),
-   out:r.out,lesk:r.lesk,cena:r.cena,fx:par[2]||null,fxCol:r.fxCol||null};
+   out:r.out,lesk:r.lesk,cena:r.cena,fx:par[2]||null,fxCol:r.fxCol||null,
+   tvar:r.tvar||null,tvarN:r.tvarN||'tovární tvar'};
  SKCACHE.set(klic,d); return d;
 }
 function skinSeznam(k){
@@ -12065,13 +12082,27 @@ function accEff(type,key){
 }
 
 const META=[
- {id:'budget',n:'Provozní záloha',d:'+10 startovního rozpočtu',max:6,cost:l=>11+l*6},
+ // --- zaklad mereni ---
+ {id:'budget',n:'Provozní záloha',d:'+6 startovního rozpočtu',max:10,cost:l=>10+l*4},
  {id:'cap',n:'Stálý tým',d:'+1 základní kapacita stanovisek',max:6,cost:l=>21+l*14},
- {id:'prec',n:'Etalon',d:'+4 % poškození po celé měření',max:6,cost:l=>20+l*10},
- {id:'acd',n:'Rychlonabíjení',d:'+1 náboj měřické metody za úroveň',max:6,cost:l=>15+l*4},
- {id:'disc',n:'Vlastní dílna',d:'Přístroje o 5 % levnější',max:6,cost:l=>9+l*6},
- {id:'resb',n:'Grantové oddělení',d:'+10 % získaného výzkumu',max:6,cost:l=>12+l*6}
+ {id:'prec',n:'Etalon',d:'+2,5 % poškození po celé měření',max:10,cost:l=>18+l*6},
+ {id:'rng',n:'Dalekohledy',d:'+2 % dosahu všech stanovisek',max:10,cost:l=>17+l*6},
+ {id:'rate',n:'Servisní prohlídky',d:'+2 % rychlosti měření',max:10,cost:l=>19+l*7},
+ {id:'crit',n:'Měření ve dvou polohách',d:'+2 % šance na dvojnásobnou ránu',max:8,cost:l=>24+l*11},
+ // --- prubeh mereni ---
+ {id:'acd',n:'Rychlonabíjení',d:'+1 náboj metody za dvě úrovně',max:8,cost:l=>15+l*4},
+ {id:'rep',n:'Údržba značek',d:'+1 % přesnosti po každé etapě',max:6,cost:l=>26+l*16},
+ // --- ekonomika ---
+ {id:'disc',n:'Vlastní dílna',d:'Přístroje o 3 % levnější',max:10,cost:l=>9+l*4},
+ {id:'resb',n:'Grantové oddělení',d:'+6 % získaného výzkumu',max:10,cost:l=>12+l*4},
+ {id:'mez',n:'Styk s katastrem',d:'+1 mezník za dokončené území',max:5,cost:l=>60+l*45}
 ];
+
+// Vychozi stav laborky se odvodi ze seznamu META, at pridani polozky
+// nevyzaduje hledat tri ruzna mista s rucne psanym seznamem klicu.
+function vychoziMeta(){
+ const o={}; META.forEach(function(u){o[u.id]=0;}); return o;
+}
 
 /* ==================== ULOŽENÍ ==================== */
 const BASE_TYPES=['theo','nivel','edm','tape'], BASE_ABILS=['adjust','repair'];
@@ -12086,7 +12117,7 @@ let SAVE={v:5,res:0,unlocked:1,best:new Array(12).fill(0),stars:new Array(12).fi
  xp:0,step:0,types:BASE_TYPES.slice(),abils:BASE_ABILS.slice(),
  killed:{},presets:[[],[]],pslot:0,perk:{},ach:{},stats:{runs:0,waves:0,kills:0,merges:0,wins:0,best:0},cards:{tape:4,theo:4,nivel:3,edm:3},lvl:{},acc:{},spec:{},slots:[],deck:['tape','theo','nivel','edm'],abilDeck:['adjust','repair'],abilLvl:{},tr:0,arena:0,testAll:0,
  mez:0,mezLog:[],mezDay:{d:'',res:0},skin:{},skinOn:'base',skinT:{},skinOwn:{},hrdOn:'photo',
- meta:{budget:0,cap:0,prec:0,acd:0,disc:0,resb:0}};
+ meta:vychoziMeta()};
 let __seqWarn=0;
 const SKEY='geo:save:v2';
 const BKEY=SKEY+'.bak';   // kopie posledniho ctitelneho postupu
@@ -12101,7 +12132,7 @@ function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 function normalize(s){
      s=s||{};
      SAVE=Object.assign(SAVE,s);
-     SAVE.meta=Object.assign({budget:0,cap:0,prec:0,acd:0,disc:0,resb:0},s.meta||{});
+     SAVE.meta=Object.assign(vychoziMeta(),s.meta||{});
      // v90: stupnu je vsude sest a kazdy je mensi - stary postup se prepocte,
      // aby hrac mel presne tolik sily, kolik si koupil.
      if(!SAVE.metaV6){
@@ -12568,7 +12599,7 @@ function newRun(mi,endless,chal,hard){
  PATHS.forEach(pp=>pp.forEach(q=>ONPATH.add(q[0]+','+q[1])));
  const ter={};
  (MAPS[mi].ter||[]).forEach(([kind,c,r])=>{ if(!ONPATH.has(c+','+r))ter[c+','+r]=kind; });
- S={map:mi,cr:60+10*SAVE.meta.budget+((SAVE.stats.runs||0)<3?22:0),acc:100,wave:0,phase:'build',speed:1,
+ S={map:mi,cr:60+6*(SAVE.meta.budget||0)+((SAVE.stats.runs||0)<3?22:0),acc:100,wave:0,phase:'build',speed:1,
     towers:[],enemies:[],fx:[],queue:[],spawnT:0,shop:[],placing:null,sel:null,
     net:{prec:0,rng:0,inc:0,rep:0,rate:0,cheap:0},mods:{},cds:{},
     spdBoost:null,svcSpd:0,
@@ -12788,7 +12819,7 @@ function capMax(){if(chMod('small'))return 7;
 function priceOf(k){
  // `M('cheap')` je karta z mereni, `S.net.cheap` nova polozka site
  // (Ramcova smlouva), `meta.disc` trvale vylepseni z laborky.
- const f=Math.max(.42,1-.15*M('cheap')-.06*((S&&S.net&&S.net.cheap)||0)-.05*SAVE.meta.disc);
+ const f=Math.max(.42,1-.15*M('cheap')-.06*((S&&S.net&&S.net.cheap)||0)-.03*(SAVE.meta.disc||0));
  return Math.max(4,Math.round(T[k].cost*1.25*f));
 }
 function pathOf(pi){ return PATHS[pi||0]||PATHS[0]; }
@@ -12819,7 +12850,7 @@ function vetOf(t){
 }
 function dmgOf(t){
  const k=t.k;
- let m=(1+.18*t.cal)*(1+t.buffD)*(1+.08*S.net.prec)*(1+.04*SAVE.meta.prec)*(1+.09*M('all_dmg'))
+ let m=(1+.18*t.cal)*(1+t.buffD)*(1+.08*S.net.prec)*(1+.025*(SAVE.meta.prec||0))*(1+.09*M('all_dmg'))
       *(1+.08*(SAVE.lvl[k]||0))*(1+accEff(k,'dmg'))
       *(1+(specHas(k,'dmg')?.15:0))*(1+condEff('dmg'))*(1+.18*M('overdrive'))
       *(1+.90*(t.plus||0))*(hasPerk(t,'econdmg')?1.5:1)*(hasPerk(t,'globdmg')?1.45:1)
@@ -12843,7 +12874,8 @@ function perkRng(t){
 const RNG_STROP=1.9;
 function rngNasob(z){ return z<=RNG_STROP?z:RNG_STROP+(z-RNG_STROP)*.28; }
 function rngOf(t){
- const z=perkRng(t)*terRng(t)*(1+t.buffR)*(1+.07*S.net.rng)*(1+.07*M('range'))*((S.orient>0)?1.45:1)
+ const z=perkRng(t)*terRng(t)*(1+t.buffR)*(1+.07*S.net.rng)*(1+.07*M('range'))
+   *(1+.02*(SAVE.meta.rng||0))*((S.orient>0)?1.45:1)
   *(1+.04*(SAVE.lvl[t.k]||0))*(1+accEff(t.k,'rng'))*(1+(specHas(t.k,'rng')?.15:0))
   *(1+condEff('rng'))*(1-.10*M('overdrive'));
  return T[t.k].rng[t.l]*rngNasob(z)*CS;
@@ -12863,14 +12895,14 @@ function globalRate(){
  S.towers.forEach(g=>{ if(g.k==='basecal'&&hasPerk(g,'ballrate'))m=Math.max(m,1.15); });
  // Kadence mereni ze site (trvala do konce uzemi) a docasne zrychleni
  // koupene ve sluzbach (plati dve etapy).
- m*=(1+.06*((S.net&&S.net.rate)||0));
+ m*=(1+.06*((S.net&&S.net.rate)||0))*(1+.02*(SAVE.meta.rate||0));
  if(S.spdBoost&&S.wave<=S.spdBoost.do)m*=(1+S.spdBoost.v);
  return m;
 }
 function rateOf(t){return T[t.k].rate[t.l]*(T[t.k].hero?hrdKadence(t.k):1)*perkRate(t)*globalRate()*(1+(t.buffT||0))*(1+(specHas(t.k,'rate')?.15:0))
  *(1+.08*M('rate'))*(1+condEff('rate'))*(S.rush>0?1.6:1);}
 function critOf(t){
- let c=.08*M('crit')+accEff(t.k,'crit')+(specHas(t.k,'crit')?.10:0)+(hasPerk(t,'g_crit')?.15:0);
+ let c=.08*M('crit')+.02*(SAVE.meta.crit||0)+accEff(t.k,'crit')+(specHas(t.k,'crit')?.10:0)+(hasPerk(t,'g_crit')?.15:0);
  if(S)S.towers.forEach(g=>{ if(g.k==='basecal'&&hasPerk(g,'ballcrit'))c+=.10; });
  // Ostra zamera: hranol zvysuje sanci sousedum v dosahu.
  if(S)S.towers.forEach(g=>{
@@ -13257,9 +13289,57 @@ function glyphKresli(g,k,x,y,s,l,col){
  function pruchod(c,w,dy){
    g.save();g.translate(x,y+(dy||0));
    g.lineWidth=w;g.strokeStyle=c;g.fillStyle=c;g.lineCap='round';g.lineJoin='round';
-   glyphBody(g,k,s,l);
+   glyphTvar(g,k,s,l,(sk&&sk.tvar)||null);
    g.restore();
  }
+}
+/* TVAR VZHLEDU. Vlastni silueta pristroje zustava (jinak by se na desce
+   nedalo poznat, co kde stoji) a kolem ni se kresli STROJ, ktery ji nese:
+     histor  - drevene rozkrocene nohy, ozdobny prstenec, spicka nahore
+     moderni - hranata skrin s displejem a rovna centralni noha
+     polni   - robustni ochranny ram a popruh
+   Diky tomu je "Muzejni teodolit" opravdu jiny tvar nez "Karbonovy",
+   ne jen jina barva. */
+function glyphTvar(g,k,s,l,tvar){
+ if(!tvar){ glyphBody(g,k,s,l); return; }
+ const je2x2=!!(T[k]&&T[k].sz&&T[k].sz>1);
+ g.save();
+ if(tvar==='histor'){
+   // rozkrocene nohy stativu a ozdobny prstenec pod pristrojem
+   g.beginPath();
+   g.moveTo(-s*.16,s*.30);g.lineTo(-s*.52,s*.62);
+   g.moveTo( s*.16,s*.30);g.lineTo( s*.52,s*.62);
+   g.moveTo(0,s*.30);g.lineTo(0,s*.60);
+   g.stroke();
+   g.beginPath();g.ellipse(0,s*.30,s*.30,s*.10,0,0,7);g.stroke();
+   g.beginPath();g.moveTo(0,-s*.62);g.lineTo(0,-s*.48);g.stroke();
+   g.beginPath();g.arc(0,-s*.66,s*.055,0,7);g.fill();
+   g.save();g.scale(.88,.86);glyphBody(g,k,s,l);g.restore();
+ } else if(tvar==='moderni'){
+   // hranata skrin za pristrojem, displej a rovna noha
+   g.save();g.globalAlpha=.9;
+   g.beginPath();
+   const w2=s*(je2x2?.62:.50), h2=s*.46;
+   if(g.roundRect)g.roundRect(-w2,-h2*.55,w2*2,h2*1.5,s*.10);
+   else g.rect(-w2,-h2*.55,w2*2,h2*1.5);
+   g.stroke();
+   g.beginPath();g.moveTo(-w2*.55,h2*.55);g.lineTo(w2*.55,h2*.55);g.stroke();
+   g.restore();
+   g.beginPath();g.moveTo(0,h2*.95);g.lineTo(0,s*.60);
+   g.moveTo(-s*.26,s*.60);g.lineTo(s*.26,s*.60);g.stroke();
+   g.save();g.scale(.82,.80);g.translate(0,-s*.04);glyphBody(g,k,s,l);g.restore();
+ } else if(tvar==='polni'){
+   // ochranny ram kolem pristroje a popruh pres rameno
+   g.beginPath();
+   const r2=s*.60;
+   g.moveTo(-r2,-s*.18);g.lineTo(-r2,s*.34);
+   g.moveTo( r2,-s*.18);g.lineTo( r2,s*.34);
+   g.moveTo(-r2,s*.34);g.lineTo(r2,s*.34);
+   g.stroke();
+   g.beginPath();g.moveTo(-r2,-s*.18);g.lineTo(r2*.30,-s*.52);g.stroke();
+   g.save();g.scale(.86,.86);glyphBody(g,k,s,l);g.restore();
+ } else glyphBody(g,k,s,l);
+ g.restore();
 }
 function glyphBody(g,k,s,l){
  g.save();
@@ -15423,7 +15503,7 @@ function endWave(){
  S.uzavrBon=Math.round((1-S.uzavr/100)*(4+Math.min(S.wave,16)*.9));
  bonus+=S.uzavrBon;
  S.cr+=bonus;
- if(S.net.rep)S.acc=Math.min(100,S.acc+S.net.rep*2);
+ if(S.net.rep||SAVE.meta.rep)S.acc=Math.min(100,S.acc+S.net.rep*2+(SAVE.meta.rep||0));
  if(M('regen'))S.acc=Math.min(100,S.acc+2*M('regen'));
  rollShop(true);
  if(S.endless&&S.wave%5===0){
@@ -15462,7 +15542,7 @@ function finish(win){
  // nález v terénu: 6 % po dokončeném měření
  if(win&&Math.random()<.06)mezDej(1,'nález ve výkopu');
  S.over=true;S.phase='done';S.paused=false;
- let r=Math.round((S.wave*3+(win?25:0))*(1+.1*SAVE.meta.resb));
+ let r=Math.round((S.wave*3+(win?25:0))*(1+.06*(SAVE.meta.resb||0)));
  // Bezny den se dvema az tremi behy da 250-350 xp: sezona je dohratelna hranim.
  addSeasonXp(Math.round(S.wave*2+(win?30:0)));
  SAVE.res+=r;
@@ -15478,6 +15558,8 @@ function finish(win){
    SAVE.stars[S.map]=Math.max(SAVE.stars[S.map]||0,stars);
    // tři hvězdy na území: 3 mezníky, jednou za území
    if((SAVE.stars[S.map]||0)>=3)mezDej(3,'tři hvězdy','hv'+S.map);
+   // Laborka "Styk s katastrem": mezniky za KAZDE dokoncene uzemi.
+   if(SAVE.meta.mez)mezDej(SAVE.meta.mez,'styk s katastrem');
    if(S.acc>=100)SAVE.perfect=(SAVE.perfect||0)+1;
    SAVE.goals=SAVE.goals||{};
    const gm=SAVE.goals[S.map]||{};
@@ -17649,6 +17731,25 @@ function shopOffers(){
  const ck=['common','rare','epic'][Math.floor(rnd(9)*3)];
  out.push({id:'k1',type:'crate',crate:ck,price:{common:180,rare:420,epic:900}[ck],
    title:CRATES[ck].n, sub:CRATES[ck].cards[0]+'–'+CRATES[ck].cards[1]+' karet, otevře se hned'});
+ // MERICKA METODA v denni nabidce. Hrac: "tu denni nabidku bych treba
+ // ozvlastnil tim, ze by slo treba nakupovat mericke metody, ktere by slo
+ // taky vylepsovat." Nabizi se prave jedna denne a je to bud metoda, kterou
+ // hrac jeste nezna, nebo uroven k te, kterou uz ma.
+ {
+  const nezname=ABIL.filter(a=>!hasAbil(a.id));
+  const lze=ABIL.filter(a=>hasAbil(a.id)&&abilUpCost(a.id)!==null);
+  if(nezname.length){
+    const a=nezname[Math.floor(rnd(21)*nezname.length)];
+    out.push({id:'m1',type:'abilNew',abil:a.id,price:640,
+      title:'Metoda: '+a.n, sub:a.info});
+  } else if(lze.length){
+    const a=lze[Math.floor(rnd(23)*lze.length)];
+    const c=abilUpCost(a.id);
+    out.push({id:'m1',type:'abilUp',abil:a.id,price:Math.round(c*2.6),
+      title:a.n+' · úroveň '+(abilLv(a.id)+1),
+      sub:'+18 % síly metody'+(((abilLv(a.id)+1)%2===0)?' a náboj navíc':'')});
+  }
+ }
  out.push({id:'r1',type:'res',res:0,price:0,title:'Zdarma každý den',sub:'Malá dávka karet a výzkumu',free:true});
  return out;
 }
@@ -17667,6 +17768,16 @@ function buyOffer(o){
  if(o.type==='cards'){
    SAVE.cards[o.k]=(SAVE.cards[o.k]||0)+o.n;
    toast2('Koupeno: '+o.n+'× '+T[o.k].n[0]);
+ } else if(o.type==='abilNew'){
+   if(SAVE.abils.indexOf(o.abil)<0)SAVE.abils.push(o.abil);
+   const a=ABIL.find(x=>x.id===o.abil);
+   toast2('Nová měřická metoda: '+(a?a.n:o.abil));
+   renderAbilDeck();
+ } else if(o.type==='abilUp'){
+   SAVE.abilLvl[o.abil]=abilLv(o.abil)+1;
+   const a=ABIL.find(x=>x.id===o.abil);
+   toast2((a?a.n:o.abil)+' · úroveň '+abilLv(o.abil));
+   renderAbilDeck();
  } else if(o.type==='crate'){
    const cr=rollCrate(o.crate);showCrate([cr]);
  } else {
@@ -17676,33 +17787,79 @@ function buyOffer(o){
  SAVE.shop.b.push(o.id);save();snd('coin');
  renderShop();renderTitle();
 }
-// Zalozka "Za mezniky": balicek vyzkumu se stropem 1x denne a vzhledy.
+// Uroven metody koupena za mezniky. Vybira si ji HRAC - jinak by hra
+// mohla trefit metodu, kterou vubec nenosi do terenu.
+function otevriMetodaZaMezniky(){
+ const L=$('ptList');L.innerHTML='';ptSloupec();
+ ptNadpis('Které metodě přidat úroveň');
+ $('ptLead').textContent='Vyšší úroveň zvedne sílu metody o 18 % a každá druhá '+
+   'přidá i náboj navíc. Vyber, komu úroveň připsat.';
+ const mam=ABIL.filter(a=>hasAbil(a.id)&&abilUpCost(a.id)!==null);
+ if(!mam.length){
+   const d=document.createElement('div');d.className='ptrow';
+   d.innerHTML='<div class="pi"><div class="pn2">Všechny metody jsou na maximu</div>'+
+     '<div class="pd2">Mezníky se ti vrátily.</div></div>';
+   L.appendChild(d);
+   mezDej(180,'vrácení – všechny metody na maximu');
+   SAVE.mezDay.metoda=0; save();
+ }
+ mam.forEach(function(a){
+   const d=document.createElement('div');d.className='ptrow';
+   d.innerHTML='<div class="aic">'+a.ic+'</div><div class="pi">'+
+     '<div class="pn2">'+a.n+'<span class="prar" style="background:var(--brass)">úr. '+
+       abilLv(a.id)+' → '+(abilLv(a.id)+1)+'</span></div>'+
+     '<div class="pd2">'+a.info+'</div></div>';
+   d.onclick=function(){
+     SAVE.abilLvl[a.id]=abilLv(a.id)+1; save(); snd('merge');
+     toast2(a.n+' · úroveň '+abilLv(a.id));
+     $('pickTower').classList.remove('on'); renderMez(); renderAbilDeck();
+   };
+   L.appendChild(d);
+ });
+ $('pickTower').classList.add('on');
+}
+
+// Zalozka "Za mezniky": denni nabidka za vzacnou menu a vzhledy.
 function renderMez(){
  const bal=$('mezRes'), sk=$('mezSkins');
  if(!bal||!sk)return;
  SAVE.mezDay=SAVE.mezDay||{d:'',res:0};
  if(SAVE.mezDay.d!==today())SAVE.mezDay={d:today(),res:0};
- const uz=SAVE.mezDay.res>0;
  bal.innerHTML='';
  {const st=document.getElementById('mezStav');if(st)st.textContent=String(SAVE.mez||0);}
- {
-   const d=document.createElement('div');d.className='karta mezBal';
-   d.innerHTML='<div class="pruz"><div class="mezBalN">200 výzkumu</div>'
-     +'<div class="tise">'+(uz?'dnes už vyčerpáno, vrátí se po půlnoci'
-     :'jednou za den · 40 mezníků')+'</div></div>';
-   const b=document.createElement('button');
-   b.className='b-buy mezKup';
-   b.innerHTML=uz?'<span class="stav">DNES HOTOVO</span>'
-     :'<span class="cena">40</span> <i>mezníků</i>';
-   b.disabled=uz||(SAVE.mez||0)<40;
-   b.onclick=()=>{
-     if((SAVE.mez||0)<40)return;
-     SAVE.res+=200; SAVE.mezDay={d:today(),res:1};   // nejdriv pripsat
-     if(!mezVezmi(40)){SAVE.res-=200;return;}
-     save();
-     snd('coin'); toast2('+200 výzkumu'); renderMez(); renderTitle(); };
-   d.appendChild(b); bal.appendChild(d);
- }
+ // Kazda polozka ma vlastni denni strop - mezniky se davaji jen za vykon
+ // (8-15 denne u aktivniho hrace), takze bez stropu by se jedna z nich
+ // stala jedinou spravnou volbou a zbytek by nikdo nekoupil.
+ const zbozi=[
+  {id:'res', n:'200 výzkumu',        p:'do laborky i na úrovně přístrojů', cena:40,
+   dej:()=>{ SAVE.res+=200; }},
+  {id:'karty',n:'10 karet přístrojů',p:'polovina míří na tvoji sestavu',   cena:70,
+   dej:()=>{ const g=grantCards(10);
+     toast2('Karty: '+Object.keys(g).map(k=>SHORT[k]+' ×'+g[k]).join(', ')); }},
+  {id:'bedna',n:'Přístrojový kufr', p:'15–21 karet a šance na nový přístroj', cena:130,
+   dej:()=>{ showCrate([rollCrate('rare')]); }},
+  {id:'metoda',n:'Úroveň měřické metody',p:'zvedne sílu i počet nábojů',   cena:180,
+   dej:()=>{ otevriMetodaZaMezniky(); }}
+ ];
+ zbozi.forEach(function(o){
+  const uz=!!SAVE.mezDay[o.id];
+  const d=document.createElement('div');d.className='karta mezBal';
+  d.innerHTML='<div class="pruz"><div class="mezBalN">'+o.n+'</div>'
+    +'<div class="tise">'+(uz?'dnes už vyčerpáno, vrátí se po půlnoci'
+    :(o.p+' · jednou za den'))+'</div></div>';
+  const b=document.createElement('button');
+  b.className='b-buy mezKup';
+  b.innerHTML=uz?'<span class="stav">DNES HOTOVO</span>'
+    :'<span class="cena">'+o.cena+'</span> <i>mezníků</i>';
+  b.disabled=uz||(SAVE.mez||0)<o.cena;
+  b.onclick=function(){
+    if((SAVE.mez||0)<o.cena)return;
+    if(!mezVezmi(o.cena))return;
+    SAVE.mezDay[o.id]=1; SAVE.mezDay.d=today();
+    o.dej(); save(); snd('coin'); renderMez(); renderTitle();
+  };
+  d.appendChild(b); bal.appendChild(d);
+ });
  // ---- VZHLEDY: nejdriv pristroj, pak jeho vzhled ----
  SAVE.skinOwn=SAVE.skinOwn||{}; SAVE.skinT=SAVE.skinT||{};
  const SEZ=skinPristroje();
@@ -17742,7 +17899,8 @@ function renderMez(){
  const ht=document.createElement('div'); ht.className='skHeroTxt';
  const h1=document.createElement('div'); h1.className='nadpis'; h1.textContent=dSel.n;
  const h2=document.createElement('p'); h2.className='popis';
- h2.textContent=T[k0].n[0]+' · rodina '+(dSel.rodN||'Základ');
+ h2.textContent=T[k0].n[0]+' · rodina '+(dSel.rodN||'Základ')+
+   ' · '+(dSel.tvarN||'tovární tvar');
  ht.appendChild(h1); ht.appendChild(h2);
  const od=document.createElement('span');
  if(jeNa){ od.className='odznak odznak--zeleny'; od.textContent='Nasazeno'; }
@@ -18138,15 +18296,28 @@ function renderShop(){
      d.style.setProperty('--rar',rr.col);
      d.classList.add('rar-'+(TRAR[o.k]||'c'));
    }
+   else if(o.type==='abilNew'||o.type==='abilUp'){
+     const mc='#5fd6f0';
+     d.style.setProperty('--rc','color-mix(in srgb,'+mc+' 55%,#0b1236)');
+     d.style.setProperty('--rcL',mc);
+     d.style.setProperty('--rar',mc);
+   }
    else {d.style.setProperty('--rc',CRATES[o.crate].c);
      d.style.setProperty('--rcL',CRATES[o.crate].c);
      d.style.setProperty('--rar',CRATES[o.crate].c);}
    // Vzacnost musi byt citelna slovem, ne jen odstinem ramu.
    {const zn=document.createElement('span');zn.className='shRar';
-    zn.textContent=(o.type==='cards')?rarOf(o.k).n:'Bedna';d.appendChild(zn);}
+    zn.textContent=(o.type==='cards')?rarOf(o.k).n
+      :(o.type==='abilNew')?'Nová metoda'
+      :(o.type==='abilUp')?'Úroveň metody':'Bedna';
+    d.appendChild(zn);}
    const art=document.createElement('div');art.className='shArt';
    if(o.type==='cards')art.appendChild(mini(o.k,Math.min(3,SAVE.lvl[o.k]||0),
      Math.round(58*Math.min(2,window.devicePixelRatio||1))));
+   else if(o.type==='abilNew'||o.type==='abilUp'){
+     const a=ABIL.find(x=>x.id===o.abil);
+     art.innerHTML='<div class="shMet">'+((a&&a.ic)||'')+'</div>';
+   }
    else art.innerHTML='<div class="shBox" style="--cc:'+CRATES[o.crate].c+'"><i></i><b></b></div>';
    d.appendChild(art);
    const t=document.createElement('div');t.className='shT';
@@ -19955,9 +20126,15 @@ const LABIC={
  prec:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>',
  acd:'<svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
  disc:'<svg viewBox="0 0 24 24"><path d="M8 8h.01M16 16h.01M6 18 18 6"/><rect x="3" y="3" width="18" height="18" rx="4"/></svg>',
- resb:'<svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L5.2 18A2 2 0 0 0 7 21h10a2 2 0 0 0 1.8-3L14 9V3"/></svg>'
+ resb:'<svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L5.2 18A2 2 0 0 0 7 21h10a2 2 0 0 0 1.8-3L14 9V3"/></svg>',
+ rng:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8.4"/><path d="M12 1.2v3M12 19.8v3"/></svg>',
+ rate:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13V8.4M9.6 2.4h4.8"/></svg>',
+ crit:'<svg viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6"/><path d="M4 6.5 9 11.5 12.5 8"/></svg>',
+ rep:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>',
+ mez:'<svg viewBox="0 0 24 24"><path d="M12 2.6 16.4 6v11.4H7.6V6z"/><path d="M4.4 20.4h15.2"/></svg>'
 };
-const LABC={budget:'brass',cap:'violet',prec:'tape',acd:'sky',disc:'moss',resb:'laser'};
+const LABC={budget:'brass',cap:'violet',prec:'tape',acd:'sky',disc:'moss',resb:'laser',
+ rng:'sky',rate:'laser',crit:'tape',rep:'moss',mez:'violet'};
 function renderLabPeek(){
  const el=$('labPeek'); if(!el)return;
  el.innerHTML=META.map(u=>{
@@ -21148,7 +21325,7 @@ function renderOpts(){
  btn.onclick=()=>{
    if(btn.dataset.c){ SAVE.res=0;SAVE.unlocked=1;SAVE.best=[0,0,0];SAVE.stars=[0,0,0];
      SAVE.endless=[0,0,0];SAVE.won=[0,0,0];SAVE.tut=0;SAVE.run=null;
-     SAVE.meta={budget:0,cap:0,prec:0,acd:0,disc:0,resb:0};
+     SAVE.meta=vychoziMeta();
      SAVE.xp=0;SAVE.step=0;SAVE.types=BASE_TYPES.slice();SAVE.abils=BASE_ABILS.slice();
      SAVE.cards={};SAVE.lvl={};SAVE.acc={};SAVE.spec={};SAVE.perk={};SAVE.ach={};SAVE.slots=[];SAVE.tr=0;SAVE.arena=0;
      SAVE.best=MAPS.map(()=>0);SAVE.stars=MAPS.map(()=>0);
