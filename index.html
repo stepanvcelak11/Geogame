@@ -10227,26 +10227,22 @@ function finaleRysy(){
 // stejnou odolnost v sumu NENI vymena jedna ku jedne, a bez tohohle nasobku by
 // uzemni smes tise ztezovala hru.
 //
-// POZOR, uz to zkouseno bylo. Cisla nize jsou ODHAD, ktery je overeny na
-// vysledku hry - ne primo namerena sila druhu.
+// POZOR, ctvrtou sadu cisel uz nezkousej. Zkouseny byly TRI a rozhodly jinak,
+// nez bych cekal:
+//   1) tyhle odhady                                  9,7 vyhry z 12 (zaklad 10,3)
+//   2) sila druhu merena na vlne z JEDNOHO druhu     9,0            (zaklad 10,3)
+//      (rusicka 3,24 · drift 2,0 · preklep 1,1 · hruba 1,05 · multipath 1,2)
+//   3) MEZNI prinos schopnosti ve smisene vlne       9,3            (zaklad 10,7)
+//      (rusicka 2,5, zbytek kolem 1,0 - mereno tak, ze se v teze vlne vypne
+//       schopnost jednoho druhu; jedina, ktera s vysledkem hne, je umlcovani)
+// A zmirneni cele smesi z 0,7 na 0,55 dalo TENTYZ prumer jako 0,7.
 //
-// Balancova session silu vlivu pozdeji ZMERILA (mereni/vlna.py: nesmrtelne cile
-// jednoho druhu na trase; o kolik min prace obrana odvede nez proti Chybe
-// odectu) a vysla ji jina cisla: rusicka 3,24 · drift 2,0 · preklep 1,1 ·
-// hruba chyba 1,05 · multipath 1,2 · sedani 1,1. Dosadil jsem je - a A/B
-// robotem je ODMITLO: 9,0 vyhry z 12 proti 9,7 s temito odhady (zaklad 10,3).
-// Sila druhu proti prazdne trase zjevne neni totez co jeho prinos uvnitr
-// michane vlny. Nez to nekdo prepise, at ma A/B, ktere ukazuje opak.
-//
-// U lecitele a zakrytu navic to mereni ma slepe misto: pousti vlnu z JEDINEHO
-// druhu, takze lecitel lecil jen lecitele a zakryt kryl jen zakryty. Ve smisene
-// vlne chrani i sedani (150 hp) a zakryt (170 hp), tedy prave to, po cem obrana
-// strili nejdele - jejich 1,05 a 1,11 je dolni mez, ne hodnota.
-//
-// A jeste jedno cislo do stejneho radku: ucinek NENI na poctu linearni. Tri
-// lecitele jsou skoro neznatelni (1,05), dvacet jich vyleci 133x vic, nez obrana
-// stihne ubrat. Hra ale nikdy neposle vic nez pet, takze pro nas plati ten dolni
-// konec rozsahu.
+// Zaver: cena uzemni smesi nestoji na vahach ani na jeji sile. Stoji na tom, ze
+// SOUSTREDENA vlna trestá pevnou sestavu - a robot je nejhorsi mozny pripad,
+// protoze hraje s tim, co mu obchod nabidne, a o uzemi dopredu nevi nic.
+// Clovek si sestavu vybira a od verze 93 mu detail uzemi rika, co ho ceka.
+// Vahy tu tedy jsou proto, aby smes nemenila TLAK vlny (soucet odolnosti drzi
+// na puvodni hodnote), ne proto, aby vyrovnaly rozdil ve vysledku.
 const SILA={jam:2.2,heal:2.5,cover:2.0,jump:1.4,drift:1.35,blun:1.2,multi:1.15,subs:1.1};
 // Jak vyhranena uzemi jsou: 1 = plne podle tabulky `mix`, 0 = vsude stejne.
 // Zmereno: zmirneni na 0,55 dalo TENTYZ prumer (9,7 vyhry z 12) jako 0,7,

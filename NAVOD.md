@@ -591,25 +591,31 @@ rozdíly zvětšit nebo zmírnit, mění se jedna konstanta, ne dvanáct tabulek
 Měřeno robotem, vždy tři kola proti třem. Cesta k tomu byla dlouhá a stojí za
 zapsání, protože každý mezikrok něco vyvrátil:
 
-| pokus | výhry z 12 | co se ukázalo |
+| pokus | výhry z 12 (základ) | co se ukázalo |
 |---|---|---|
-| jen rysy a směs, bez vážení | 8,0 (základ 9,7) | rys byl čistý přídavek k síle |
+| jen rysy a směs, bez vážení | 8,0 (9,7) | rys byl čistý přídavek k síle |
 | + cena rysu | 8,7 | zbytek nedělaly rysy, ale směs |
-| + násobek síly vlivu | **9,7 : 9,7** | vážit jen odolností nestačí |
-| + naměřené síly místo odhadu | 9,0 (základ 10,3) | **naměřená čísla to zhoršila** |
-| zpět odhad, směs zmírněna na 0,55 | 9,7 | zmírnění směsi nezměnilo **nic** |
+| + násobek síly vlivu (odhad) | **9,7 (9,7)** | vážit jen odolností nestačí |
+| síly měřené na vlně z jednoho druhu | 9,0 (10,3) | naměřená čísla to **zhoršila** |
+| mezní přínos schopností ve smíšené vlně | 9,3 (10,7) | zase o kus hůř |
+| odhady, směs zmírněná z 0,7 na 0,55 | 9,7 | zmírnění nezměnilo **nic** |
 
-Poslední dva řádky jsou zajímavější než ten úspěšný. Balancová session mezitím
-sílu vlivů **opravdu změřila** (nesmrtelné cíle jednoho druhu na trase) a vyšla
-jí čísla výrazně jiná než moje odhady — rušička 3,24 místo 2,2, drift 2,0 místo
-1,35. Když jsem je dosadil, obtížnost se **zhoršila**, ne zlepšila. A když jsem
-pak zkusil zmírnit celou směs skoro na polovinu, průměr se nepohnul ani o setinu.
+Ty neúspěšné řádky říkají víc než ten povedený. Balancová session sílu vlivů
+dvakrát opravdu změřila — nejdřív na vlně z jednoho druhu, pak (na moji námitku)
+jako mezní přínos ve skutečné smíšené vlně, kde se v téže vlně vypne schopnost
+jednoho druhu. Vyšlo jí, že **jediná schopnost, která s výsledkem vlny hne, je
+umlčování stanovisek**: obrana proti rušičce odvede o 55 % míň práce, kdežto
+léčení, krytí, regenerace i přeskakování trasy dělají jednotky procent. Dosadil
+jsem obojí a **pokaždé to bylo horší než moje odhady**.
 
-Z toho plyne, že **síla druhu proti prázdné trase není totéž co jeho přínos uvnitř
-míchané vlny** — a že zbylý rozdíl proti základu (9,7 proti 10,3, jednotlivá kola
-10/9/10 proti 10/11/10) na síle směsi nestojí. Je v rozptylu měřidla, které samo
-kolísá o výhru na kolo. V kódu je to u tabulky `SILA` napsané i s čísly, aby to
-nikdo nezkoušel podruhé naslepo.
+Závěr po třech sadách vah: **ta cena nestojí na vahách ani na síle směsi.** Stojí
+na tom, že soustředěná vlna trestá pevnou sestavu — a robot je na to nejhorší
+možný případ, protože hraje s tím, co mu obchod nabídne, a o území dopředu neví
+nic. Člověk si sestavu vybírá, a právě proto v detailu území nově stojí, co ho
+čeká. Zbylý rozdíl proti základu je **necelá výhra z dvanácti u robota**; jak
+vyhraněná území jsou, drží jediné číslo `MIX_SILA`, takže se to dá kdykoli
+stáhnout. V kódu je celá tahle historie u tabulky `SILA`, aby nikdo nezkoušel
+čtvrtou sadu naslepo.
 
 V detailu území proto nově stojí řádek **Nejčastější vlivy** — a jde se podle něj
 vybrat sestava. Čte se z téhož předpisu, kterým se vlna doopravdy skládá.
