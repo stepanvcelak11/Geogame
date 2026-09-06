@@ -1,4 +1,4 @@
-# GeoGame — verze 90
+# GeoGame — verze 91
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=90;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=91;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v90-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v91-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v90-jediny-soubor.html
+copy index.html geogame-v91-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -54,6 +54,76 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 91
+
+Verze podle připomínek hráče. Prošel novou podobu hry obrazovku po obrazovce —
+všech 49, od menu přes všech šestnáct oken po záložky panelu v měření — a
+u 48 z nich napsal, co s nimi. Tohle je zapracování jeho slov.
+
+Nejčastější věta byla „text malý a nepřehledný" a „je toho tam moc namačkaného".
+Změřeno na 15 obrazovkách ve třech motivech: z 3 242 popisků jich bylo
+**1 883 (58 %) pod 12 px**. Po opravě ani jeden. Stupnice odsazení šla o 15–20 %
+nahoru, výška řádku popisů na 1,55. Hrací deska se tím zmenšit nesměla, takže
+herní obrazovka má vlastní hustotu: políčko má na 390×844 pořád 42 px.
+
+**Terén**
+- **Mapa světa se roluje na výšku** a jsou v ní vidět **tři území naráz**;
+  celá trasa se otevře po klepnutí. Platno vyrostlo z 384×361 na 384×1362 px,
+  krok mezi územími je 112 px a cedulky se už nepřekrývají (kresleno je jich
+  dvanáct místo sedmi). Nadpis „Mapa světa" stojí nad mapou, ne na ní.
+- Ikona Terénu ve spodní liště je vycentrovaná (odchylka 0,02 px), text HRÁT
+  je méně tučný, profil geodeta má čitelnou hodnost a postup.
+- Režimy jsou menší a mají „i" s vysvětlením. Karta **„Co teď" je pryč**.
+
+**Obchod**
+- **Měny se po klepnutí vysvětlí** — u mezníků včetně toho, kde se berou.
+  Patní poznámka „Kde se mezníky berou" tím zmizela z výpisu.
+- Ikony vzhledů jsou světlejší (průměrný jas dlaždic 106–158 → 132–195).
+- **Živý náhled, jak přístroj vypadá na desce**, s trasou a zásahy.
+- Přibyla police **legendárních vzhledů** se zvláštním efektem při měření —
+  pečeť, vlna nebo roj. Mění jen vzhled, ne sílu.
+
+**Vybavení a Laborka**
+- Sestava, hrdinové, měřické metody a karty leží ve **třech zapuštěných deskách**,
+  ne v jednom svitku; odznak úrovně je čitelný (kontrast 8,91 → 11,56:1).
+- Text „Jak se sestava skládá" je pryč.
+- **Vylepšení mají jemnější kroky a každý přístroj jich má stejný počet.**
+  Robot dohrál stejně jako předtím (8/12 s běžným postupem, 10/12 s plně
+  vylepšeným) — obtížnost se neposunula.
+
+**Kariéra**
+- **Trofejní i sezónní cesta jsou svislý pás**, ne poloviční výřez posouvaný
+  do strany: vodorovné rolování 1 420 px → 0, písmo 10,5–11,5 px → 12–15 px,
+  20 prvků mimo okno → 0.
+- **Odměna se při vyzvednutí odhalí i s kartami**, jako u bedny; totéž
+  u denní odměny.
+
+**Encyklopedie**
+- Všech osm záložek: 0 popisků pod 12 px, nejnižší kontrast 4,62 → nad 6:1.
+- Vzácnost je vidět barvou (proužek, lem i pilulka).
+- Srovnání má **sloupce místo holých čísel**.
+
+**Měření**
+- Tlačítka jsou světlejší (jas plochy 0,037 → 0,074), lišta nahoře je nižší
+  (88 → 73 px), z karet přístrojů zmizely úrovně a z desky cedulka „ODSUD".
+- **Rada dole mlčí, jakmile máš první území dohrané**, a jde zavřít křížkem.
+- Křížky a záložky panelu mají dotykový terč 44 px.
+
+**Okna**
+- Detail území je bez doporučené sestavy a s **náhledem mapy 150×193 px**
+  místo 62×80.
+- Detail přístroje je rozdělený do tří záložek (jeden svitek 1 528 px →
+  867/735/851 px).
+
+### Co zůstává na příště
+
+- **Srovnání v encyklopedii je teď 3,3× delší** (1 167 → 3 875 px): je čitelné,
+  ale všech 23 přístrojů už nejde přehlédnout naráz.
+- V záložce **Podmínky** se věta „potlačí meteostanice" opakuje devětkrát.
+- Prázdné hledání v encyklopedii nechá zapnuté „vše" — stará vada z verze 89.
+- Kód zálohy postupu ztratil neproporcionální písmo.
+- Na 320 px se v okně celé trofejní cesty pár popisků láme na dva řádky.
 
 ## Co je nového ve verzi 90
 

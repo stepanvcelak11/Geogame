@@ -6,7 +6,51 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: ČÍSLO 90 SI VZALA SESSION H (5. 9. pozdě večer) — OPRAVY, NE VZHLED
+## AKTUÁLNÍ STAV: VYDÁNA VERZE 91 (6. 9. ráno, session G) — PŘIPOMÍNKY HRÁČE
+
+**Číslo 91 je vydané, další si berte 92.** Session G zapracovala připomínky
+uživatele ke všem 49 obrazovkám verze 89.
+
+⚠ **Verzi 90 mezitím vydala jiná session** (čtyři commity oprav: mrtvá epická
+karta, popisky, odměny slibující hrdiny). Moje práce stála na verzi 89, takže
+se musela **přesadit na jejich soubor** — všech sedm záplat naštěstí sedlo beze
+změny kotev, jejich opravy se s vizuálem nepotkaly. Kdo bude příště vydávat:
+`git pull --rebase` a `git log --oneline -5` na začátku, ne až na konci.
+
+### Jak to vzniklo
+
+Uživatel dostal prohlížečku všech 49 obrazovek (menu, 16 oken, všechny záložky
+včetně šesti záložek panelu v měření) s hodnocením u každé. Vyplnil ji celou:
+**48× „Předělat", 1× „Sedí"** (Nastavení). Jeho slova jsou doslova zapsaná
+v pracovním souboru `ZADANI.md` v dočasné složce session.
+
+Workflow: agent na globální čitelnost, pak sedm oblastí (terén, obchod,
+vybavení+laborka, kariéra, encyklopedie, měření, okna), na každou skeptik.
+15 agentů, žádný nespadl.
+
+### Co našli skeptici a co jsem po nich spravil
+
+- **Zamrzlý tutoriál**: schování rady veteránovi zastavilo i POSTUP tutoriálu,
+  takže `SAVE.tut` zůstal na nule a výměna skladu byla **zdarma navždy**.
+  Postup se teď počítá vždy, veteránovi se tutoriál jednou provždy zavře.
+- **Náhled přístroje v obchodě zamrzl** po návratu na stránku (jeho smyčka
+  končí na `PAGE!==0` a nikdo ji nerozjel). `goPage` ho teď nastartuje.
+- Nadpis „Mapa světa" ležel na mapě (na 320 px zakrýval 5 z 12 jmen území).
+- Křížek panelu měl 34 px místo 44, popisek „?" se vrátil, na 320 px se
+  usekávaly názvy záložek.
+- Mřížka denní odmény lezla na 320 px mimo okno; popisky v okně trofejní cesty
+  se sekaly třemi tečkami; zamčený řádek pásu tlumil text krytím (4,28:1).
+
+### Čím je vydání podložené
+
+- 9 kombinací (320/390/1440 × den/noc/kontrastní) × dvě spuštění: **0 chyb**.
+- Robot `mereni/ab.py`, tři kola: **8,0 vyhraných území z 12** proti 8,7 u verze
+  90 — v rozptylu měřidla (jednotlivá kola 7/9/8 proti 9/9/8).
+- Políčko desky 42 px na 390×844, stejně jako v 89 i 90.
+
+---
+
+## PŘEDCHOZÍ STAV: ČÍSLO 90 SI VZALA SESSION H (5. 9. pozdě večer) — OPRAVY, NE VZHLED
 
 **Číslo 90 je zabrané, další si berte 91.** Session H udělala prohlídku hry
 (report `Desktop\geogame-hodnoceni-v89.md`, známka 7,5/10) a pak opravila to,
