@@ -19629,15 +19629,22 @@ function vykresliPick(){
    // v99: u vsech nevylepsenych pristroju tu stalo "bez urovne" - dvanactkrat
    // pod sebou tataz veta, ktera hraci nic nerika. Ted je na tom miste postup
    // ke kartam, stejne cislo jako ve Sbirce.
-   const cst=cardCost(k);
-   // Kdyz uz hrac na povyseni MA, je to dulezitejsi nez pomer karet - pomer
-   // by se navic cetl spatne ("44/3 karet" vypada jako chyba).
-   sp.textContent=zna?(muzeVylepsit(k)?'lze vylepšit'
-                        :(lv?('úroveň '+lv)
-                          :(owns?(cst?((SAVE.cards[k]||0)+'/'+cst.cards+' karet')
-                                     :'nejvyšší')
-                                :'chybí karty')))
-                     :towerOdkudKratce(k);
+   // Drive tu u kazdeho nevylepseneho pristroje stalo "bez urovne" -
+   // dvanactkrat pod sebou tataz veta, ktera hraci nic nerika. Ted je tam
+   // to, co mu do dalsi urovne SCHAZI.
+   // POZOR: pouhy pomer "karty/potreba" se tu cist neda. Novy hrac zacina
+   // se ctyrmi kartami na pasmo, ktere jich potrebuje tri - stalo by mu tam
+   // "4/3 karet", coz vypada jako chyba, a povysit stejne nemuze, protoze
+   // ma nula vyzkumu. Proto se rozlisuje, co presne chybi.
+   const cst=cardCost(k), mam=SAVE.cards[k]||0;
+   let stav;
+   if(!zna)stav=towerOdkudKratce(k);
+   else if(muzeVylepsit(k))stav='lze vylepšit';
+   else if(lv)stav='úroveň '+lv;
+   else if(!cst)stav='nejvyšší';
+   else if(mam>=cst.cards)stav='chybí výzkum';
+   else stav=mam+'/'+cst.cards+' karet';
+   sp.textContent=stav;
    if(zna&&muzeVylepsit(k))sp.classList.add('pkLze');
    d.appendChild(sp);
    if(SUP.indexOf(k)>=0){const r2=document.createElement('div');r2.className='pkRole';
@@ -20540,7 +20547,8 @@ function renderStarRew(){
      x.n+'</div><div class="srT">'+rw.join(' + ')+
      '<div class="srB"><i style="width:'+Math.min(100,tot/x.n*100)+'%"></i></div></div>';
    const btn=document.createElement('button');
-   btn.textContent=done?'✓':(rdy?'VZÍT':'—');btn.disabled=!rdy;
+   btn.textContent=done?'✓':(rdy?'VZÍT'
+     :(Math.floor(Math.min(1,tot/x.n)*100)+' %'));btn.disabled=!rdy;
    btn.onclick=()=>{
      if(!rdy)return;
      if(x.r.res)SAVE.res+=x.r.res;
@@ -20605,7 +20613,8 @@ function renderAch(){
      '<div class="achB postup"><i style="width:'+Math.round(pr/a.g*100)+'%"></i></div>'+
      '<div class="achR"><span class="achP">'+pr+' / '+a.g+'</span>'+kaRwChips(a.r,1)+'</div></div>';
    const btn=document.createElement('button');
-   btn.textContent=done?'✓':(rd?'VZÍT':'—');btn.disabled=!rd;
+   btn.textContent=done?'✓':(rd?'VZÍT'
+     :(Math.floor(Math.min(1,pr/a.g)*100)+' %'));btn.disabled=!rd;
    btn.onclick=()=>{
      if(!rd)return;
      if(a.r.res)SAVE.res+=a.r.res;

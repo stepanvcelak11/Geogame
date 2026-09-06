@@ -105,6 +105,22 @@ Sbírka a okno nemůžou rozejít.
 - **Obchod**: tlačítko na kartě „Zdarma každý den" říkalo „ZDARMA" (totéž co
   nadpis), teď říká „VZÍT".
 
+### Očima nováčka
+
+Nová hra startuje se **zapnutým testovacím režimem** (výchozí uložení má
+natvrdo `testAll:1`), takže při zkoušení má člověk všech 23 přístrojů,
+30 000 výzkumu a 40 karet od každého. Prohlídku jsem proto zopakoval se
+stavem, který má **opravdový nováček**: 4/4/3/3 karty, nula výzkumu, čtyři
+základní přístroje. Vypadlo z toho tohle:
+
+- Ve výběru přístrojů stálo u všech čtyř startovních kusů **„4/3 karet"** —
+  poměr, kde čitatel je větší než jmenovatel. Vypadá to jako chyba a hráč
+  stejně povýšit nemůže, protože mu chybí **výzkum**, ne karty. Teď se
+  rozlišuje: *lze vylepšit* / *chybí výzkum* / *N/M karet*.
+- Táž mrtvá pomlčka jako u denních úkolů byla i na kartách **úspěchů**
+  a **odměn za hvězdy** — a těch je v Kariéře pod sebou dvacet. Teď je
+  i tam procento.
+
 ### Čím je to podložené
 
 - 17 obrazovek × 320/390/430 px × denní/noční/kontrastní: **0 chyb v konzoli**,
