@@ -1,4 +1,4 @@
-# GeoGame — verze 97
+# GeoGame — verze 98
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=97;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=98;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v97-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v98-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v95-jediny-soubor.html
+copy index.html geogame-v98-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -54,6 +54,76 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 98
+
+Prohlídka **bitevní obrazovky**: hra se odehrála v prohlížeči a každý ovládací
+prvek se změřil — kde leží, jestli na něj jde klepnout a jestli se text vejde.
+Do menu, do čísel ani do balancu se nesahalo.
+
+### Tlačítko ZRUŠIT nešlo trefit prstem
+
+Pruh „Umísťuješ *Nivelák* — klepni na desku“ (`#place`) byl **jediný prvek
+bitvy v běžné sazbě** — deska, horní HUD i spodní ovládání jsou umístěné
+absolutně. Skončil proto na souřadnici 0,0, přesně **pod horním HUD**:
+naměřeno na 390×844 měl pruh `top 0, výška 60`, HUD `top 0, výška 73`.
+Hráč ten pruh nikdy neviděl a klepnutí na ZRUŠIT chytal ukazatel přesnosti nad
+ním. Odvolat rozestavěný přístroj šlo jen druhým klepnutím na kartu.
+
+Pruh teď umisťuje tatáž funkce jako rychlou lištu (`placeQuick()`), tedy nad
+spodní ovládání. Ověřeno skutečným klepnutím — u přístroje i u hrdiny.
+
+### Panel ležel na tutoriálové bublině
+
+`setDock()` počítal polohu panelu jen z výšky spodního ovládání a nezapočítal
+bublinu tutoriálu, která nad ním visí. Naměřeno: bublina 596–663, panel
+242–664 — její křížek proto nešel zavřít. Polohu panelu teď počítá `placeQuick()`
+ze stejného základu jako všechno ostatní a **znovu při každém překreslení**,
+takže sedí i tehdy, když se bublina objeví až po otevření panelu.
+
+### Z názvů přístrojů zbývaly trojznaky
+
+Vyčerpaný slot skladu bral stejně široký sloupec jako živá karta a psal do něj
+„použito“. Při šesti slotech (vylepšení *Větší sklad* + *Polní sklad*) a kartě
+hrdiny to dělalo sedm sloupců po 30 px a v řádku stálo
+„Pil… Niv… Teo… Pás… Dál… pou…“.
+
+- Vyčerpaný slot je teď **úzký čárkovaný proužek**. Drží místo v řadě, aby
+  karty pod prstem nepřeskakovaly, ale nebere šířku názvům.
+- Velikost názvu se řídí **naměřenou šířkou dlaždice**, ne počtem karet —
+  úzké prázdné sloty totiž šířku neberou.
+- Slot, který se nemá čím naplnit, se **vůbec nezaloží**. Výchozí balíček má
+  čtyři typy, takže *Větší sklad* na 2. úrovni a *Polní sklad* dosud přidávaly
+  dlaždice, které se do konce měření nenaplnily.
+
+Po opravě: **0 ořezaných názvů** ve všech konfiguracích (4/6/7 slotů, s hrdinou
+i bez, šířky 320/360/390/430 px) a výška spodního ovládání se nezměnila, takže
+deska nezmenšila.
+
+### Drobnosti
+
+- „PŘESNOST“ se na 320 px ořezávala na „PŘESNOS…“ (potřebovala 80 px do 69).
+- Křížek tutoriálu měl terč 44×34 px. Výšku mu přidat nelze — deska si z ní
+  počítá velikost pole — takže se terč roztahuje neviditelně, přes pseudoprvek.
+  Účinná výška 46 px, sazba i deska zůstávají na pixel stejné.
+
+### Co se měřilo a vyšlo čistě
+
+104 klepnutí na všechno ovládání bitvy v osmi stavech: **0 chyb**. Uložená
+rozehraná bitva se po znovunačtení stránky obnovuje beze změny a dá se dohrát.
+Poškozená i velmi stará uložená data (prázdný řetězec, nesmysl, `null` uvnitř)
+hru nezhodí. Přepnutí na pozadí uprostřed vlny hru správně **zastaví**, uloží
+a nabídne POKRAČOVAT. Kontrola „obsah oříznutý bez rolujícího předka“ na
+3 šířkách × 7 stavech: **0 nálezů**.
+
+### Co zůstalo a proč
+
+- **Panel vybraného stanoviska má dole ~145 px prázdna.** Je to cena za „panel
+  jedné výšky“ z verze 96: panel je ukotvený zespodu, takže proměnná výška by
+  hýbala lištou záložek nahoře — přesně tím, co verze 96 řešila.
+- **Při vybraném stanovisku nesou neaktivní záložky jen ikonu.** Sedmá záložka
+  je o 9 px přes šířku obrazovky a ořezala rovnou čtyři popisky. Spravit to
+  znamená něco z lišty vyhodit — to je rozhodnutí, ne oprava.
 
 ## Co je nového ve verzi 97
 
