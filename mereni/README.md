@@ -97,19 +97,31 @@ obtížnosti, nebo úkol pro výběr sestavy? Skript pustí robota na tutéž
 soustředěnou vlnu dvakrát — jednou se **začáteční sestavou**, jednou se
 sestavou **vybranou proti tomu soustředění**.
 
-Naměřeno (území 7–10, 8 běhů na řádek):
+**Dávková křivka — kde je útes** (území 7–10, 8 běhů na buňku, začáteční sestava;
+v závorce zbylá přesnost):
 
-| soustředěno na | začáteční sestava | vybraná sestava |
-|---|---|---|
-| bez soustředění | 8/8 při 84 % | — |
-| Sedání bodu (pancíř) | 8/8 při 98 % | 8/8 při 96 % |
-| Šum měření (roj) | 8/8 při 96 % | 8/8 při 98 % |
-| **Rušička signálu** | **0/8 při 0 %** | **6/8 při 69 %** |
+| soustředěno na | 10 % vlny | 20 % vlny | 30 % vlny | 40 % vlny |
+|---|---|---|---|---|
+| **Rušička signálu** | 5/8 (57 %) | **1/8 (6 %)** | **0/8 (0 %)** | **0/8 (0 %)** |
+| Sedání bodu | 7/8 (71 %) | 8/8 (91 %) | 7/8 (85 %) | 8/8 (93 %) |
+| Šum měření | 6/8 (72 %) | 6/8 (68 %) | 8/8 (87 %) | 8/8 (90 %) |
 
-Závěr: **soustředění je úkolem pro výběr sestavy jen u rušičky.** U pancíře
-a u roje nezmění nic — začáteční sestava je zvládne, a soustředění na pomalé
-Sedání bodu vlnu dokonce **usnadní** (98 % proti 84 % bez soustředění).
-U rušičky je to naopak rozdíl mezi nedohratelným územím a slušným během.
+(bez soustředění: 5/8 při 56 %)
+
+Dvě věci naráz:
+
+1. **Rušička má ostrý útes mezi 10 a 20 % vlny.** Do desetiny se nestane nic,
+   nad pětinou je území se začáteční sestavou nedohratelné. Pro srovnání: dnes
+   je rušička ve 20. etapě **5,7 % odolnosti vlny**, s územním násobkem ×1,7
+   **9,6 %** — tedy těsně pod hranou. Kdo ten násobek zvedne na dvojnásobek,
+   překlopí území přes útes, aniž by na čemkoli jiném něco poznal.
+2. **U ostatních druhů soustředění vlnu USNADNÍ.** Nahradit rychlé drobné vlivy
+   pomalými odolnými znamená míň těl, po kterých se dá střílet déle.
+
+S vybranou sestavou proti soustředění (40 % vlny): Sedání bodu 8/8 při 97 %,
+Šum 7/8 při 87 %, **Rušička 6/8 při 75 %** — u rušičky je tedy výběr sestavy
+rozdíl mezi nulou a slušným během.
+
 Sedí to s tím, co říká `vlna.py prinos`: umlčování stanovisek je jediná
 schopnost, která s výsledkem vlny hne.
 

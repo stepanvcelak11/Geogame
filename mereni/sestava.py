@@ -12,12 +12,13 @@ from playwright.sync_api import sync_playwright
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 SP = os.path.dirname(os.path.abspath(__file__))
-BOT = open(os.path.join(SP, "bot-head.js"), encoding="utf-8").read()
+BOT = open(os.path.join(SP, "bot.js"), encoding="utf-8").read()
 url = "file:///" + os.path.abspath(
     sys.argv[1] if len(sys.argv) > 1 else r"C:\Users\stepa\Desktop\geogame\index.html").replace("\\", "/")
 
 SETUP = r"""
-(druh)=>{
+(a)=>{
+ const druh=a&&a[0], podil=(a&&a[1])||0.40;
  // Soustredena vlna: ze skutecne skladby se vezme 40 % odolnosti a preleje
  // se do jednoho druhu. Celkova odolnost vlny zustava, meni se jen to, ceho
  // je vlna plna.
@@ -28,7 +29,7 @@ SETUP = r"""
    let odebranoHp=0;
    comp.forEach(z=>{
      if(z[0]===druh||z[0]==='boss')return;
-     const uber=Math.floor(z[1]*0.40);
+     const uber=Math.floor(z[1]*podil);
      if(uber<=0)return;
      odebranoHp+=uber*E[z[0]].hp;
      z[1]-=uber;
@@ -82,7 +83,6 @@ with sync_playwright() as pw:
                 "SAVE.opts.snd=0;SAVE.opts.mus=0;SAVE.testAll=1;")
     pg.add_script_tag(content=BOT)
     pg.evaluate("window.__botInit()")
-    pg.evaluate(SETUP.replace("(druh)=>", "(druh)=>"), None)   # jen definuje
 
     def kolo(deck):
         vyh = 0; acc = []
@@ -93,18 +93,27 @@ with sync_playwright() as pw:
                 acc.append(r["acc"])
         return vyh, statistics.mean(acc)
 
-    print("Uzemi 7-10, 2 behy na uzemi (8 behu na radek). Robot ze skladu.\n")
+    print("Uzemi 7-10, 2 behy na uzemi (8 behu na radek). Robot ze skladu.")
+    print()
     pg.evaluate(SETUP, None)
     zv, za = kolo(ZACATECNI)
-    print("BEZ SOUSTREDENI, zacatecni sestava:            %d/8 vyher, presnost %.0f %%\n" % (zv, za))
+    print("BEZ SOUSTREDENI, zacatecni sestava: %d/8 vyher, presnost %.0f %%" % (zv, za))
+    print()
+    print("DAVKOVA KRIVKA: kolik vlny musi byt jednoho druhu, aby to bylo poznat")
+    print("%-8s %s" % ("druh", " ".join("%10s" % ("%d %% vlny" % (x * 100)) for x in (.10, .20, .30, .40))))
+    for druh in ('jam', 'subs', 'noise'):
+        bunky = []
+        for podil in (.10, .20, .30, .40):
+            pg.evaluate(SETUP, [druh, podil])
+            v, a = kolo(ZACATECNI)
+            bunky.append("%d/8 %3.0f%%" % (v, a))
+        print("%-8s %s" % (druh, " ".join("%10s" % x for x in bunky)))
+    print()
+    print("A s vybranou sestavou proti tomu soustredeni (40 % vlny):")
     for druh, proti, proc in POKUSY:
-        pg.evaluate(SETUP, druh)
-        av, aa = kolo(ZACATECNI)
+        pg.evaluate(SETUP, [druh, .40])
         bv, ba = kolo(proti)
-        print("soustredeno na '%s' (%s)" % (druh, proc))
-        print("   zacatecni sestava %-28s %d/8 vyher, presnost %.0f %%" % (",".join(ZACATECNI), av, aa))
-        print("   vybrana sestava   %-28s %d/8 vyher, presnost %.0f %%" % (",".join(proti), bv, ba))
-        print("   -> vyber sestavy vratil %+d vyher, %+.0f bodu presnosti\n" % (bv - av, ba - aa))
+        print("   %-6s %-30s %d/8 vyher, presnost %.0f %%" % (druh, ",".join(proti), bv, ba))
     pg.evaluate(SETUP, None)
     print("chyby JS:", errs[:4])
     b.close()
