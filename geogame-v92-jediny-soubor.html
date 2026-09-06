@@ -12018,7 +12018,8 @@ function mistrCost(t){
 function mistrKoup(t){
  const c=mistrCost(t);
  if(c===null||!S||S.cr<c)return false;
- S.cr-=c; t.plus=(t.plus||0)+1; t.cd=0; t.spawn=.5; t.flash=.3;
+ S.cr-=c; t.plus=(t.plus||0)+1; t.mistrCr=(t.mistrCr||0)+c;
+ t.cd=0; t.spawn=.5; t.flash=.3;
  recalcBuffs(); snd('merge'); punch(8,T[t.k].c);
  setTimeout(()=>snd('merge2'),90);
  const mx=tcx(t),my=tcy(t);
@@ -12149,7 +12150,14 @@ function calCost(t){
 }
 function prepCost(){ return Math.round(55+S.wave*14); }
 function sellVal(t){const f=M('refund')?1:.5;let v=priceOf(t.k)*Math.pow(2.1,t.l)*f;
- for(let i=0;i<t.cal;i++)v+=(9+i*7)*(1+t.l*.9)*f; return Math.round(v);}
+ for(let i=0;i<t.cal;i++)v+=(9+i*7)*(1+t.l*.9)*f;
+ // Mistrovska rada se vraci podle ZAPLACENYCH KREDITU, ne podle poctu hvezd.
+ // Hvezda ze slouceni je zdarma, takze za ni prodej vratit nic nesmi - jinak
+ // by slouceni dvou pasem 4. rady (dohromady za 204) dalo hvezdu prodejnou
+ // za 362 a s kartou "Vykup pristroju" by z toho byl stroj na penize
+ // s ziskem 158 za kolo. Takhle hrac nikdy nedostane zpatky vic, nez dal.
+ v+=(t.mistrCr||0)*f;
+ return Math.round(v);}
 function nearestPathIdx(t){
  let bi=0,bd=1e9,bp=0;
  PATHS.forEach((pp,pi)=>{
@@ -14804,7 +14812,7 @@ function snapshot(){
    // 'plus' (mistrovska rada) se do snimku NEUKLADALO uz od doby, kdy vzniklo.
    // Po POKRACOVAT se hvezda tise ztratila i s tim, co za ni hrac zaplatil -
    // pri zebriku az ★★★ je to 3 060 rozpoctu a +270 % poskozeni.
-   towers:S.towers.map(t=>({k:t.k,l:t.l,c:t.c,r:t.r,cal:t.cal,cd:t.cd,prio:t.prio,xp:t.xp,dmgDone:t.dmgDone,plus:t.plus||0})),
+   towers:S.towers.map(t=>({k:t.k,l:t.l,c:t.c,r:t.r,cal:t.cal,cd:t.cd,prio:t.prio,xp:t.xp,dmgDone:t.dmgDone,plus:t.plus||0,mistrCr:t.mistrCr||0})),
    stats:{kills:S.kills,merges:S.merges,abilUses:S.abilUses,built:S.built,
      leaked:S.leaked,condWaves:S.condWaves,maxTowers:S.maxTowers,fastStarts:S.fastStarts}
  };
@@ -14834,7 +14842,7 @@ function loadRun(){
  S.crew=r.crew||0; S.mrg=r.mrg||0; S.crewM=r.crewM||0;
  S.cleared=r.cleared||0;
  S.towers=(r.towers||[]).map(t=>({k:t.k,l:t.l,c:t.c,r:t.r,sz:(T[t.k]&&T[t.k].sz)||1,cal:t.cal,prio:t.prio||'first',
-   xp:t.xp||0,dmgDone:t.dmgDone||0,plus:Math.min(PLUS_MAX,t.plus||0),cd:0,buffD:0,buffR:0,buffT:0,jam:false,spawn:0}));
+   xp:t.xp||0,dmgDone:t.dmgDone||0,plus:Math.min(PLUS_MAX,t.plus||0),mistrCr:t.mistrCr||0,cd:0,buffD:0,buffR:0,buffT:0,jam:false,spawn:0}));
  // Ulozeny bod hrdiny nese jen klic - sz i odkaz S.hrdT se musi vzit z T,
  // jinak se hrdina po POKRACOVAT scvrkne na jedno pole a mira se z rohu.
  S.hrdT=S.towers.find(t=>jeHrdina(t.k))||null; if(S.hrdT)S.hrd=S.hrdT.k;
@@ -15225,6 +15233,7 @@ function boardTap(ev){
    if(hit.l>=3)hit.plus=(hit.plus||0)+1; else hit.l++;
    if(M('dblmerge'))hit.cal=Math.min(4,hit.cal+1);
    hit.cal=Math.min(4,Math.max(hit.cal,S.sel.cal)+(M('double')?1:0));hit.cd=0;
+   hit.mistrCr=(hit.mistrCr||0)+(S.sel.mistrCr||0);
    hit.xp=(hit.xp||0)+(S.sel.xp||0)*.6;
    hit.dmgDone=(hit.dmgDone||0)+(S.sel.dmgDone||0);
    if(!hit.prio&&S.sel.prio)hit.prio=S.sel.prio;
@@ -15321,6 +15330,7 @@ function boardTap(ev){
    if(M('dblmerge'))hit.cal=Math.min(4,hit.cal+1);
    hit.cal=Math.min(4,Math.max(hit.cal,best.cal)+(M('double')?1:0));hit.cd=0;
      hit.zone=null;hit.drones=null;hit.lock=null;hit.ramp=0;
+     hit.mistrCr=(hit.mistrCr||0)+(best.mistrCr||0);
      hit.xp=(hit.xp||0)+(best.xp||0)*.6;hit.dmgDone=(hit.dmgDone||0)+(best.dmgDone||0);
      S.towers=S.towers.filter(x=>x!==best);rebuildOcc();
      S.merges++;if(hit.l>=2)questProgress('tier',1);

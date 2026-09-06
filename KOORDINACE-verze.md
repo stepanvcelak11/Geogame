@@ -75,6 +75,37 @@ balancová session to změřila mřížkou 3×3 a vychází z toho čistá vým�
 ztráty 1:1. Pohnout s tím může jedině skladba vlny (`waveComp`), tedy pár vlivů,
 které se nedají spolehlivě zastavit. To patří session „obsah".
 
+### Doplněk k 92: prodej vrací i mistrovskou řadu
+
+Vyšlo najevo až po vydání 92, opraveno tamtéž. **Kdo do stanoviska nalil
+3 060 rozpočtu za ★★★, dostal při zrušení zpátky 107** — `sellVal()` počítá
+základní cenu a kalibraci, o hvězdách nevěděl.
+
+⚠⚠ **Naivní oprava „připočti hvězdy" je STROJ NA PENÍZE.** Hvězda ze sloučení
+je zadarmo, takže by za ni prodej platil, aniž ji kdokoli koupil: sloučit dvě
+pásma 4. řady (dohromady za 204) a výsledek prodat by s kartou *Výkup přístrojů*
+dalo 362, tedy **+158 za kolo donekonečna**. Správně se pamatují **zaplacené
+kredity** (`t.mistrCr`), ne počet hvězd — hráč pak nikdy nedostane zpátky víc,
+než dal. Ověřeno třemi případy s kartou Výkup přístrojů: sloučená hvězda zdarma
+−102 (ztráta, ne zisk), koupené ★★★ za 3 060 vrátí přesně 3 060, sloučení dvou
+koupených ★1 sečte investici na 520 a nezdvojnásobí ji.
+
+⚠ **Tatáž vada jako u `plus`:** `t.mistrCr` se muselo zvlášť dopsat do
+`snapshot()` i `loadRun()`. **Kdykoli přidáváš stav na věž, projdi obě funkce** —
+`snapshot()` má vlastní ruční seznam polí a tiše zahodí všechno, co v něm není.
+
+### ⚠⚠ Past v měřidle, které staví „co nejblíž trase"
+
+Nález balancové session, ať na tom nikdo nestráví hodinu znovu: robot, který
+umisťuje stanoviska podle pokrytí trasy, **systematicky podhodnocuje přístroje,
+u kterých rozhoduje GEOMETRIE, ne blízkost.** Pentagon měří jen po své řadě
+a sloupci — umístěný podle osy udělá o 40 % víc; kvadrant +42 %, protože se
+dostane ze své mrtvé zóny. Podpůrné přístroje se stejným způsobem odepíšou jako
+„nedělají nic", když stojí kousek za svým dosahem (hranol postavený 2,24 pole
+daleko při dosahu 2,2). Se správným umístěním přidá hranol +12 %, GNSS +33 %,
+termokamera +24 %, etalon +24 % — proti +13,5 % za deváté pásmo. **Roster je
+v pořádku; chyba byla v měřidle.**
+
 ⚠ **Syntaktickou chybu ve sdíleném souboru** (chybějící čárka mezi dvěma
 položkami `QUIZ`) neodhalí `check_js` ani boot přes `file://` — ten hlásí jen
 „Script error." bez čísla řádku. Funguje tohle: vytáhnout velký `<script>` do
