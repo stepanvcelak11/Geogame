@@ -1,4 +1,4 @@
-# GeoGame — verze 91
+# GeoGame — verze 92
 
 ## Co nahrát na hosting
 
@@ -449,6 +449,50 @@ co bylo rozbité — včetně dvou věcí, které braly hráči postup.
 - Obtížnost: přesnost klesá plynule podle toho, kolik vlny projde, vlny nerostou
   na konci tak strmě a v Nastavení přibylo **Omezit pohyb**.
 
+## Co je nového ve verzi 92
+
+**Uzávěr etapy.** Každá etapa teď končí číslem: jak daleko po trase se dostal
+nejhlubší vliv. Dokud jsi neztrácel přesnost, hra mlčela — a tys nevěděl, jestli
+to bylo o vlas, nebo o tři třídy. Změřeno robotem: **86 % etap skončilo beze změny
+jediné číslice.** Uzávěr to řekne dopředu (v prohraném území roste z 39 % na 100 %
+už čtyři etapy před první ztrátou) a čím dál od nulového bodu obranu udržíš, tím
+větší dotace.
+
+**Mistrovská řada ★ až ★★★.** Čtvrtá řada bývala strop, na který se dosáhne kolem
+desáté etapy — a tím růst skončil, zatímco vlny rostly dál. „Mistrovská varianta"
+sice existovala, ale byla to jediná hvězda a bylo na ni potřeba **osm** přístrojů
+téhož druhu; robot na ni za celý běh došel třikrát ze sedmdesáti etap. Teď nad
+čtvrtou řadou vede žebřík tří hvězd, každá **+90 % poškození**, a vedou k ní dvě
+cesty: sloučit dva stejně označené přístroje (zdarma), nebo hvězdu koupit
+(260 / 900 / 1 900). Tlačítko je tam, kde bývalo SLOUČIT, jakmile není s čím slučovat.
+
+**Koupená hvězda přežije POKRAČOVAT.** `plus` se neukládalo do snímku rozehrané
+hry už od doby, kdy vzniklo — po načtení se mistrovská řada tiše ztratila i s tím,
+co za ni hráč zaplatil. Změřeno: ★★ za 1 160 rozpočtu → po načtení **267 poškození
+místo 746**.
+
+**Kapacita čety konečně něco znamená.** Rostla na 43–46 stanovisek, zatímco na
+desce jich stálo 8–14 — to číslo v HUDu za celý běh nikdy nic neomezilo. Hlavní
+příčina: +1 za každé třetí sloučení bez stropu, ačkoli sloučení už samo jedno
+místo uvolňuje. Teď má strop. Podíl etap, kdy je četa plná, u hráče, který
+neslučuje: **33 % → 51 %**; u toho, kdo slučuje, zůstává skoro nulový. Slučování
+je tím konečně to, čím má být — cesta ven z nedostatku místa.
+
+**Příjem drží krok s vlnami.** Dotace přestávala růst ve 12. etapě a odměna za
+zničený vliv nerostla vůbec, ale odolnost vln mezi 12. a 24. etapou vyroste 22×.
+Nebyl to strop síly, ale peněz.
+
+**Gravimetr konečně ubírá.** Celé jeho poškození jde přes vír a ten je uděloval
+po snímcích — zlomek bodu, ze kterého pancíř sebral všechno. Sedání bodu,
+Multipath, Rušička ani boss od něj nedostávali **nic**, a přitom je držel na
+místě, takže etapa neměla jak skončit.
+
+**Pásmo mělo zdarma průbojnost**, kterou popisek slibuje jen teodolitu. Teodolit
+za dvojnásobek ceny byl proto horší nákup skoro ve všem.
+
+**Tlak je rovnoměrnější.** První třetina území už není na všech dvanácti stejná
+a poslední třetina už není zeď.
+
 ## Co je nového ve verzi 83
 
 - **Stavět jde na každé pole, které sousedí s trasou** — i rohem. Konec náhodného
@@ -463,7 +507,8 @@ co bylo rozbité — včetně dvou věcí, které braly hráči postup.
 
 ## Co je ve hře
 
-12 území s vlastními bossy · 20 přístrojů + 3 hrdinové · pátá mistrovská řada · 13 druhů vlivů,
+12 území s vlastními bossy · 20 přístrojů + 3 hrdinové · čtyři řady a nad nimi
+mistrovská řada ★ až ★★★ · 13 druhů vlivů,
 elity a pravidla vln · vývojový strom 3 patra × 8 cest s možností přeladit ·
 6 režimů · obchod s denní nabídkou · sezónní cesta · trofejní cesta · 25 úspěchů ·
 sbírka karet · laboratoř · příslušenství · encyklopedie · zkouška z geodézie

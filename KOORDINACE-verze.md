@@ -6,7 +6,86 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
-## AKTUÁLNÍ STAV: VYDÁNA VERZE 91 (6. 9. ráno, session G) — PŘIPOMÍNKY HRÁČE
+## AKTUÁLNÍ STAV: VYDÁNA VERZE 92 (6. 9. odpoledne) — GAMEPLAY
+
+**Číslo 92 je vydané. 93 má session „obsah", 94 session „vizuál", další si berte 95.**
+
+⚠⚠ **Dnes odpoledne jsme na hře pracovaly ČTYŘI session naráz** a tři z nich
+psaly do TÉHOŽ pracovního stromu `Desktop\geogame`. Dohoda přes vzájemné zprávy
+(`ListAgents` + `SendMessage`) fungovala, ale stálo to hodinu. Kdo příště najde
+v `git status` cizí nezacommitované změny: **napřed se zeptej, kdo je autor**,
+teprve pak sahej na soubor. Větev NEPOMŮŽE — `git checkout -b` mění jen ukazatel,
+pracovní strom zůstává společný. Pomůže jedině `git worktree`.
+
+### Rozdělení revírů, na kterém jsme se dohodly
+
+| session | revír | verze |
+|---|---|---|
+| gameplay (tahle) | `capMax`, slučování na ★, uzávěr etapy, `plus` do snímku | **92** |
+| balanc | `waveScale`, dotace v `endWave`, odměna za vliv, gravimetr, pásmo | (v 92) |
+| obsah | `MAPS`, `RYS`, `mixUzemi`, `spawnAt`, `hurt`, bossové, texty, QUIZ | 93 |
+| vizuál | `PALS`, `buildBG`, `terrainFull`, `drawTower` (vlastní worktree) | 94 |
+
+### Co je ve verzi 92 (dva commity)
+
+**Balanc (commit `2e6d54e`, cizí session):** příjem držel krok s vlnami (dotace
+měla strop `min(wave,12)`, odměna za vliv nerostla vůbec, přitom odolnost vln
+mezi 12. a 24. etapou roste 22×); násobek území platí od 1. etapy; křivka
+odolnosti `(1+.44*(w-1))*1,10^(w-8)`; gravimetr neubíral vlivům s pancířem NIC
+a uměl zaseknout etapu; pásmo mělo zdarma teodolitovu průbojnost.
+
+**Gameplay (tenhle commit):**
+1. **Uzávěr etapy.** Hra už `S.frontier` počítala (jak daleko se dostal nejhlubší
+   vliv), ale NIKDO ji nečetl — její jediný konzument `openNewSpot()` se v celém
+   souboru nevolá. Teď z ní má každá etapa výsledek a spojitou dotaci.
+2. **Mistrovská řada ★ až ★★★** místo jediného kroku, ke kterému bylo potřeba
+   osm přístrojů téhož druhu (robot na něj za celý běh došel 3× ze 70 etap).
+   Druhá cesta je koupě — 260 / 900 / 1900.
+3. **Kapacita čety má strop.** Rostla na 43–46 proti 8–14 postaveným
+   stanoviskům, tedy za celý běh nikdy nic neomezila. Hlavní příčina: +1 za
+   každé třetí sloučení bez stropu, ačkoli sloučení už samo místo uvolňuje.
+4. **`plus` se ukládalo do snímku** — po POKRAČOVAT se mistrovská řada tiše
+   ztrácela i s tím, co za ni hráč zaplatil. Změřeno: ★★ za 1 160 rozpočtu
+   → po načtení 267 poškození místo 746.
+
+### Čím je to podložené
+
+- Čistá A/B mých změn proti HEAD (12 území × 3 kola, `mereni/ab.py`):
+  **9,7 vs 9,7 výher z 12** — obtížností nehýbou. Etap, kde se ukazatel přesnosti
+  vůbec hne: **9,3 % → 13,5 %**.
+- Kapacita: podíl etap, kdy je četa plná, u hráče, který NESLUČUJE: **33 % → 51 %**.
+  U hráče, který slučuje, zůstává skoro nulový (2 % → 6 %) — přesně ten tvar,
+  o který šlo.
+- Boot 0 chyb, jednotkový test mechanik i test uložení/načtení sedí.
+
+⚠⚠ **Změnil jsem `mereni/bot.js`** — robot slučoval MIMO `boardTap` a připisoval
+si četu podle vlastní kopie pravidla, takže po stropu vycházela kapacita 33 místo
+17: měřil by stav, který ve hře neexistuje. Navíc teď umí kupovat ★. **Kdo má
+rozměřeno starým robotem, čísla kapacity a pozdního rozpočtu proti novému
+nesednou** — starý je `git show 7283539:mereni/bot.js`.
+
+⚠⚠ **Past v měření, na kterou jsme naletěly dvě session nezávisle:** tvrzení
+„rozpočet se v druhé polovině hromadí" (400–870 nevyužitých) je ARTEFAKT OKAMŽIKU
+MĚŘENÍ. Log čte `S.cr` na KONCI etapy, tedy po příjmu a před stavební fází.
+Po stavební fázi zbývá 40–260 — hráč utratí skoro všechno. Co platí, je že mu
+docházejí VĚCI, na které utrácet.
+
+⚠⚠ **Tvar obtížnosti zůstává binární** a globálním násobkem HP se to nespraví —
+balancová session to změřila mřížkou 3×3 a vychází z toho čistá výměna výher za
+ztráty 1:1. Pohnout s tím může jedině skladba vlny (`waveComp`), tedy pár vlivů,
+které se nedají spolehlivě zastavit. To patří session „obsah".
+
+⚠ **Syntaktickou chybu ve sdíleném souboru** (chybějící čárka mezi dvěma
+položkami `QUIZ`) neodhalí `check_js` ani boot přes `file://` — ten hlásí jen
+„Script error." bez čísla řádku. Funguje tohle: vytáhnout velký `<script>` do
+samostatného `.js`, v prázdné stránce ho vložit přes
+`el=document.createElement('script'); el.textContent=src; head.appendChild(el)`
+a poslouchat `window.onerror` — inline skript už číslo řádku dá. Pak přičíst
+offset první řádky skriptu (9873).
+
+---
+
+## PŘEDCHOZÍ STAV: VYDÁNA VERZE 91 (6. 9. ráno, session G) — PŘIPOMÍNKY HRÁČE
 
 **Číslo 91 je vydané, další si berte 92.** Session G zapracovala připomínky
 uživatele ke všem 49 obrazovkám verze 89.

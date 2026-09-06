@@ -11848,7 +11848,7 @@ function newRun(mi,endless,chal,hard){
  // na startu je volných jen pár míst, další se uvolňují slučováním
  // VYTYCENY PAS: vse, co se dotyka trasy (i rohem). Deterministicke -
  // stejna mapa vypada vzdy stejne a jde se ji naucit.
- S.open=new Set();S.occ=new Set();S.freeSpots=0;S.crew=0;S.mrg=0;
+ S.open=new Set();S.occ=new Set();S.freeSpots=0;S.crew=0;S.mrg=0;S.crewM=0;
  // poradove cislo rozehrane hry - drzi podpis pozadi v resize() poctivy
  S.bgSeq=(window.__bgSeq=(window.__bgSeq||0)+1);
  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){
@@ -11884,9 +11884,9 @@ const NEWTIPS=[
  {k:'ammo',   c:s2=>s2&&s2.phase==='combat'&&s2.wave>=1,
   m:'<b>Metody mají náboje.</b> Tečky na tlačítku ukazují, kolik jich zbývá. Jeden se doplní na konci každé etapy.'},
  {k:'tier5',  c:s2=>s2&&s2.towers.some(t=>t.l>=3),
-  m:'<b>Čtvrtá řada není strop.</b> Dva přístroje čtvrté řady jdou sloučit na mistrovskou variantu — je skoro dvakrát silnější.'},
+  m:'<b>Čtvrtá řada není strop.</b> Nad ní je mistrovská řada ★ až ★★★, každá hvězda +90 % poškození. Buď sloučíš dva stejně označené přístroje, nebo hvězdu koupíš v panelu stanoviska.'},
  {k:'spend',  c:s2=>s2&&s2.cr>=250&&s2.wave>=6,
-  m:'<b>Rozpočet se dá utratit i jinak.</b> V panelu ☰ posílíš četu o další stanovisko a v záložce Síť koupíš vylepšení celé sítě — přesnost, dosah, příjem, kapacitu.'},
+  m:'<b>Rozpočet se dá utratit i jinak.</b> V panelu ☰ posílíš četu o další stanovisko, v záložce Síť koupíš vylepšení celé sítě a u přístroje čtvrté řady mistrovskou hvězdu ★.'},
  {k:'finalb', c:s2=>s2&&s2.wave===lastWaveOf()-1,
   m:'<b>Příští etapa je finále území.</b> Přijdou dva bossové naráz — nech si náboje metod.'}
 ];
@@ -11993,10 +11993,61 @@ function hrdVejde(k,c,r){
  }
  return true;
 }
+// Kolikrat se da ceta posilit slucovanim. Bez stropu z ni rostlo cislo,
+// ktere nikdy nic neomezilo (mereno: kapacita 43-46 proti 8-14 stanoviskum).
+const CREW_MRG_MAX=3;
+
+/* ==================== MISTROVSKA RADA ====================
+   Do verze 91 byla ctvrta rada strop a "mistrovska varianta" (t.plus) jediny
+   krok navic, ke kteremu bylo potreba OSM zakladnich pristroju stejneho druhu.
+   Robot ji za cely beh dosahl trikrat ze sedmdesati etap. Vysledek: sila hrace
+   se zastavila kolem 10. etapy, zatimco vlny rostly dal - a rozpocet se od te
+   chvile jen hromadil (mereno 400-870 nevyuzitych kreditu na etapu).
+   Nove je hvezda ZEBRIK (★ az ★★★) a da se ke kazdemu dalsimu stupni dojit
+   dvema cestami: slucovanim dvou stejne oznacenych pristroju (zdarma, ale
+   chce druhy pristroj ctvrte rady), nebo koupi. Koupe je zamerne draha -
+   je to misto, kam pozdni rozpocet konecne tece. */
+const PLUS_MAX=3;
+const MISTR_CENA=[260,900,1900];
+function mistrCost(t){
+ if(!t||jeHrdina(t.k)||t.l<3)return null;
+ const p=t.plus||0;
+ if(p>=PLUS_MAX)return null;
+ return MISTR_CENA[p];
+}
+function mistrKoup(t){
+ const c=mistrCost(t);
+ if(c===null||!S||S.cr<c)return false;
+ S.cr-=c; t.plus=(t.plus||0)+1; t.cd=0; t.spawn=.5; t.flash=.3;
+ recalcBuffs(); snd('merge'); punch(8,T[t.k].c);
+ setTimeout(()=>snd('merge2'),90);
+ const mx=tcx(t),my=tcy(t);
+ S.fx.push({type:'ring',x:mx,y:my,r:CS*1.2,c:T[t.k].c,t:.5,d:.5});
+ S.fx.push({type:'ring',x:mx,y:my,r:CS*.65,c:'#ffffff',t:.32,d:.32});
+ S.fx.push({type:'txt',x:mx,y:my-CS*.6,s:'\u2605'.repeat(t.plus),c:T[t.k].c,t:1.3,d:1.3});
+ for(let i=0;i<20;i++){const a=Math.random()*6.283,v=45+Math.random()*95;
+   S.fx.push({type:'part',x:mx,y:my,vx:Math.cos(a)*v,vy:Math.sin(a)*v,
+     c:i%3?T[t.k].c:'#ffffff',t:.6,d:.6,r:1.6+Math.random()*2.4});}
+ feed('Mistrovsk\u00e1 \u0159ada '+'\u2605'.repeat(t.plus)+' \u00b7 <b>'+T[t.k].n[t.l]+'</b>','var(--brass)');
+ return true;
+}
+// Jedine misto, kde se rozhoduje, jestli jdou dva pristroje sloucit.
+// Driv to byla sestkrat opsana podminka - a kazda z nich hvezdu zastropovala.
+function lzeSloucit(a,b){
+ if(!a||!b||a===b)return false;
+ if(jeHrdina(a.k)||jeHrdina(b.k))return false;
+ if(a.k!==b.k||a.l!==b.l)return false;
+ if(a.l<3)return true;
+ return (a.plus||0)===(b.plus||0)&&(a.plus||0)<PLUS_MAX;
+}
 function capMax(){if(chMod('small'))return 7;
  // Pas nabizi mist dost, takze omezenim je nove KAPACITA - jedno cislo,
  // ktere hrac vidi v HUDu, misto rozptylenych neviditelnych zamku.
- return 6+Math.floor((S?S.wave:0)/5)+SAVE.meta.cap
+ // MERENO na verzi 91: kapacita dorostla na 43-46, zatimco na desce stalo
+ // 8-14 stanovisek - to cislo tedy za cely beh ani jednou nic neomezilo.
+ // Hlavni pricinou byla ceta za slucovani (+1 za kazde treti, bez stropu);
+ // slucovani pritom uz samo jedno misto uvolnuje, takze to bylo dvojite.
+ return 6+Math.floor((S?S.wave:0)/6)+SAVE.meta.cap
         +3*((S&&S.net.cap)||0)+2*M('cap')
         +((S&&S.mods&&S.mods.crew)||0)+((S&&S.crew)||0);}
 function priceOf(k){
@@ -12954,7 +13005,7 @@ function drawTower(g,t){
  for(let i=0;i<t.l;i++){g.fillStyle=col;
    g.beginPath();g.arc(x-CS/2+6+i*5.5,y+CS/2-5,2.2,0,7);g.fill();}
  // partner ke sloučení
- if(!jeHrdina(t.k)&&S.towers.some(o=>o!==t&&!jeHrdina(o.k)&&o.k===t.k&&o.l===t.l&&(t.l<3||((t.plus||0)===0&&(o.plus||0)===0)))){
+ if(S.towers.some(o=>lzeSloucit(t,o))){
    g.save();
    g.fillStyle='#0d1a28';g.strokeStyle='#7bf3a0';g.lineWidth=2;
    g.beginPath();g.arc(x+CS*.34,y-CS*.34,CS*.13,0,7);g.fill();g.stroke();
@@ -13303,7 +13354,7 @@ function draw(){
    ctx.beginPath();ctx.arc(tcx(t),tcy(t),R,0,7);ctx.stroke();ctx.setLineDash([]);
    ctx.lineWidth=2.5;ctx.strokeRect(OX+t.c*CS+1.5,OY+t.r*CS+1.5,CS*tsz(t)-3,CS*tsz(t)-3);
    const pulse=.5+.5*Math.sin(tAnim*5);
-   S.towers.forEach(o=>{if(o!==t&&!jeHrdina(o.k)&&!jeHrdina(t.k)&&o.k===t.k&&o.l===t.l&&(t.l<3||((t.plus||0)===0&&(o.plus||0)===0))){
+   S.towers.forEach(o=>{if(lzeSloucit(t,o)){
      const x=OX+o.c*CS, y=OY+o.r*CS;
      ctx.save();
      ctx.strokeStyle=T.lidar.c;ctx.lineWidth=2+pulse*2;
@@ -14324,6 +14375,15 @@ function startWave(){
 }
 function endWave(){
  S.phase='build';
+ // UZAVER ETAPY. Do verze 91 nemela etapa bez pruniku zadny vysledek - mereno
+ // 86 % etap skoncilo beze zmeny jedine cislice, takze hrac nevedel, jestli to
+ // bylo o vlas nebo o tri tridy, a zjistil to az ve chvili, kdy uz bylo pozde.
+ // S.frontier uz hra pocita (jak daleko po trase se dostal nejhlubsi vliv),
+ // jen ji nikdo necetl - openNewSpot(), jediny jeji konzument, se nevola.
+ // Cislo se cte PRED vynulovanim.
+ S.uzavr=Math.round(Math.min(1,Math.max(0,S.frontier||0))*100);
+ S.uzavrSum=(S.uzavrSum||0)+S.uzavr; S.uzavrN=(S.uzavrN||0)+1;
+ if(S.uzavr<=45)S.uzavrOk=(S.uzavrOk||0)+1;
  S.frontier=0;
  if(typeof checkNewTips==='function')checkNewTips();
  // náboje metod se doplní o jeden na konci každé etapy
@@ -14354,6 +14414,14 @@ function endWave(){
  // "+18.2 rozpoctu". Rozpocet je cele cislo, zaokrouhli se az tady, aby se
  // po ceste nic neztratilo.
  bonus=Math.round(bonus);
+ // Kdo drzi trasu daleko od nuloveho bodu, dostane zaplaceno. Je to jediny
+ // duvod stavet vys po trase misto tesne pred cil - a zaroven to dela z etapy
+ // bez ztraty vysledek, ktery se da zlepsovat.
+ // Spojite, ne zaskrtavatko. Prah 45 % prochazel ve 13 etapach ze 14 -
+ // takove cislo uz hraci nic nerika. Takhle dostane kazda etapa vlastni
+ // vysledek: cim dal od nuloveho bodu se to zastavilo, tim vetsi dotace.
+ S.uzavrBon=Math.round((1-S.uzavr/100)*(4+Math.min(S.wave,16)*.9));
+ bonus+=S.uzavrBon;
  S.cr+=bonus;
  if(S.net.rep)S.acc=Math.min(100,S.acc+S.net.rep*2);
  if(M('regen'))S.acc=Math.min(100,S.acc+2*M('regen'));
@@ -14368,7 +14436,13 @@ function endWave(){
  if(!S.endless&&S.wave>=(S.chal?S.chalWaves:(MAPS[S.map].waves+(S.hard?3:0))))return finish(true);
  saveRun();
  feed('Etapa '+S.wave+' hotova · <b>+'+bonus+'</b> rozpočtu','var(--brass)');
- if(S.wave%3===0){
+ feed('Uzávěr etapy <b>'+S.uzavr+' %</b> — '+
+   (S.uzavr<=25?'vzorný uzávěr':S.uzavr<=50?'v mezní odchylce'
+    :S.uzavr<=80?'trasa udržená':'na hranici odchylky')+
+   (S.uzavrBon?' · <b>+'+S.uzavrBon+'</b> rozpočtu':''),
+   S.uzavr<=25?'var(--moss)':S.uzavr<=50?'var(--gnssC,var(--sky))'
+   :S.uzavr<=80?'var(--tape)':'#ff9a6c');
+ if(S.wave%4===0){
    S.crew=(S.crew||0)+1;
    const sp=null;
    if(sp)feed('Terén připraven · <b>nové volné místo</b>','var(--gnssC,var(--sky))');
@@ -14725,9 +14799,12 @@ function snapshot(){
    endless:S.endless,hard:S.hard,deck:S.deck,shop:S.shop,phase:S.phase,
    open:S.open?[...S.open]:null, cleared:S.cleared||0,
    ammo:S.ammo||{}, repairs:S.repairs||0, rerolls:S.rerolls||0,
-   crew:S.crew||0, mrg:S.mrg||0,
+   crew:S.crew||0, mrg:S.mrg||0, crewM:S.crewM||0,
    zones:(S.zones||[]).map(z=>({x:z.x,y:z.y,r:z.r,t:z.t,dps:z.dps,c:z.c})),
-   towers:S.towers.map(t=>({k:t.k,l:t.l,c:t.c,r:t.r,cal:t.cal,cd:t.cd,prio:t.prio,xp:t.xp,dmgDone:t.dmgDone})),
+   // 'plus' (mistrovska rada) se do snimku NEUKLADALO uz od doby, kdy vzniklo.
+   // Po POKRACOVAT se hvezda tise ztratila i s tim, co za ni hrac zaplatil -
+   // pri zebriku az ★★★ je to 3 060 rozpoctu a +270 % poskozeni.
+   towers:S.towers.map(t=>({k:t.k,l:t.l,c:t.c,r:t.r,cal:t.cal,cd:t.cd,prio:t.prio,xp:t.xp,dmgDone:t.dmgDone,plus:t.plus||0})),
    stats:{kills:S.kills,merges:S.merges,abilUses:S.abilUses,built:S.built,
      leaked:S.leaked,condWaves:S.condWaves,maxTowers:S.maxTowers,fastStarts:S.fastStarts}
  };
@@ -14754,10 +14831,10 @@ function loadRun(){
  if(r.shop&&r.shop.length)S.shop=r.shop;
  // Ulozeny seznam poli se ZAMERNE ignoruje: pas se dopocita znovu, jinak
  // by se stara rozehrana hra nacetla se sesti poli.
- S.crew=r.crew||0; S.mrg=r.mrg||0;
+ S.crew=r.crew||0; S.mrg=r.mrg||0; S.crewM=r.crewM||0;
  S.cleared=r.cleared||0;
  S.towers=(r.towers||[]).map(t=>({k:t.k,l:t.l,c:t.c,r:t.r,sz:(T[t.k]&&T[t.k].sz)||1,cal:t.cal,prio:t.prio||'first',
-   xp:t.xp||0,dmgDone:t.dmgDone||0,cd:0,buffD:0,buffR:0,buffT:0,jam:false,spawn:0}));
+   xp:t.xp||0,dmgDone:t.dmgDone||0,plus:Math.min(PLUS_MAX,t.plus||0),cd:0,buffD:0,buffR:0,buffT:0,jam:false,spawn:0}));
  // Ulozeny bod hrdiny nese jen klic - sz i odkaz S.hrdT se musi vzit z T,
  // jinak se hrdina po POKRACOVAT scvrkne na jedno pole a mira se z rohu.
  S.hrdT=S.towers.find(t=>jeHrdina(t.k))||null; if(S.hrdT)S.hrd=S.hrdT.k;
@@ -15143,9 +15220,9 @@ function boardTap(ev){
    S.sel=S.hrdT;ui();return;
  }
 
- if(S.sel&&hit&&!jeHrdina(hit.k)&&!jeHrdina(S.sel.k)&&hit!==S.sel&&hit.k===S.sel.k&&hit.l===S.sel.l&&(S.sel.l<3||((hit.plus||0)===0&&(S.sel.plus||0)===0))){
+ if(S.sel&&hit&&lzeSloucit(hit,S.sel)){
    S.mergeMode=false;
-   if(hit.l>=3)hit.plus=1; else hit.l++;
+   if(hit.l>=3)hit.plus=(hit.plus||0)+1; else hit.l++;
    if(M('dblmerge'))hit.cal=Math.min(4,hit.cal+1);
    hit.cal=Math.min(4,Math.max(hit.cal,S.sel.cal)+(M('double')?1:0));hit.cd=0;
    hit.xp=(hit.xp||0)+(S.sel.xp||0)*.6;
@@ -15156,7 +15233,7 @@ function boardTap(ev){
    S.merges++;if(hit.l>=2)questProgress('tier',1);
    // Kazde treti slouceni pribere cloveka do cety (+1 stanovisko).
    S.mrg=(S.mrg||0)+1;
-   if(S.mrg>=3){ S.mrg=0; S.crew=(S.crew||0)+1;
+   if(S.mrg>=3&&(S.crewM||0)<CREW_MRG_MAX){ S.mrg=0; S.crewM=(S.crewM||0)+1; S.crew=(S.crew||0)+1;
      S.fx.push({type:'txt',x:cx(hit.c),y:cy(hit.r)-CS*.6,s:'ČETA +1',
        c:T.gnss.c,t:1.2,d:1.2}); }
    snd('merge');punch(8,T[hit.k].c);
@@ -15165,7 +15242,7 @@ function boardTap(ev){
    const mx=cx(hit.c),my=cy(hit.r);
    S.fx.push({type:'ring',x:mx,y:my,r:CS*1.1,c:T[hit.k].c,t:.45,d:.45});
    S.fx.push({type:'ring',x:mx,y:my,r:CS*.6,c:'#ffffff',t:.3,d:.3});
-   S.fx.push({type:'txt',x:mx,y:my-CS*.5,s:'ŘADA '+(hit.l+1),c:T[hit.k].c,t:1.1,d:1.1});
+   S.fx.push({type:'txt',x:mx,y:my-CS*.5,s:hit.plus?'\u2605'.repeat(hit.plus):'ŘADA '+(hit.l+1),c:T[hit.k].c,t:1.1,d:1.1});
    for(let i=0;i<22;i++){const a=Math.random()*6.283,v=45+Math.random()*95;
      S.fx.push({type:'part',x:mx,y:my,vx:Math.cos(a)*v,vy:Math.sin(a)*v,
        c:i%3?T[hit.k].c:'#ffffff',t:.6,d:.6,r:1.6+Math.random()*2.4});}
@@ -15236,11 +15313,11 @@ function boardTap(ev){
  }
  // dvojité klepnutí na stejné stanovisko sloučí s nejbližším vhodným
  if(hit&&!jeHrdina(hit.k)&&S.sel===hit&&S.lastTap&&performance.now()-S.lastTap<380){
-   const cands=S.towers.filter(o=>o!==hit&&o.k===hit.k&&o.l===hit.l&&(hit.l<3||((hit.plus||0)===0&&(o.plus||0)===0)));
+   const cands=S.towers.filter(o=>lzeSloucit(hit,o));
    if(cands.length){
      const best=cands.reduce((a,b)=>
        (Math.hypot(b.c-hit.c,b.r-hit.r)<Math.hypot(a.c-hit.c,a.r-hit.r))?b:a);
-     if(hit.l>=3)hit.plus=1; else hit.l++;
+     if(hit.l>=3)hit.plus=(hit.plus||0)+1; else hit.l++;
    if(M('dblmerge'))hit.cal=Math.min(4,hit.cal+1);
    hit.cal=Math.min(4,Math.max(hit.cal,best.cal)+(M('double')?1:0));hit.cd=0;
      hit.zone=null;hit.drones=null;hit.lock=null;hit.ramp=0;
@@ -15249,7 +15326,7 @@ function boardTap(ev){
      S.merges++;if(hit.l>=2)questProgress('tier',1);
      // Kazde treti slouceni pribere cloveka do cety (+1 stanovisko).
      S.mrg=(S.mrg||0)+1;
-     if(S.mrg>=3){ S.mrg=0; S.crew=(S.crew||0)+1;
+     if(S.mrg>=3&&(S.crewM||0)<CREW_MRG_MAX){ S.mrg=0; S.crewM=(S.crewM||0)+1; S.crew=(S.crew||0)+1;
        S.fx.push({type:'txt',x:cx(hit.c),y:cy(hit.r)-CS*.6,s:'ČETA +1',
          c:T.gnss.c,t:1.2,d:1.2}); }
      punch(8,T[hit.k].c);setTimeout(()=>snd('merge2'),90);
@@ -15257,7 +15334,7 @@ function boardTap(ev){
      snd('merge');vib([12,40,12]);
      const mx=cx(hit.c),my=cy(hit.r);
      S.fx.push({type:'ring',x:mx,y:my,r:CS*1.1,c:T[hit.k].c,t:.45,d:.45});
-     S.fx.push({type:'txt',x:mx,y:my-CS*.5,s:'ŘADA '+(hit.l+1),c:T[hit.k].c,t:1.1,d:1.1});
+     S.fx.push({type:'txt',x:mx,y:my-CS*.5,s:hit.plus?'\u2605'.repeat(hit.plus):'ŘADA '+(hit.l+1),c:T[hit.k].c,t:1.1,d:1.1});
      feed('Rychlé sloučení → <b>'+T[hit.k].n[hit.l]+'</b>','var(--moss)');
      S.lastTap=0;ui();return;
    }
@@ -15284,7 +15361,7 @@ function uiStatus(){
    // Pri desitkach volnych poli uz "kolik je volnych" nic nerika.
    // Jedine cislo, ktere ma hrac sledovat, je kapacita.
    const txt=pocetStanovisek()+'/'+capMax()+' stanovisek'+
-     (S.mrg?' · sloučení '+S.mrg+'/3':'');
+     ((S.mrg&&(S.crewM||0)<CREW_MRG_MAX)?' · sloučení '+S.mrg+'/3':'');
    if(capW.textContent!==txt)capW.textContent=txt;   // zapis do DOM jen pri zmene
    capW.title=pocetStanovisek()+' z '+capMax()+' stanovisek · '+freeSpots+' volných míst';
    capW.classList.toggle('full',pocetStanovisek()>=capMax());}
@@ -15487,14 +15564,14 @@ function ui(){
  requestAnimationFrame(placeQuick);
  if(S.sel&&!S.over&&!DOCK){
    const t=S.sel,def=T[t.k];
-   const cands=S.towers.filter(o=>o!==t&&o.k===t.k&&o.l===t.l&&(t.l<3||((t.plus||0)===0&&(o.plus||0)===0))).length;
+   const cands=S.towers.filter(o=>lzeSloucit(t,o)).length;
    const cc=calCost(t), sv=sellVal(t);
    qb.classList.add('on');
    qb.innerHTML='';
    const head=document.createElement('div');head.className='qHead';
    head.appendChild(mini(t.k,Math.min(3,t.l),60));
    const ht=document.createElement('div');
-   ht.innerHTML='<b>'+def.n[t.l]+(t.plus?' ★':'')+'</b><span>'+
+   ht.innerHTML='<b>'+def.n[t.l]+(t.plus?' '+'\u2605'.repeat(t.plus):'')+'</b><span>'+
      (jeHrdina(t.k)
        ?((def.hn||'hrdina')+' · řada '+(t.l+1)+'/4')
        :(cands?('sloučit lze s '+cands+' stanovisky'):'zatím není s čím sloučit'))+'</span>';
@@ -15519,10 +15596,18 @@ function ui(){
        S.fx.push({type:'txt',x:tcx(t),y:tcy(t)-CS*.8,s:'ŘADA '+(t.l+1),c:T[t.k].c,t:1.2,d:1.2});
        feed('Hrdina povýšen → <b>'+T[t.k].n[t.l]+'</b>','var(--brass)');ui();});
    } else
-   mk('qm',S.mergeMode?'zrušit':'sloučit',cands?('×'+cands):'—',!cands,()=>{
-     S.mergeMode=!S.mergeMode;
-     if(S.mergeMode)toast('Klepni na blikající stanovisko.');
-     snd('ui');ui();});
+   {
+     // Kdyz uz neni s cim slucovat, nabidne tyz knoflik koupi mistrovske rady.
+     // Zadne nove tlacitko - rychla lista ma pevne ctyri mista.
+     const mc=cands?null:mistrCost(t);
+     if(mc!==null)
+       mk('qm','mistr ★','·'+mc,S.cr<mc,()=>{ if(mistrKoup(t))ui(); });
+     else
+       mk('qm',S.mergeMode?'zrušit':'sloučit',cands?('×'+cands):'—',!cands,()=>{
+         S.mergeMode=!S.mergeMode;
+         if(S.mergeMode)toast('Klepni na blikající stanovisko.');
+         snd('ui');ui();});
+   }
    mk('qc','kalibrace',t.cal>=4?'MAX':cc,t.cal>=4||S.cr<cc,()=>{
      if(S.cr<cc)return;S.cr-=cc;t.cal++;snd('merge');ui();});
    mk('qmv','přesun',Math.max(4,Math.round(sv*.4)),S.cr<Math.max(4,Math.round(sv*.4)),()=>{
@@ -15572,13 +15657,13 @@ function ui(){
    $('tstat').innerHTML=(def.kind==='support'
      ?'okolí +'+Math.round(def.bd[t.l]*100)+' % pošk., +'+Math.round(def.br[t.l]*100)+' % dosah'
      :'pošk./s '+(dmgOf(t)*def.rate[t.l]).toFixed(0)+' · dosah '+(rngOf(t)/CS).toFixed(1))
-     +(t.plus?'<br><b>mistrovská řada</b>':'')+extra+(vetOf(t)?'<br>zkušenost '+vetOf(t)+'/4 · +'+(vetOf(t)*8)+' % poškození':'')
+     +(t.plus?'<br><b>mistrovská řada '+'\u2605'.repeat(t.plus)+'</b> · +'+Math.round(t.plus*90)+' % poškození':'')+extra+(vetOf(t)?'<br>zkušenost '+vetOf(t)+'/4 · +'+(vetOf(t)*8)+' % poškození':'')
      +(t.dmgDone?'<br>odvedeno '+Math.round(t.dmgDone).toLocaleString('cs')+' poškození':'')
      +'<br>kalibrace '+t.cal+'/4 · +'+(t.cal*18)+' % poškození'+(t.buffD>0?' · bonus +'+Math.round(t.buffD*100)+' %':'')
      +(t.k==='theo'?'<br>Měří ve dvou polohách — každá druhá rána o 60 % silnější.':'')
      +synTxt;
    const acts=$('tacts');acts.innerHTML='';
-   const cands=S.towers.filter(o=>o!==t&&!jeHrdina(o.k)&&!jeHrdina(t.k)&&o.k===t.k&&o.l===t.l&&(t.l<3||((t.plus||0)===0&&(o.plus||0)===0)));
+   const cands=S.towers.filter(o=>lzeSloucit(t,o));
    const bm=document.createElement('button');
    if(jeHrdina(t.k)){
      const uc=hrdUpCost(t);
@@ -15591,6 +15676,13 @@ function ui(){
        recalcBuffs();snd('merge');punch(7,T[t.k].c);
        feed('Hrdina povýšen → <b>'+T[t.k].n[t.l]+'</b>','var(--brass)');ui();};
    } else {
+   const mc2=cands.length?null:mistrCost(t);
+   if(mc2!==null){
+     bm.innerHTML='MISTROVSKÁ ŘADA ★ · '+mc2;
+     bm.className=S.cr>=mc2?'key':'';
+     bm.disabled=S.cr<mc2;
+     bm.onclick=()=>{ if(mistrKoup(t))ui(); };
+   } else {
    bm.innerHTML='SLOUČIT ('+cands.length+')';
    bm.className=cands.length?'key':'';
    bm.disabled=!cands.length;
@@ -15600,6 +15692,7 @@ function ui(){
        toast('Klepni na blikající stanovisko na desce — sloučí se do vyšší řady.'); }
      ui();
    };
+   }
    }
    const bc=document.createElement('button');
    bc.textContent='KALIBRACE · '+calCost(t);
@@ -16126,7 +16219,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=91;
+const VERZE=92;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',
@@ -19262,6 +19355,33 @@ function renderOpts(){
        if(it.act==='news'){
          showHint(
            'GeoGame '+VERZE+'\n\n'+
+           'CO SE ZMĚNILO PROTI 91\n'+
+           '• UZÁVĚR ETAPY. Každá etapa teď končí číslem: jak daleko po trasách se\n'+
+           '  dostal nejhlubší vliv. Dokud jsi neztrácel přesnost, hra mlčela — a tys\n'+
+           '  nevěděl, jestli to bylo o vlas, nebo o tři třídy. Uzávěr to řekne dopředu\n'+
+           '  a čím dál od nulového bodu obranu udržíš, tím větší dotace\n'+
+           '• MISTROVSKÁ ŘADA ★ AŽ ★★★. Čtvrtá řada bývala strop, na který jsi\n'+
+           '  dosáhl kolem desáté etapy — a tím růst skončil, zaťatečko vlny rostly dál.\n'+
+           '  Nad ni teď vede žebřík tří hvězd, každá +90 % poškození. Buď sloučíš\n'+
+           '  dva stejně označené přístroje, nebo hvězdu koupíš v panelu stanoviska\n'+
+           '• Koupená hvězda už PŘEŽIJE POKRAČOVAT. Do teď se při načtení rozehrané hry\n'+
+           '  tiše ztrácela i s tím, co jsi za ni zaplatil (★★ = ztráta 64 % poškození)\n'+
+           '• KAPACITA ČETY konečně něco znamená. Rostla na 43–46 stanovisek, zatímco\n'+
+           '  na desce jich stálo 8–14 — to číslo v HUDu za celý běh nikdy nic neomezilo.\n'+
+           '  Za každé třetí sloučení rostla donekonečna, ačkoli slučování už samo místo\n'+
+           '  uvolňuje. Teď má strop — a kdo slučuje, má místa pořád dost\n'+
+           '• PŘÍJEM DRžÍ KROK S VLNAMI. Dotace přestávala růst ve 12. etapě a odměna za\n'+
+           '  zničený vliv nerostla vůbec, ale odolnost vln mezi 12. a 24. etapou\n'+
+           '  vyrostla 22×. Nebyl to strop síly, ale peněz\n'+
+           '• GRAVIMETR KONEČNĚ UBÍRÁ. Celé jeho poškození jde přes vír a ten je udílel\n'+
+           '  po snímcích — zlomek bodu, ze kterého pancíř sebral všechno. Sedání bodu,\n'+
+           '  Multipath, Rušička ani boss od něj nedostávali NIC, a přitom je držel na\n'+
+           '  místě, takže etapa neměla jak skončit\n'+
+           '• PRVNÍ TŘETINA ÚZEMÍ už není na všech dvanácti stejná a poslední třetina\n'+
+           '  už není zeď — tlak je rovnoměrnější\n'+
+           '• PÁSMO MĚLO ZDARMA PRŮBOJNOST, kterou popisek slibuje jen teodolitu. Teodolit\n'+
+           '  za dvojnásobek ceny byl proto horší nákup skoro ve všem\n'+
+           '\n'+
            'CO SE ZMĚNILO PROTI 90\n'+
            '• PÍSMO. Prošel jsi celou hru obrazovku po obrazovce a psal „text malý\n'+
            '  a nepřehledný" — z 3 242 popisků jich bylo 1 883 pod 12 px. Teď není\n'+

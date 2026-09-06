@@ -36,7 +36,11 @@ window.__botInit=function(){
      x.cal=Math.min(4,Math.max(x.cal,y.cal));x.cd=0;
      S.towers=S.towers.filter(t=>t!==y);
      S.merges++;S.mrg=(S.mrg||0)+1;
-     if(S.mrg>=3){S.mrg=0;S.crew=(S.crew||0)+1;}
+     // Robot slucuje mimo boardTap, takze si pravidlo cety musi zopakovat sam.
+     // Bez toho mu ceta rostla bez stropu a kapacita v mereni vysla 33 misto 17
+     // - merilo by se neco, co ve hre vubec neni.
+     var __strop=(typeof CREW_MRG_MAX==='number')?CREW_MRG_MAX:1e9;
+     if(S.mrg>=3&&(S.crewM||0)<__strop){S.mrg=0;S.crewM=(S.crewM||0)+1;S.crew=(S.crew||0)+1;}
      rebuildOcc();recalcBuffs();did=true;
      return true;
    }
@@ -114,6 +118,21 @@ window.__botSmart=function(){
    const c=calCost(t);
    if(S.cr<c+40)break;
    S.cr-=c;t.cal++;did=true;
+ }
+ // Mistrovska rada: kdyz uz neni co slucovat ani kalibrovat, hvezda je jedine,
+ // kam pozdni rozpocet tece. Robot ji kupuje na nejsilnejsi pristroj a nechava
+ // si rezervu na stavbu, at nemeri "utratil vsechno na jednu vez".
+ if(typeof mistrCost==='function'){
+   for(let i=0;i<12;i++){
+     const kand=S.towers.filter(t=>mistrCost(t)!==null)
+                        .sort((a,b)=>(a.plus||0)-(b.plus||0)||b.l-a.l)[0];
+     if(!kand)break;
+     const c=mistrCost(kand);
+     if(S.cr<c+150)break;
+     if(typeof mistrKoup==='function'){ if(!mistrKoup(kand))break; }
+     else { S.cr-=c; kand.plus=(kand.plus||0)+1; }
+     did=true;
+   }
  }
  recalcBuffs();
  return did;
