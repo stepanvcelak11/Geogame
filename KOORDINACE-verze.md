@@ -6,6 +6,42 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
+## AKTUÁLNÍ STAV: VERZE 101 (6. 9., session „dodělávky“) — DODĚLÁVKY PO 96
+
+**Číslo 101 je zabrané, další si berte 102.** Větev **`dodelavky-v98`**
+(jméno větve nese původní číslo 98 a nic neznamená: 98 si ve stejnou minutu
+vzala i větev `prohlidka-v97`, rozdíl commitů 19 vteřin, tak jsem ustoupil)., vlastní
+git worktree `Desktop\geogame-dodelavky`.
+Na main to ZATÍM NEJDE — vydání si drží uživatel.
+
+⚠ Ve stejnou dobu běžely worktree `geogame-v97`, `-v99`, `-v100`
+a `-prohlidka-v97`, všechny nad týmž `index.html`. Čísla 97, 98, 99 a 100 si
+vzaly ony. ⚠ Větev `prohlidka-v97` opravila TÝŽ přesah karty hrdiny
+o pixel jako já — při slučování to bude kolidovat.
+
+### Čeho se to týká
+
+Jen CSS a úklid, do pravidel hry se nesahalo. **Žádné herní číslo se nezměnilo.**
+
+- `@media (max-width:360px)`: `#deckRow` má 3 sloupce místo 5 a `.dn` ztratilo
+  záporný okraj (ten pouštěl text přes lem dlaždice ven).
+- `.pkNm{line-height:1.4}` — všech dvacet názvů ve výběru se ořezávalo o 2 px.
+- `#hrdRow > *{min-width:0}`, `.hslot .hDet{margin-top:auto}`.
+- `#podDeska` padding-bottom: `max()` místo součtu s bezpečnou zónou.
+- `manifest.webmanifest`: `#0a0f2e` → `#0c1030` (souhlas s `theme-color`).
+- Smazána mrtvá `upgradeAll()` a drát na `$('collAll')`.
+
+⚠ **Spodní „tmavě modrý proužek“ ze seznamu připomínek se NEPODAŘILO
+reprodukovat.** Změřeno: deska menu končí na spodní hraně okna (mezera 0 px),
+v bitvě sahá plocha i lišta na 844 z 844 px. Opraveny byly dvě věci, které to
+způsobit MOHLY (dvojí odsazení bezpečné zóny, nesouhlasná barva v manifestu),
+ale potvrzení musí přijít z telefonu.
+
+---
+## Předchozí: VERZE 96 (6. 9., session „připomínky") — SEZNAM PŘIPOMÍNEK HRÁČE
+
+**Číslo 96 je zabrané.** Větev **`pripominky-v96`**, vlastní
+
 ## AKTUÁLNÍ STAV: VERZE 100 (6. 9. večer, session „režimy a texty")
 
 **Číslo 100 je zabrané.** Větev **`vylepseni-v100`**, vlastní git worktree
