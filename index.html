@@ -1293,7 +1293,28 @@ html[data-theme="night"] .rbar{background:rgba(255,255,255,.12)}
 @keyframes blink{0%,100%{opacity:.45}50%{opacity:1}}
 .crStage.open .crTap{display:none}
 .crGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin:6px 0 4px}
+/* Prichod karty: kazda prilétne zespoda, mirne naklonena, s prestrelenim.
+   Drive melo animaci jen epicke a legendarni - zbytek se jen objevil. */
+@keyframes crPrilet{
+  0%  {opacity:0;transform:translateY(26px) scale(.72) rotate(-7deg)}
+  62% {opacity:1;transform:translateY(-4px) scale(1.06) rotate(1.5deg)}
+  100%{opacity:1;transform:translateY(0)    scale(1)    rotate(0)}
+}
+.crCard{animation:crPrilet .34s cubic-bezier(.2,.9,.3,1.25) both}
 .crCard.flip{animation:crFlip .42s cubic-bezier(.2,.9,.3,1.2) both}
+/* Prejezd svetla po prave prisle karte - jednou, pak zmizi. */
+.crCard:after{content:'';position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;overflow:hidden;
+  background:linear-gradient(105deg,transparent 34%,
+    rgba(255,255,255,.34) 50%,transparent 66%);
+  background-size:260% 100%;background-position:150% 0;
+  animation:crLesk .55s .12s ease-out forwards}
+@keyframes crLesk{
+  0%{background-position:150% 0;opacity:1}
+  99%{opacity:1}
+  100%{background-position:-120% 0;opacity:0}
+}
+html[data-lowmo="1"] .crCard,html[data-lowmo="1"] .crCard:after{animation:none}
 @keyframes crFlip{from{transform:rotateY(85deg) scale(.9)}to{transform:none}}
 @keyframes crPunch{0%{transform:scale(1)}35%{transform:scale(1.18)}100%{transform:scale(1)}}
 .crFlash{position:absolute;inset:-6px;border-radius:16px;pointer-events:none;
@@ -2746,6 +2767,10 @@ html[data-theme="hc"] .ov.ovCela .box{background:#fff}
 .ovCela .celaPata{margin-top:auto;padding-top:var(--m3)}
 
 /* --- 4.12c OKNO PROFILU --- */
+/* Tlacitko Zvetsit u sezonni cesty - stejne jako u trofejni, jen sedi
+   pod pasem, ne v jeho zahlavi. */
+.kaZoomSe{display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;margin-top:var(--m2)}
 #profTelo{display:flex;flex-direction:column;gap:var(--m2)}
 .pfKarta{display:grid;grid-template-columns:72px 1fr;gap:var(--m3);align-items:center;
   background:linear-gradient(150deg,var(--s3),var(--s2));
@@ -5742,11 +5767,13 @@ html[data-board="0"] .card canvas{width:33px;height:33px}
   border-radius:calc(var(--r4) - 4px) calc(var(--r4) - 4px) 0 0}
 .ov[data-okno="oslava"] .box>h2:before,
 .ov[data-okno="oslava"] .rInner>h2:before{
-  content:'';position:absolute;left:0;right:0;top:0;height:4px;
+  content:'';position:absolute;left:50%;transform:translateX(-50%);
+  top:0;width:46%;height:5px;
   background:linear-gradient(90deg,
-    color-mix(in srgb,var(--ak) 30%,transparent),var(--ak) 50%,
-    color-mix(in srgb,var(--ak) 30%,transparent));
-  border-radius:calc(var(--r4) - 4px) calc(var(--r4) - 4px) 0 0}
+    color-mix(in srgb,var(--ak) 10%,transparent),var(--ak) 50%,
+    color-mix(in srgb,var(--ak) 10%,transparent));
+  border-radius:0 0 5px 5px;
+  box-shadow:0 2px 12px -2px color-mix(in srgb,var(--ak) 70%,transparent)}
 
 /* Barva podle povahy odmeny: mena zlata, postup fialovy, vyber tyrkysovy. */
 #login .box,#crates .box{--ak:var(--brass)}
@@ -9746,6 +9773,7 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
 
     <div class="secTitle" style="--ak:var(--violet)">Sezónní cesta <span id="seasonHint"></span><span id="seasonTimer" class="timerChip"></span></div>
     <div id="seasonBox"></div>
+    <button class="kaZoom kaZoomSe" id="seZoom" type="button" aria-label="Zvětšit sezónní cestu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4h-5.5v5.5M14.5 4h5.5v5.5M9.5 20h-5.5v-5.5M14.5 20h5.5v-5.5"/></svg><span>Zvětšit</span></button>
 
     <div class="sbal kaSbal" id="starSbal" data-zavreno>
       <button class="hlava" id="starHlava" type="button">Odměny za hvězdy<span class="pruz"></span><span id="starHint"></span><i class="kaSip" aria-hidden="true"></i></button>
@@ -10141,6 +10169,15 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
   <p class="lead" id="ptLead">Sestava rozhoduje, co ti bude nabízet sklad během měření.</p></div>
   <div id="ptList"></div>
   <div class="celaPata"><button class="big ghost" id="ptClose">ZAVŘÍT</button></div>
+</div></div>
+
+<!-- ============ SEZONNI CESTA PRES CELOU OBRAZOVKU ============ -->
+<div class="ov ovCela" id="seFull" style="z-index:27"><div class="box">
+  <div class="celaHlava"><div class="pgHead"><h2>Sezónní cesta</h2>
+    <button class="xBtn" id="seFullX" type="button" aria-label="Zavřít">✕</button></div>
+  <div class="kaFullSum" id="seFullSum"></div></div>
+  <div id="seFullBox"></div>
+  <div class="celaPata"><button class="big ghost" id="seFullClose" type="button">Zavřít</button></div>
 </div></div>
 
 <!-- ============ JAK SE HRAJE ============ -->
@@ -16124,7 +16161,7 @@ function revealCards(list,box){
    grid.appendChild(d);
    // časování i zvuk podle vzácnosti
    const rr2=it.res!==undefined?'x':(TRAR[it.k]||'c');
-   const delay={x:220,c:240,r:340,e:520,l:900}[rr2];
+   const delay={x:200,c:190,r:330,e:560,l:980}[rr2];
    if(rr2==='l'||rr2==='e'){
      d.classList.add('flip');
      const fl=document.createElement('div');fl.className='crFlash';d.appendChild(fl);
@@ -20182,6 +20219,8 @@ function applyTheme(){
  document.documentElement.setAttribute('data-theme',
    SAVE.opts.theme==='night'?'night':SAVE.opts.theme==='hc'?'hc':'day');
  document.documentElement.setAttribute('data-board',String(SAVE.opts.board!==undefined?SAVE.opts.board:1));
+ // "Omezit pohyb" ted vypina i animace, ktere bezi v CSS (prichod karet).
+ document.documentElement.setAttribute('data-lowmo',SAVE.opts.lowmo?'1':'0');
  // Barva prouzku prohlizece MUSI sedet s pozadim hry, jinak dole svitil pruh.
  const m=$('tcolor'); if(m)m.setAttribute('content',
    SAVE.opts.theme==='night'?'#050b16':SAVE.opts.theme==='hc'?'#ffffff':'#0c1030');
@@ -20270,6 +20309,54 @@ function renderSeason(){
    };
    el.appendChild(b);
  }
+}
+// Sezonni cesta pres celou obrazovku. Kresli TYTEZ radky jako pas na
+// strance, jen vsech dvacet urovni a shora dolu od cile ke startu -
+// stejny smer jako mapa sveta a trofejni cesta.
+function renderSeasonFull(){
+ const el=$('seFullBox'); if(!el)return;
+ const s2=ensureSeason(), lv=seasonLvl();
+ const sum=$('seFullSum');
+ if(sum)sum.innerHTML='<span class="odznak odznak--tyrkys">'+seasonName()+'</span>'+
+   '<span class="odznak">úroveň '+lv+' / '+SEASON_LVLS+'</span>'+
+   (s2.proOn?'<span class="odznak odznak--zeleny">odborná stopa</span>':'');
+ el.innerHTML='';
+ const hl=document.createElement('div');hl.className='sePasHl';
+ hl.innerHTML='<span class="sePasNh"></span>'+
+   '<span class="sePasL l1">Základní</span>'+
+   '<span class="sePasL l2">Odborná'+(s2.proOn?'':' · zamčeno')+'</span>';
+ el.appendChild(hl);
+ const tr=document.createElement('div');tr.className='sePas';
+ for(let i=SEASON_LVLS-1;i>=0;i--){
+   const open=lv>i;
+   const row=document.createElement('div');
+   row.className='sePasR'+(open?' open':'')+(lv===i?' ted':'');
+   const num=document.createElement('div');num.className='sePasNum';
+   num.textContent=String(i+1);
+   row.appendChild(num);
+   [[SEASON_FREE[i],false],[SEASON_PRO[i],true]].forEach(function(par){
+     const rw=par[0], pro=par[1];
+     const got=(pro?s2.pro:s2.free).indexOf(i)>=0;
+     const zam=pro&&!s2.proOn;
+     const rdy=open&&!got&&!zam;
+     const c=document.createElement('div');
+     c.className='sePasC'+(pro?' pro':' free')+(got?' got':'')+(rdy?' rdy':'')+
+       (zam?' zam':'')+(open?'':' cek');
+     karOdmList(rw).slice(0,2).forEach(function(o){
+       const t=document.createElement('div');t.className='sePasI';
+       t.appendChild(karIko(o,34));
+       const sp=document.createElement('span');sp.textContent=o.nad;t.appendChild(sp);
+       c.appendChild(t);
+     });
+     const zn=document.createElement('i');zn.className='sePasZn';
+     zn.innerHTML=got?karSvg(KAR_SVG.ok):(zam||!open?karSvg(KAR_SVG.lock):'');
+     c.appendChild(zn);
+     c.onclick=function(e){e.stopPropagation();kaSez(i,pro);};
+     row.appendChild(c);
+   });
+   tr.appendChild(row);
+ }
+ el.appendChild(tr);
 }
 function renderStarRew(){
  const row=$('starRow'); if(!row)return;
@@ -20558,14 +20645,9 @@ function renderRoadTrack(){
  const od=vse?0:Math.max(0,a-1);
  el.innerHTML='';
  const pas=document.createElement('div');pas.className='pas';
- if(od>0){
-   const b=document.createElement('button');b.type='button';b.className='pasVic';
-   b.textContent='Zobrazit i splněné oblasti ('+od+')';
-   b.onclick=e=>{e.stopPropagation();window.__pasVse=1;
-     try{snd('ui');}catch(x){}renderRoadTrack();};
-   pas.appendChild(b);
- }
- for(let i=od;i<AREN.length;i++){
+ // Poradi se obraci: nejvyssi oblast nahore, splnene dole. Tlacitko
+ // "zobrazit i splnene" tedy pribyva ZDOLA, ne shora.
+ for(let i=AREN.length-1;i>=od;i--){
    const ar=AREN[i];
    const hotovo=SAVE.tr>=ar.tr;
    const ted=(i===a+1)||(i===a&&a===AREN.length-1);
@@ -20596,6 +20678,13 @@ function renderRoadTrack(){
    row.onclick=()=>kaUzel(i);
    pas.appendChild(row);
  }
+ if(od>0){
+   const b=document.createElement('button');b.type='button';b.className='pasVic';
+   b.textContent='Zobrazit i splněné oblasti ('+od+')';
+   b.onclick=e=>{e.stopPropagation();window.__pasVse=1;
+     try{snd('ui');}catch(x){}renderRoadTrack();};
+   pas.appendChild(b);
+ }
  el.appendChild(pas);
 }
 function renderRoad(){
@@ -20613,7 +20702,9 @@ function renderRoad(){
    $('xpTxt').textContent=cur.n+' · nejvyšší oblast dosažena';
  }
  const L=$('roadList');if(!L)return;L.innerHTML='';L.className='roadWrap karCela';
- AREN.forEach((ar,i)=>{
+ // Nahore cil, dole start - cesta se leze vzhuru.
+ AREN.slice().reverse().forEach((ar,ri)=>{
+   const i=AREN.length-1-ri;
    const done=i<=a, next=i===a+1;
    const d=document.createElement('div');
    d.className='arena karAr'+(done?' done':next?' next':' zam');
@@ -21918,6 +22009,9 @@ $('kaClose').onclick=kaZavri;
 $('kaGo').onclick=()=>{ if(kaAkce)kaAkce(); };
 $('kaOv').onclick=e=>{ if(e.target.id==='kaOv')kaZavri(); };
 $('kaZoom').onclick=kaCela;
+$('seZoom').onclick=()=>{snd('ui');renderSeasonFull();$('seFull').classList.add('on');};
+$('seFullX').onclick=()=>$('seFull').classList.remove('on');
+$('seFullClose').onclick=()=>{snd('ui');$('seFull').classList.remove('on');};
 $('kaFullX').onclick=()=>$('kaFull').classList.remove('on');
 $('kaFullClose').onclick=()=>$('kaFull').classList.remove('on');
 $('kaFull').onclick=e=>{ if(e.target.id==='kaFull')$('kaFull').classList.remove('on'); };
