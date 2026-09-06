@@ -10181,7 +10181,21 @@ const T={
    dmg:[11,24,50,108],rng:[2.2,2.5,2.7,3.1],rate:[.8,.85,.95,1.05],spl:[.9,1.15,1.45,1.85],
    d:'Naskenuje celý profil naráz. Plošné poškození kolem cíle.'},
  nivel:{n:['Nivelační přístroj','Digitální nivelák','Hydrostatická síť','Gravimetrická síť'],c:'#a9e08c',cost:13,kind:'slow',
-   dmg:[4,9,18,38],rng:[2.1,2.3,2.6,3.0],rate:[1.2,1.35,1.5,1.7],slow:[.55,.44,.33,.24],sdur:[1.3,1.7,2.2,2.6],
+   // NIVELAK byl nejsilnejsi pristroj hry, a pritom je druhy nejlevnejsi a
+   // ma ho kazdy od zacatku v sestave. ZMERENO trikrat nezavisle: sam vyhral
+   // 8 z 8 nejtezsich uzemi se stoprocentni presnosti (InSAR za 32 dal 87 %,
+   // dalkomer 68 %, pasmo, teodolit i buzola 0 z 8), a delal 577 skody na
+   // 1 rozpoctu proti 301 u InSARu a 55 u pasma.
+   // Nedelalo to poskozeni, ale ZPOMALENI: zasahuje vse v dosahu a zpomaleni
+   // se NESCITAJI - bere se nejsilnejsi. Jediny kus ctvrte rady tedy drzel
+   // celou vlnu natrvalo na 24 % rychlosti, tedy 4,2x vic casu na strelbu pro
+   // celou obranu. Nejsilnejsi zpomaleni odjinud ve hre je 0,62.
+   // Zpomaleni tedy jde na 0,38 - porad zdaleka nejlepsi brzda ve hre.
+   // Naskok v poskozeni na 1 rozpocet tim klesa z dvojnasobku na tretinu
+   // (577 -> 402) a hra si to NEODNESE: 10,0 vyher z 12 pred i po.
+   // Poskozeni ZAMERNE zustava. Zkouseno na polovinu: stalo to celou vyhru
+   // a zpetnou vazbu hraci to nezlepsilo (castecna ztrata 11,3 -> 10,9 %).
+   dmg:[4,9,18,38],rng:[2.1,2.3,2.6,3.0],rate:[1.2,1.35,1.5,1.7],slow:[.60,.52,.45,.38],sdur:[1.3,1.7,2.2,2.6],
    d:'Zbrzdí vše v dosahu. Malé poškození, ale drží tempo vlny.'},
  photo:{n:['Fotogrammetrický dron','Dron s RTK','Roj dronů','Letecké mapování'],c:'#ee6c2b',cost:24,kind:'drone',
    hero:1,sz:2,tr:0,hn:'Pilot roje',
