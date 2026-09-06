@@ -94,6 +94,26 @@ koupených ★1 sečte investici na 520 a nezdvojnásobí ji.
 `snapshot()` i `loadRun()`. **Kdykoli přidáváš stav na věž, projdi obě funkce** —
 `snapshot()` má vlastní ruční seznam polí a tiše zahodí všechno, co v něm není.
 
+### ⚠⚠ Sdílíme i STAGOVACÍ PLOCHU, nejen pracovní strom
+
+Stalo se 6. 9. odpoledne a stojí za zapamatování: `git add` je ve sdíleném
+stromě **sdílená akce**. Jedna session si `git add`la svoje soubory, druhá
+o pár vteřin později přidala `git apply --cached` svůj jediný hunk a
+commitla — a `git commit` vzal **celý index**, takže do jejího commitu spadly
+i cizí `NAVOD.md`, `KOORDINACE-verze.md` a cizí změny v `index.html`.
+Nic se neztratilo, ale commit nese popis, který o polovině jeho obsahu mlčí.
+
+**Pojistka není „stageuj jen svoje hunky".** Ta nestačí, protože index už může
+obsahovat cizí práci z dřívějška. Pojistka je **`git diff --cached --stat`
+těsně před `git commit`** a podívat se, jestli tam nejsou cizí soubory.
+
+⚠ `git update-index --cacheinfo` se v tomhle prostředí tiše neprojevilo —
+spolehlivé je dočasně přepsat soubor svou verzí, `git add`, a hned soubor
+vrátit zpět (pracovní kopie druhé session tím zůstane netknutá).
+
+⚠ A po každém takovém zmatku ověřit **`cmp index.html geogame-vXX-jediny-soubor.html`**
+— kopie se rozešla přesně o cizí hunk a na hostingu by ležela jiná hra než v repu.
+
 ### Hrdinové: síla za čtyři pole (druhé zadání uživatele k 92)
 
 Uživatel: *„vybalancuj hrdiny tak, aby silou dali za 4 postavičky (zabírají
