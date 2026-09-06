@@ -12145,12 +12145,42 @@ function critOf(t){
 // at vi, ze to je zmena balancu, ne preklep k opraveni mimochodem.
 function auraR(t){return T.gnss.rng[t.l]*(1+.07*S.net.rng)*(1+.12*M('range'))*(1+accEff('gnss','rng'))*CS;}
 function calCost(t){
- const base=(16+t.cal*15)*(1+t.l*1.1);
- return Math.max(5,Math.round(base*(1-.30*M('calib'))));
+ // Kalibrace stoji PODIL Z CENY SVEHO pristroje. Driv byla cena na druhu
+ // pristroje nezavisla - (16+cal*15)*(1+l*1.1) - takze plna kalibrace pasma
+ // stala 662 rozpoctu, ackoli pasmo ctvrte rady stoji 88.
+ // ZMERENO (27 cilu, 20 s, skoda na 1 rozpoctu): stavet dal je dokonale
+ // linearni, 4 i 8 i 12 i 16 pasem da 40,0. Kalibrovat davalo 8,5; u nivelaku
+ // 15,9 proti 122 za stavbu. Kalibrace tedy byla DESETKRAT horsi nez postavit
+ // dalsi, cili past - kazdy rozpocet, ktery do ni hrac dal, byl vyhozeny.
+ // Ted vychazi na ~0,20 ucinnosti stavby: druha volba, ne past. Plati se tim,
+ // ze nepotrebuje misto na desce, kapacitu cety ani stesti v nabidce - a je
+ // to jedina cesta, jak zesilit, kdyz je ceta plna.
+ // HRDINA sem NEPATRI a zustava na stare cene. Za prve ma byt podle zadani
+ // drazsi, ne levnejsi. Za druhe nema rady ze slucovani - roste pres
+ // hrdUpCost (60/150/340/760) - takze priceOf*2^l u nej vubec nepopisuje,
+ // co do nej hrac dal. Tuhle vetev dopisuje soubezna session spolu s
+ // vyvazenim hrdinu; nesahat na ni bez toho vyvazeni.
+ if(typeof jeHrdina==='function'&&jeHrdina(t.k)){
+   const stara=(16+t.cal*15)*(1+t.l*1.1);
+   return Math.max(5,Math.round(stara*(1-.30*M('calib'))));
+ }
+ const zaklad=priceOf(t.k)*Math.pow(2,t.l)*(.65+.15*t.cal);
+ return Math.max(5,Math.round(zaklad*(1-.30*M('calib'))));
 }
 function prepCost(){ return Math.round(55+S.wave*14); }
-function sellVal(t){const f=M('refund')?1:.5;let v=priceOf(t.k)*Math.pow(2.1,t.l)*f;
- for(let i=0;i<t.cal;i++)v+=(9+i*7)*(1+t.l*.9)*f;
+function sellVal(t){const f=M('refund')?1:.5;
+ // Zaklad je 2^rada - PRESNE tolik, kolik stanovisko te rady stalo (kazda
+ // rada je slouceni dvou nizsich). Drive tu bylo 2.1^rada; s kartou "Vykup
+ // pristroju" (vraci 100 %) to znamenalo +10 % za 2. radu, +21 % za 3. a
+ // +33 % za 4. - tedy stroj na penize, ktery dosud maskovala jen predrazena
+ // kalibrace. Zmereno po jejim zlevneni: 15 vydelecnych kombinaci.
+ let v=priceOf(t.k)*Math.pow(2,t.l)*f;
+ // Kalibrace se vraci podle TEZE ceny, jakou stala. Drive to bylo vlastni
+ // cislo (9+i*7)*(1+l*.9), ktere s cenou kalibrace nijak nesouviselo; po
+ // jejim zlevneni by vracelo vic, nez do ni hrac dal - stejny stroj na
+ // penize, jaky hlida radek s mistrovskou radou o kus niz.
+ const ck={k:t.k,l:t.l,cal:0};
+ for(let i=0;i<t.cal;i++){ ck.cal=i; v+=calCost(ck)*f; }
  // Mistrovska rada se vraci podle ZAPLACENYCH KREDITU, ne podle poctu hvezd.
  // Hvezda ze slouceni je zdarma, takze za ni prodej vratit nic nesmi - jinak
  // by slouceni dvou pasem 4. rady (dohromady za 204) dalo hvezdu prodejnou
@@ -13991,7 +14021,6 @@ function fire(t){
    // PENTAGONALNI HRANOL: meri jen v pravem uhlu - po rade nebo po sloupci.
    // Vybere osu s vetsim poctem cilu a projde ji celou; nic mimo osy nevidi.
    const sirka=def.sirka[t.l]*CS*(hasPerk(t,'orthowide')?1.7:1);
-   const osy=hasPerk(t,'ortho2')?['x','y']:['x','y'];
    const nase={x:[],y:[]};
    cand.forEach(e=>{ const q=pathPos(e.p,e.pi);
      if(Math.abs(q.y-ty)<=sirka)nase.x.push(e);
@@ -14369,7 +14398,7 @@ function startWave(){
    punch(7,'#ff9a6c');
    snd('s_boss');
    duck(.6,1.2);
-   setTimeout(()=>{ if(S&&S.phase==='combat')feed('<b>'+S.bossInfo.n+'</b> — '+S.bossInfo.d,'var(--tape)'); },900);
+   setTimeout(()=>{ if(S&&S.phase==='combat'&&S.bossInfo)feed('<b>'+S.bossInfo.n+'</b> — '+S.bossInfo.d,'var(--tape)'); },900);
  }
  snd('wave');
  if(SAVE.tut===4){SAVE.tut=5;save();}
