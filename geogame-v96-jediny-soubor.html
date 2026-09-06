@@ -4082,7 +4082,12 @@ html[data-theme="hc"] #pgTeren .tStitek{
 html[data-theme="hc"] #pgTeren .tTip{color:#06131c}
 
 /* Tlacitko POKRACOVAT sedi hned pod mapou, kdyz je rozdelane mereni. */
-#pgTeren #bResume{margin-top:var(--m3);width:100%}
+#pgTeren #bResume{margin-top:var(--m3);width:100%;
+  flex-direction:column;gap:1px;padding:11px 14px;line-height:1.15}
+#bResume b{font-size:calc(15px*var(--fs,1));font-weight:800;letter-spacing:.04em}
+/* Druhy radek je LEHCI a mensi - nese jen "kam se vracim", ne akci. */
+#bResume s{text-decoration:none;font-size:calc(11.5px*var(--fs,1));font-weight:600;
+  opacity:.78;letter-spacing:0}
 
 /* ---------- 2. PROFIL: jedna karta misto peti ---------- */
 /* Drive: profil + tri statistiky + prouzek areny + hodnost + postup.
@@ -20188,7 +20193,8 @@ function renderTitle(){
  const rb=$('bResume');
  if(SAVE.run&&MAPS[SAVE.run.map]){
    rb.classList.remove('hide');
-   rb.textContent='POKRAČOVAT · '+MAPS[SAVE.run.map].n+', etapa '+((SAVE.run.wave|0)+1);
+   rb.innerHTML='<b>POKRAČOVAT</b><s>'+MAPS[SAVE.run.map].n+' · etapa '+
+     ((SAVE.run.wave|0)+1)+'</s>';
  } else { if(SAVE.run){SAVE.run=null;save();} rb.classList.add('hide'); }
  const L=$('mapList');L.innerHTML='';
  MAPS.forEach((m,i)=>{
