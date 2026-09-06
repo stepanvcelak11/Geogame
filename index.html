@@ -651,8 +651,14 @@ html[data-theme="night"] .introBtns .key{color:#0a1626}
 .lvBan b{color:var(--tape)}
 .lvName{font-size:calc(19px*var(--fs,1));font-weight:800;line-height:1.2}
 .lvStars{display:flex;gap:4px;margin-top:6px}
-.stIco{width:22px;height:22px;fill:#e3ebf0;stroke:#c3d3dd;stroke-width:1.2}
+/* Hvezdy u uzemi. Neziskana mela vypln #e3ebf0 - na tmave plose okna to
+   nebylo prazdne luzko, ale skoro bila hvezda, takze cerstve uzemi vypadalo
+   jako dohrane na tri hvezdy. Stejna vada byla v okne vysledku. */
+.stIco{width:22px;height:22px;fill:rgba(226,236,247,.10);
+  stroke:rgba(226,236,247,.45);stroke-width:1.2}
 .stIco.on{fill:#ffb01f;stroke:#e08c00}
+html[data-theme="hc"] .stIco{fill:#ffffff;stroke:#000000;stroke-width:2}
+html[data-theme="hc"] .stIco.on{fill:#8a4a00;stroke:#000000}
 .lvMeta{font-size:calc(11.5px*var(--fs,1));color:var(--dim);margin-top:5px}
 .tiBox{padding:0;overflow:hidden}
 .tiBanner{display:flex;gap:14px;align-items:center;padding:16px 16px 14px;
@@ -1794,7 +1800,11 @@ html[data-theme="night"] .rtag{color:#06111a}
 .rtro svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.4;
   stroke-linecap:round;stroke-linejoin:round}
 .rstars{display:flex;justify-content:center;gap:9px;margin:6px 0 4px}
-.rstars svg{width:44px;height:44px;fill:#e3ebf0;stroke:#c3d3dd;stroke-width:1.2;
+/* Neziskana hvezda mela vypln #e3ebf0, tedy skoro bilou. Na tmave modre
+   plose okna byla nejsvetlejsim prvkem cele obrazovky - po prohre videl hrac
+   tri zaricí hvezdy. Ted je to prazdne luzko a zlata je jen ta ziskana. */
+.rstars svg{width:44px;height:44px;fill:rgba(226,236,247,.09);
+  stroke:rgba(226,236,247,.42);stroke-width:1.2;
   transform:scale(.2);opacity:0}
 .rstars svg.pop{animation:starpop .5s cubic-bezier(.2,1.6,.4,1) forwards}
 .rstars svg.on{fill:#ffb01f;stroke:#e08c00}
@@ -5557,10 +5567,16 @@ html[data-board="0"] .card canvas{width:33px;height:33px}
 #levelup .box{--ak:var(--violet)}
 #draft .box,#spec .box{--ak:var(--laser)}
 #result .box{--ak:var(--brass)}
+/* Prohra vypadala presne jako vyhra: mosazny prouzek v zahlavi, mosazna zare
+   kolem okna, mosazna svatozar za nim. Jedine, co ji odlisovalo, byl cerveny
+   odznak s odectenymi pohary. Cely ten aparat visi na jedine promenne --ak,
+   takze staci prehodit ji. */
+#result.prohra .box{--ak:var(--tape)}
 #login,#crates{--ak:var(--brass)}
 #levelup{--ak:var(--violet)}
 #draft,#spec{--ak:var(--laser)}
 #result{--ak:var(--brass)}
+#result.prohra{--ak:var(--tape)}
 
 /* ---------- 3. PROVOZNI OKNO ---------- */
 /* Uzke, bez zahlavi, nadpis mensi. Nema nic zaric - je to zastavka. */
@@ -5856,8 +5872,37 @@ html[data-board="0"] .card canvas{width:33px;height:33px}
 #draft .pick .pn,#spec .pick .pn,#levelup .pick .pn{
   font-family:var(--display);color:var(--t1);font-size:calc(14.5px*var(--fs,1))}
 #draft .pick .pd,#spec .pick .pd,#levelup .pick .pd{color:var(--t2)}
-#draft .pick.draft{border-left-width:5px}
+/* Vzacnost karty se driv poznala jen podle 5px prouzku u leveho okraje
+   a odznaku, ktery mel u bezne karty sedou na sede. Tri nabidnute karty tak
+   vypadaly stejne a hrac nemel jak na prvni pohled poznat, ktera z nich je
+   ta vzacna. Ted nese barvu vzacnosti cela karta: prouzek, jemny nadech
+   do plochy a - u vzacnejsich - zare kolem. Stejnou reci mluvi Laborka. */
+#draft .pick.draft{border-left-width:5px;
+  background:
+    linear-gradient(100deg,color-mix(in srgb,var(--rc) 16%,transparent) 0%,
+                    transparent 46%),
+    linear-gradient(180deg,var(--s3),var(--s2));
+  box-shadow:var(--hrana),0 3px 0 var(--stroke),
+    0 0 0 1px color-mix(in srgb,var(--rc) 34%,transparent),
+    0 10px 22px rgba(4,8,28,.42)}
+#draft .pick.draft.vzacna{
+  box-shadow:var(--hrana),0 3px 0 var(--stroke),
+    0 0 0 1px color-mix(in srgb,var(--rc) 55%,transparent),
+    0 0 22px -4px color-mix(in srgb,var(--rc) 60%,transparent),
+    0 10px 22px rgba(4,8,28,.42)}
 #draft .rtag{top:12px;right:12px}
+/* Odznak vzacnosti: u bezne karty byla seda na sede (1,9:1). Ted je to
+   obrys v barve vzacnosti se svetlym textem tehoz odstinu. */
+#draft .rtag{background:transparent!important;color:var(--rcL);
+  border:1.5px solid color-mix(in srgb,var(--rc) 70%,transparent);
+  padding:3px 9px;border-radius:999px;font-weight:800}
+/* Kolik uz jich hrac ma - stejne pipy jako v Laborce misto tiche vety. */
+#draft .pick .pkRow{display:flex;align-items:center;gap:8px;margin-top:9px}
+#draft .pick .pkRow .pips{margin:0;gap:4px}
+#draft .pick .pkRow .pip{width:16px;height:5px;border-radius:999px;
+  background:transparent;border:1px solid color-mix(in srgb,var(--rc) 45%,transparent)}
+#draft .pick .pkRow .pip.f{background:var(--rcL);border-color:var(--rcL)}
+#draft .pick .pk{margin-top:0;color:var(--t3)}
 
 /* ---------- 13. #quiz, #task, #backup: provozni drobnosti ---------- */
 #quiz .qzProg{color:var(--t3);letter-spacing:.10em;font-weight:800}
@@ -5931,6 +5976,11 @@ html[data-theme="hc"] #login .lgDay .lgN,html[data-theme="hc"] #login .lgDay .lg
 html[data-theme="hc"] #login .lgDay.now .lgN,html[data-theme="hc"] #login .lgDay.now .lgR,
 html[data-theme="hc"] #pickTower .ptrow .pn2,html[data-theme="hc"] #pickTower .ptrow.on .pn2,
 html[data-theme="hc"] #crates .crName,html[data-theme="hc"] #crates .crCard .crN,
+html[data-theme="hc"] #draft .pick.draft,
+html[data-theme="hc"] #draft .pick.draft.vzacna{background:#fff;box-shadow:0 0 0 3px #000}
+html[data-theme="hc"] #draft .rtag{color:#06131c;border-color:#000;border-width:2px}
+html[data-theme="hc"] #draft .pick .pkRow .pip{border-color:#000}
+html[data-theme="hc"] #draft .pick .pkRow .pip.f{background:#06131c;border-color:#000}
 html[data-theme="hc"] #draft .pick .pn,html[data-theme="hc"] #spec .pick .pn,
 html[data-theme="hc"] #levelup .pick .pn,html[data-theme="hc"] #quiz .qzQ,
 html[data-theme="hc"] #result #rh{color:#06131c}
@@ -5943,6 +5993,10 @@ html[data-theme="hc"] .ov.on>.box{animation:none}
 html[data-theme="hc"] .ov[data-okno="oslava"] .box{box-shadow:0 0 0 3px #000}
 html[data-theme="hc"] #result .rstars svg,
 html[data-theme="hc"] #result .rstars svg.on{filter:none}
+/* V kontrastnim motivu se na poloprusvitnou vypln spolehnout nejde: prazdna
+   hvezda je bila s cernym obrysem, ziskana plna cerna. */
+html[data-theme="hc"] #result .rstars svg{fill:#ffffff;stroke:#000000;stroke-width:2}
+html[data-theme="hc"] #result .rstars svg.on{fill:#8a4a00;stroke:#000000}
 
 
 /* ===== 910-oprava.css ===== */
@@ -15203,6 +15257,7 @@ function finish(win){
  window.__lastResult='GeoGame — '+MAPS[S.map].n+
    (S.hard?' (mistrovské)':'')+': etapa '+S.wave+'/'+(S.chal?S.chalWaves:(MAPS[S.map].waves+(S.hard?3:0)))+
    ', přesnost '+Math.round(S.acc)+' %, hvězd '+stars+'/3, zničeno '+S.kills+' vlivů.';
+ $('result').classList.toggle('prohra',!win);
  $('result').classList.add('on');
  // Obsah je vyssi nez okno (1003 proti 844 px na iPhonu), takze MERIT ZNOVU
  // bylo urizle a ZPET DO MENU 75 px pod okrajem - a nic to nenaznacovalo.
@@ -15641,10 +15696,18 @@ function openDraft(){
  pick.forEach(c=>{
    const rr=RAR[c.r||'c'];
    const d=document.createElement('div');d.className='pick draft';
+   // Vzacnejsi nez bezna dostane zar - at je ze tri nabidek poznat ta lepsi.
+   if((c.r||'c')!=='c')d.classList.add('vzacna');
    d.style.setProperty('--rc',rr.col);d.style.setProperty('--rcL',rr.colL||rr.col);
-   d.innerHTML='<div class="rtag" style="background:'+rr.col+'">'+rr.n+'</div>'+
+   // "mas 0/3" byla tichá veta v barve popisku. Pipy ukazou tyz udaj bez cteni
+   // a jsou tataz rec, jakou mluvi Laborka.
+   const mam=S.mods[c.id]||0;
+   let pipy='';
+   for(let i=0;i<c.max;i++)pipy+='<i class="pip'+(i<mam?' f':'')+'"></i>';
+   d.innerHTML='<div class="rtag">'+rr.n+'</div>'+
      '<div class="pn">'+c.n+'</div><div class="pd">'+c.d+'</div>'+
-     '<div class="pk">máš '+(S.mods[c.id]||0)+'/'+c.max+'</div>';
+     '<div class="pkRow"><span class="pips">'+pipy+'</span>'+
+     '<span class="pk">'+mam+'/'+c.max+'</span></div>';
    d.onclick=()=>{S.mods[c.id]=(S.mods[c.id]||0)+1;
      // Karty s okamzitym ucinkem. Predsunute stanoviste slibovalo "hned uvolni
      // dve mista u trasy", ale jedine, co delalo, bylo +2 ke KAPACITE - tedy
