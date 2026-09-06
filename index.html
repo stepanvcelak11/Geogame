@@ -1390,6 +1390,27 @@ html[data-theme="night"] .crCard .crR{color:#06111a}
 #accfill{height:100%;width:100%;border-radius:3px;transition:width .25s,background .3s;
   background:linear-gradient(90deg,var(--laser),var(--moss))}
 
+/* UZAVER ETAPY - stale na ocich, ne hlaska na 2,6 s.
+   Prekryv: absolutne polozeny a bez pointer-events, takze nezmensuje desku
+   ani nebere klepnuti. Sedi pod pruhem "Pristi". */
+#uzavr{position:absolute;top:calc(var(--hudH,86px) + 44px);left:12px;right:12px;z-index:3;
+  max-width:520px;margin:0 auto;display:none;pointer-events:none;
+  background:var(--scrim);border:1px solid var(--grid);border-radius:14px;
+  padding:9px 12px;box-shadow:var(--elev2)}
+#uzavr.on{display:block}
+#uzavr .uzH{font-size:calc(12px*var(--fs,1));font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--paper);margin-bottom:6px}
+#uzavr .uzR{display:flex;align-items:center;gap:8px;margin-top:5px;
+  font-size:calc(12px*var(--fs,1));color:var(--t2);line-height:1.4}
+#uzavr .uzR span{flex:none;min-width:104px}
+#uzavr .uzR em{flex:1;height:9px;background:var(--ink3);border-radius:5px;
+  overflow:hidden;font-style:normal}
+#uzavr .uzR i{display:block;height:100%;border-radius:5px;transition:width .25s}
+#uzavr .uzR b{flex:none;font-variant-numeric:tabular-nums;min-width:44px;
+  text-align:right;color:var(--paper)}
+#uzavr .uzP{opacity:.72}
+#uzavr .uzP i{background:var(--dim)}
+#uzavr .uzN{margin-top:7px;font-size:calc(12px*var(--fs,1));color:var(--t2);line-height:1.5}
 #bossBar{position:absolute;top:72px;left:12px;right:12px;z-index:4;max-width:520px;margin:0 auto;
   display:none;background:var(--scrim);border:1px solid var(--tape);border-radius:14px;
   padding:8px 12px;box-shadow:var(--elev2)}
@@ -9565,6 +9586,12 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
   </div>
 
   <div id="pprev"><span class="pl">Příští</span><div id="wavePrev"></div></div>
+  <div id="uzavr">
+    <div class="uzH" id="uzH">Etapa hotova</div>
+    <div class="uzR"><span>nejdál se dostali</span><em><i id="uzF"></i></em><b id="uzV"></b></div>
+    <div class="uzR uzP"><span>minule</span><em><i id="uzFP"></i></em><b id="uzVP"></b></div>
+    <div class="uzN" id="uzN"></div>
+  </div>
   <div id="bossBar"><div class="bbN"><span id="bbName"></span><b id="bbHp"></b></div>
     <div class="bbT"><i id="bbFill"></i></div></div>
   <div id="buffChip"></div>
@@ -14947,6 +14974,10 @@ function endWave(){
  // S.frontier uz hra pocita (jak daleko po trase se dostal nejhlubsi vliv),
  // jen ji nikdo necetl - openNewSpot(), jediny jeji konzument, se nevola.
  // Cislo se cte PRED vynulovanim.
+ // Predchozi etapa se schova, aby panel mohl ukazat SMER - jestli se to
+ // k nulovemu bodu blizi, nebo vzdaluje. Jedno cislo samo o sobe nic nerekne.
+ S.uzavrSkryt=0;   // novy uzaver se zase ukaze
+ S.uzavrPrev=(typeof S.uzavr==='number')?S.uzavr:null;
  S.uzavr=Math.round(Math.min(1,Math.max(0,S.frontier||0))*100);
  S.uzavrSum=(S.uzavrSum||0)+S.uzavr; S.uzavrN=(S.uzavrN||0)+1;
  if(S.uzavr<=45)S.uzavrOk=(S.uzavrOk||0)+1;
@@ -15373,7 +15404,8 @@ function snapshot(){
    // pri zebriku az ★★★ je to 3 060 rozpoctu a +270 % poskozeni.
    towers:S.towers.map(t=>({k:t.k,l:t.l,c:t.c,r:t.r,cal:t.cal,cd:t.cd,prio:t.prio,xp:t.xp,dmgDone:t.dmgDone,plus:t.plus||0,mistrCr:t.mistrCr||0})),
    stats:{kills:S.kills,merges:S.merges,abilUses:S.abilUses,built:S.built,
-     leaked:S.leaked,condWaves:S.condWaves,maxTowers:S.maxTowers,fastStarts:S.fastStarts}
+     leaked:S.leaked,condWaves:S.condWaves,maxTowers:S.maxTowers,fastStarts:S.fastStarts,
+     uzavr:S.uzavr,uzavrPrev:S.uzavrPrev,uzavrN:S.uzavrN}
  };
 }
 function saveRun(){
@@ -15815,6 +15847,9 @@ function showEnemyInfo(e){
 }
 function boardTap(ev){
  if(!S||S.over)return;
+ // Uzaver etapy ustoupi, jakmile hrac zacne pracovat - jinak by cloumal
+ // horni tri rady desky celou stavecí fazi.
+ if(!S.uzavrSkryt){S.uzavrSkryt=1;ui();}
  const r=cv.getBoundingClientRect();
  const c=Math.floor((ev.clientX-r.left-OX)/CS);
  const rw=Math.floor((ev.clientY-r.top-OY)/CS);
@@ -16373,6 +16408,33 @@ function ui(){
      :'Potřebuješ druhý <b>'+def.n[t.l]+'</b> na desce. Kup ho ve skladu dole a postav vedle.';
  } else ts.classList.add('hide');
 
+ // Uzaver posledni etapy zustava na ocich celou stavecí fazi. Cte se z tehoz
+ // S.uzavr, ktere se pocita na konci etapy - nema to jak zastarat.
+ {
+   const uz=$('uzavr');
+   const mam=uz&&S.phase==='build'&&!S.over&&!S.uzavrSkryt
+             &&typeof S.uzavr==='number'&&(S.uzavrN||0)>0;
+   if(uz)uz.classList.toggle('on',!!mam);
+   if(mam){
+     const v=S.uzavr, p=S.uzavrPrev;
+     const barva=v<=25?'var(--moss)':v<=50?'var(--gnssC,var(--sky))'
+                 :v<=80?'var(--tape)':'#ff9a6c';
+     $('uzH').textContent='Etapa '+S.wave+' ustáta';
+     const f=$('uzF'); f.style.width=Math.max(2,v)+'%'; f.style.background=barva;
+     $('uzV').textContent=v+' %';
+     const rp=uz.querySelector('.uzP');
+     const maPred=(typeof p==='number');
+     rp.style.display=maPred?'':'none';
+     if(maPred){ $('uzFP').style.width=Math.max(2,p)+'%'; $('uzVP').textContent=p+' %'; }
+     let nota=v<=25?'Vzorný uzávěr — nikdo se nedostal ani do čtvrtiny trasy.'
+             :v<=50?'V mezní odchylce. Takhle to má vypadat.'
+             :v<=80?'Trasa udržená, ale bylo to blíž, než by mělo být.'
+                   :'Na hranici odchylky — blíží se to k nulovému bodu.';
+     if(maPred&&v>=p+8)nota+=' O '+(v-p)+' bodů blíž než minule.';
+     else if(maPred&&p>=v+8)nota+=' O '+(p-v)+' bodů dál než minule.';
+     $('uzN').textContent=nota;
+   }
+ }
  // náhled příští etapy
  const pv=$('pprev');
  if(S.phase==='build'&&!S.over){
