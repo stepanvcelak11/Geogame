@@ -1,4 +1,4 @@
-# GeoGame — verze 94
+# GeoGame — verze 95
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=94;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=95;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v94-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v95-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v94-jediny-soubor.html
+copy index.html geogame-v95-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -54,6 +54,37 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 95
+
+Jedna jediná věc, zato taková, která chyběla celou dobu: **hra ti konečně říká,
+jak blízko jsi byl prohře.**
+
+Do teď se ukazatel přesnosti **v 89 % etap vůbec nehnul**. Buď jsi etapu ustál
+úplně, nebo se obrana zhroutila a přišel jsi o hodně naráz — a mezi tím nic.
+Nešlo poznat, jestli to bylo o vlas, nebo procházka, a zjistilo se to až ve
+chvíli, kdy se s tím nedalo nic dělat.
+
+Verze 92 už přitom počítala, jak daleko po trase došel nejhlubší vliv. Jenže to
+řekla **jedinou větou v hlášení, které zmizí za 2,6 vteřiny** a nemá se s čím
+porovnat. Teď je z toho panel, který zůstane na očích:
+
+```
+ETAPA 12 USTÁTA
+nejdál se dostali   ████████░░  78 %
+minule              █████░░░░░  52 %
+Trasa udržená, ale bylo to blíž, než by mělo být. O 26 bodů blíž než minule.
+```
+
+Druhý pruh je to podstatné — jedno číslo samo o sobě nic neřekne, teprve
+srovnání s minulou etapou ukáže **směr**. Když se to k nulovému bodu blíží,
+je čas posílit síť, a ne až v okamžiku, kdy je pozdě.
+
+**Obtížnosti se to nedotýká.** Nic se neubírá, jen se říká, co už se stalo —
+to byla podmínka, za které tahle věc vznikla. Panel je překryv: hrací desku
+**nezmenšuje** (políčko má na 390 px pořád 42 px, změřeno před i po) a nebere
+klepnutí. Při prvním doteku desky ustoupí, aby necloumal horní řady celou
+stavěcí fázi, a po další etapě se vrátí.
 
 ## Co je nového ve verzi 94
 
