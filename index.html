@@ -18383,7 +18383,7 @@ function renderShop(){
  fd.style.setProperty('--ak','var(--brass)');
  fd.innerHTML='<div class="sfIc"><svg viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5v8L12 21l-9-4.5z"/><path d="M3 8.5 12 13l9-4.5M12 13v8"/></svg></div>'+
    '<div class="sfT"><b>'+f.title+'</b><s>'+f.sub+'</s></div>'+
-   '<div class="sfB">'+(shopBought(f.id)?'VYZVEDNUTO':'ZDARMA')+'</div>';
+   '<div class="sfB">'+(shopBought(f.id)?'VYZVEDNUTO':'VZÍT')+'</div>';
  fd.onclick=()=>{ if(!shopBought(f.id))buyOffer(f); };
  free.appendChild(fd);
  // nabídka
@@ -18778,7 +18778,8 @@ function renderProfOkno(){
    '<button type="button" class="pfPrejm" id="pfPrejm">Přejmenovat</button>'+
   '</div>'+
   '<div class="pfRad"><span class="pfK">Hodnost</span><span class="pfV">'+
-    (nx?('do <b>'+nx.n+'</b> zbývá '+(nx.tr-SAVE.tr)+' pohárů'):'nejvyšší hodnost')+
+    (nx?('do <b>'+nx.n+'</b> zbývá '+(nx.tr-SAVE.tr)+' '+kaPoh(nx.tr-SAVE.tr))
+       :'nejvyšší hodnost')+
    '</span></div><div class="pfB"><i style="width:'+pct+'%"></i></div>'+
   '<div class="pfRad"><span class="pfK">Oblast</span><span class="pfV">'+
     ar.n+(arN?(' · do „'+arN.n+'“ zbývá '+Math.max(0,arN.tr-SAVE.tr)+
@@ -18980,9 +18981,12 @@ function renderQuests(){
      '<div class="dqb"><i style="width:'+Math.min(100,q.prog/q.goal*100)+'%"></i></div></div>'+
      '<div class="dqp"><span class="dqCnt">'+Math.min(q.prog,q.goal)+' / '+q.goal+'</span>'+
      '<span class="mince">'+q.res+' výzkumu</span>'+
-     '<span class="odznak odznak--tyrkys">'+q.cards+' karty</span></div>';
+     '<span class="odznak odznak--tyrkys">'+q.cards+cardWord(q.cards)+'</span></div>';
    const btn=document.createElement('button');
-   btn.textContent=q.claimed?'✓':(ready?'VZÍT':'—');
+   // Nesplneny ukol mel na tlacitku pomlcku, ktera nerika nic. Procento
+   // je stejne kratke a ukazuje, jak daleko hrac je.
+   btn.textContent=q.claimed?'✓':(ready?'VZÍT'
+     :(Math.floor(Math.min(1,q.prog/q.goal)*100)+' %'));
    btn.disabled=!ready;
    btn.onclick=()=>{
      if(!ready)return;
@@ -20273,7 +20277,8 @@ function renderTitle(){
    if(ai>SAVE.arena)SAVE.arena=ai;
    ab.textContent='Oblast · '+AREN[ai].n;
    const nx=AREN[ai+1];
-   $('arenaNext').textContent=nx?('další oblast za '+Math.max(0,nx.tr-SAVE.tr)+' pohárů'):'nejvyšší oblast';
+   $('arenaNext').textContent=nx?('další oblast za '+Math.max(0,nx.tr-SAVE.tr)+
+     ' '+kaPoh(Math.max(0,nx.tr-SAVE.tr))):'nejvyšší oblast';
    const cur=AREN[ai];
    $('arenaFill').style.width=nx?Math.max(3,Math.min(100,(SAVE.tr-cur.tr)/Math.max(1,nx.tr-cur.tr)*100))+'%':'100%';
  }
@@ -20869,7 +20874,7 @@ function renderRoad(){
    const span=nxt.tr-cur.tr, got=SAVE.tr-cur.tr;
    $('xpfill').style.width=Math.max(3,Math.min(100,got/span*100))+'%';
    $('xpTxt').textContent='Hodnost '+rankOf().n+' · do oblasti „'+nxt.n+'" zbývá '+
-     Math.max(0,nxt.tr-SAVE.tr)+' pohárů';
+     Math.max(0,nxt.tr-SAVE.tr)+' '+kaPoh(Math.max(0,nxt.tr-SAVE.tr));
  } else {
    $('xpfill').style.width='100%';
    $('xpTxt').textContent=cur.n+' · nejvyšší oblast dosažena';

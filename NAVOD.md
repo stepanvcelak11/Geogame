@@ -1,4 +1,4 @@
-# GeoGame — verze 96
+# GeoGame — verze 99
 
 ## Co nahrát na hosting
 
@@ -54,6 +54,65 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 99
+
+Prohlídka **menu** (obchod, vybavení, laborka, kariéra, nastavení, okna) —
+17 obrazovek × 3 šířky × 3 motivy. Do bitvy, na desku, HUD ani na balanc se
+nesáhlo, ty si ve stejnou dobu vzaly jiné verze.
+
+### Cesty se otevírají tam, kde jsi
+
+Trofejní i sezónní cesta se kreslí odshora dolů od nejvyšší mety, aby se po
+nich „lezlo vzhůru". Jenže hráč s nula poháry otevřel Kariéru a první, co
+uviděl, byla odměna za **3200 pohárů** — k uzlu „JSI TADY" musel odrolovat
+přes dva tisíce pixelů (naměřeno: 2156 px při obrazovce 780).
+
+- **Pás na stránce Kariéra** se ořezával jen zdola („Zobrazit i splněné
+  oblasti"). Nově se ořezává **i shora** — nad tou nejbližší metou je vidět
+  ještě jedna a zbytek je za tlačítkem *Zobrazit i vyšší oblasti (N)*.
+  „JSI TADY" je tak vidět hned po otevření.
+- **Okno „Zvětšit"** (celá trofejní cesta) ukazovalo jen **první pětinu**
+  cesty a zbytek byl oříznutý a **nedosažitelný** — z 2599 px obsahu bylo
+  vidět 534 px a nerolovalo nic. Ze dvanácti oblastí šly vidět dvě.
+- **Sezónní cesta** začínala u úrovně 20, i když je hráč na nule.
+
+Obě okna se teď po otevření samy srovnají na aktuální uzel.
+
+### Přístroj jde vylepšit z jeho vlastního okna
+
+Povýšení o úroveň šlo dosud udělat **jen** z dlaždice ve Sbírce. Okno detailu
+přitom o vylepšení mluvilo („Na úroveň 1 potřebuješ 44 / 3 karet a 18
+výzkumu") a nemělo co zmáčknout — a ta věta začínala slovem „potřebuješ"
+i ve chvíli, kdy hráč měl všechno. Nově je v okně tlačítko **VYLEPŠIT NA
+ÚROVEŇ N**, nad ním stav *karty 44/3* a *výzkum 30000/18* a věta, která říká
+buď „Můžeš povýšit", nebo co ještě chybí. Účet je v jedné funkci, takže se
+Sbírka a okno nemůžou rozejít.
+
+### Drobnosti
+
+- **Profil**: řádek „Oblast" končil *„zbývá 60"* — **bez jednotky** (řádek
+  „Hodnost" ji má). Doplněno; řádek se navíc smí zalomit, aby delší text
+  nevylezl z okna.
+- **Cena v laborce a u příslušenství** byla `10 v.` — táž měna je v obchodě
+  psaná plně („132 výzkumu"). Nově `10 výzk.`
+- **Výběr přístrojů**: dvanáctkrát pod sebou stálo „bez úrovně". Teď je tam
+  postup ke kartám, a když hráč na povýšení má, rovnou **„lze vylepšit"**.
+- **Denní úkol**: nesplněný měl na tlačítku pomlčku, teď je tam procento.
+  Počet karet u odměny se sklonuje, stejně jako poháry na třech dalších
+  místech.
+- **Nastavení**: pod nadpisem „Nastavení" stál panel s nadpisem „NASTAVENÍ".
+- **Obchod**: tlačítko na kartě „Zdarma každý den" říkalo „ZDARMA" (totéž co
+  nadpis), teď říká „VZÍT".
+
+### Čím je to podložené
+
+- 17 obrazovek × 320/390/430 px × denní/noční/kontrastní: **0 chyb v konzoli**,
+  0 obrazovek, které by se nedaly otevřít.
+- Zvláštní kontrola na **oříznutý a nedosažitelný obsah** (přesně ta vada,
+  kterou měla trofejní cesta) přes 21 obrazovek: po opravě **0 míst**.
+- Srovnání cest změřeno: uzel „JSI TADY" byl na 2394 / 1411 / 2156 px,
+  po opravě je na 329 / 632 / 641 px při obrazovce 780.
 
 ## Co je nového ve verzi 96
 
