@@ -31,7 +31,7 @@ Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se
 
 ## Bez hostingu
 
-`geogame-v93-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v94-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v93-jediny-soubor.html
+copy index.html geogame-v94-jediny-soubor.html
 ```
 
 ## Záloha postupu
