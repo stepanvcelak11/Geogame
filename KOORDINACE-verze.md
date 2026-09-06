@@ -6,6 +6,73 @@ to tím, že dvě různé verze nesly totéž číslo.
 
 ---
 
+## AKTUÁLNÍ STAV: VERZE 100 (6. 9. večer, session „režimy a texty")
+
+**Číslo 100 je zabrané.** Větev **`vylepseni-v100`**, vlastní git worktree
+`Desktop\geogame-v100`, základ `4674c42` (špička v96).
+Na main to nejde — vydání drží uživatel.
+
+Souběžně jely **čtyři session na jednom `index.html`**. Rajóny jsme si rozdělili
+přímým psaním mezi session (samotná KOORDINACE na to nestačí):
+
+| verze | session | rajón |
+|---|---|---|
+| 97 | ar-geodet-6b | čísla a obsah: `T`, `E`, `ABIL`, `NET`, `CARDS`, `RYS`, `MAPS`, `GOALS`, ceny, dosahy, odolnosti, `mereni/*`, mapa světa, pás krajiny, `40-teren.css` |
+| 98 | ar-geodet-ce | bitevní obrazovka: `#game`, `70-hra.css`, `loop`/`draw`/`ui`, deska, HUD, `#quick`, `#uzavr`, `saveRun`/`loadRun`, `sw.js`, tutoriál, zvuk |
+| 99 | ar-geodet-51 | menu: obchod, vybavení, skiny, laborka, kariéra, sezónní cesta, nastavení, profil, encyklopedie, `10-chrome` … `80-okna` |
+| 100 | tahle | **režimy navíc a výzvy jako obsah** (`CHMODS`, `CHTIERS`, `QUESTS`, `ACH`, `LOGIN`, Bossová smršť, Rychlé měření, Nekonečné, zkouška) **+ texty hlášek** |
+
+### Kam jsem sáhl mimo svůj rajón (domluveno předem)
+
+Dvě místa uvnitř Bossové smrště, obojí odsouhlasené s 6b, který se jich sám
+nedotkl:
+
+1. `waveComp()` — **jen větev `if(S&&S.rush5)`**: počet bossů `1+w/4` → `2+0,7w`.
+2. `finaleRysy()` — `if(!S||S.rush5)return []` → bossové ve smršti dostávají
+   rysy z `RYS`. Na kampaň to nesahá, ověřeno měřením (v kampani padnou rysy
+   dál jen v poslední etapě).
+
+A jeden řádek v `pgTeren`: chybějící `<div id="todoBox">` do sekce `.tUkoly`.
+
+### Co je ve 100
+
+Podrobně v `NAVOD.md`, sekce „Co je nového ve verzi 100". Zkráceně: mrtvý
+modifikátor „Štědrá zakázka", panel „Co teď", který se nikdy nevykreslil,
+přihlašovací řada zaseknutá na sedmém dni (finále znovu a znovu každý den),
+Bossová smršť jako nejlehčí režim ve hře přes legendární bednu, bedny za režimy
+bez denního stropu, prohra přebíjející výhru v historii výzvy, úspěch, který šel
+zpět, nesplnitelný úspěch, šest chyb ve skloňování a slib „dvojice pravidel",
+který 46 dnů z 365 neplatil.
+
+### ⚠⚠ Co jsem NEZMĚNIL, ale někdo by to vědět měl
+
+**Nová hra startuje se zapnutým testovacím režimem.** Výchozí `SAVE` má natvrdo
+`testAll:1`, takže úplně nový hráč má hned **všech 23 přístrojů, 10 metod,
+5 hrdinů, 30 000 výzkumu, 1 200 mezníků a 40 karet** (změřeno na čistém
+uložení). Ve v96 to bylo zapnuté na výslovné přání kvůli testování, jenže v96
+je od té doby na mainu — takže to takhle jede i ve vydané hře. **Rozhodnutí je
+na uživateli**, proto jsem na to nesáhl.
+
+### Nástroje, které vznikly (scratchpad session)
+
+`hraj.py` (třída na otevření hry, focení a klikání) · `rezimy.py` (robot přes
+všechny režimy navíc) · `ukoly.py` (kolik jedno měření dá do každého denního
+úkolu) · `smrst3.py` (hustota Bossové smrště zvlášť za začátečníka a za
+koncovku) · `kontrola.py` (měřená kontrola všech oprav) · `klikani.py`
+(spuštění režimů klepáním) · `vyzvy61.py` (rozbor denní výzvy přes celý rok).
+
+⚠ **Robot nepoužívá metody a slučuje mimo `boardTap`** — proto mu denní úkoly
+„Použij metodu" a „Dostaň přístroj do 3. řady" vyšly na nulu. **Není to vada
+hry**; ověřeno zvlášť lidskou cestou (9 použití metod a 2 sloučení do 3. řady
+za osm etap). Kdo bude měřit úkoly robotem, ať se tím nenechá zmást.
+
+⚠ **`window.S` z prohlížeče nevidíš** — hra ho drží v uzávěru a ven jde jen
+přes `window.__G.S`. Napoprvé mi kvůli tomu vyšlo, že se žádný režim nespustil.
+
+---
+
+## AKTUÁLNÍ STAV: VERZE 96 (6. 9., session „připomínky") — SEZNAM PŘIPOMÍNEK HRÁČE
+
 ## AKTUÁLNÍ STAV: VERZE 97 (6. 9. večer, session „čísla a obsah") — ČÍSLA A OBSAH
 
 **Číslo 97 je zabrané.** Větev **`vylepseni-v97`**, vlastní git worktree
