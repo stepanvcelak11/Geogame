@@ -3243,7 +3243,10 @@ html[data-theme="hc"] #navBar{background:none; box-shadow:none; border:0}
 /* klidny kotouc pod ikonou - drzi ikony ve stejne vysce */
 #navBar button:before{
   content:''; position:absolute; z-index:-1; inset:auto;
-  left:50%; top:7px; width:40px; height:40px; margin-left:-20px;
+  /* Pseudoprvky NEdedi box-sizing z `*` (r. 131) - bez tohoto radku
+     zvetsi 3px ram bublinu na 56 px, ale margin-left ji odsadi jen o 50. */
+  box-sizing:border-box;
+  left:50%; top:7.5px; width:40px; height:40px; margin-left:-20px;
   border-radius:50%;
   background:rgba(255,255,255,.055);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);
@@ -3260,7 +3263,7 @@ html[data-theme="hc"] #navBar button:before{
   transform:none; padding:0 1px 4px;
 }
 #navBar button.on:before{
-  top:-12px; width:50px; height:50px; margin-left:-25px;
+  top:-12px; width:56px; height:56px; margin-left:-28px;
   background:linear-gradient(180deg,var(--laserL) 0 38%,var(--laser) 100%);
   border:var(--w4) solid var(--stroke);
   box-shadow:0 5px 0 var(--stroke),
@@ -3268,16 +3271,16 @@ html[data-theme="hc"] #navBar button:before{
              inset 0 3px 0 rgba(255,255,255,.55),
              inset 0 -6px 0 var(--laserD);
 }
-#navBar button.on .ni{color:#04211d; opacity:1; transform:translateY(-14px)}
+#navBar button.on .ni{color:#04211d; opacity:1; transform:translateY(-11.5px)}
 #navBar button.on svg.fi{filter:none}
 #navBar .playTab.on:before{
-  top:-18px; width:56px; height:56px; margin-left:-28px;
+  top:-18px; width:62px; height:62px; margin-left:-31px;
   box-shadow:0 6px 0 var(--stroke),
              0 12px 22px color-mix(in srgb,var(--laser) 42%,transparent),
              inset 0 4px 0 rgba(255,255,255,.6),
              inset 0 -7px 0 var(--laserD);
 }
-#navBar .playTab.on .ni{transform:translateY(-17px)}
+#navBar .playTab.on .ni{transform:translateY(-14.5px)}
 
 html[data-theme="night"] #navBar button.on{color:var(--t1)}
 html[data-theme="hc"] #navBar button{color:#06131c}
@@ -3396,7 +3399,10 @@ html[data-theme="hc"] .tb3 svg{
 /* uzke telefony: pet popisku vedle sebe */
 @media (max-width:359px){
   #navBar button,#navBar .playTab{letter-spacing:-.01em; font-size:10px}
-  #navBar button:before{width:36px; height:36px; margin-left:-18px}
+  #navBar button:before{width:36px; height:36px; margin-left:-18px; top:10.5px}
+  /* mensi popisek (10px) zkratil obsah tlacitka, takze stred ikony klesl */
+  #navBar button.on .ni{transform:translateY(-12.5px)}
+  #navBar .playTab.on .ni{transform:translateY(-15.5px)}
   .navDot{right:calc(50% - 21px)}
   .modeChip{flex:0 0 88px}
   #topBar{gap:5px; padding-left:8px; padding-right:8px}
@@ -3520,6 +3526,14 @@ html[data-theme="hc"] .tb3 svg{
   border-width:var(--w2);
   box-shadow:inset 0 3px 9px rgba(0,0,0,.55),
     0 0 18px -4px color-mix(in srgb,var(--rcL,#8fa9bd) 60%,transparent)}
+/* Znak mericke metody lezel POD kotoucem .shArt:before: kotouc je
+   position:absolute a nepozicovany obsah se maluje PRED pozicovanymi
+   potomky. Karta 'Uroven metody' tak byla prazdny kotouc bez znacky.
+   Canvas pristroju (r. 2019) i bedna (.shBox, r. 395) ten trik uz maji. */
+.shMet{position:relative;z-index:1;
+  width:66px;height:66px;background:none;border:0}
+.shMet svg{width:32px;height:32px}
+html[data-theme="hc"] .shMet svg{stroke:#000}
 .shT{padding:0 var(--m2);text-align:center;min-height:calc(46px*var(--fs,1))}
 .shT b{color:var(--t1);font-size:calc(12px*var(--fs,1));font-weight:800;
   line-height:1.25;display:block}
@@ -9715,7 +9729,7 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
         <span class="mtT">Nekupují se ani nepadají z beden. Podívej se, za co je hra dává.</span>
         <span class="mtV">Kde se berou</span>
       </button>
-      <div class="secTitle">Výzkum za mezníky</div>
+      <div class="secTitle">Nákup za mezníky</div>
       <div id="mezRes"></div>
       <div class="secTitle">Vzhledy přístrojů <span id="skHint"></span></div>
       <p class="pgNote">Vyber přístroj, pak jeho vzhled. Mění barvu i TVAR stroje:
