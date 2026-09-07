@@ -11293,7 +11293,8 @@ const COND=[
 function condOf(){ return S&&S.cond?COND.find(c=>c.id===S.cond):null; }
 function meteoSupp(){
  let m=0; if(!S)return 0;
- S.towers.forEach(t=>{ if(t.k==='meteo')m=Math.max(m,Math.min(.95,T.meteo.supp[t.l]*(hasPerk(t,'weathersup')?1.4:1))); });
+ S.towers.forEach(t=>{ if(t.k==='meteo')m=Math.max(m,Math.min(.95,
+   T.meteo.supp[t.l]*(hasPerk(t,'weathersup')?1.4:1)*(1+accEff('meteo','supp')))); });
  return m;
 }
 function condEff(key){
@@ -12423,36 +12424,79 @@ const SPEC={
 };
 function specHas(k,id){ return (SAVE.spec&&SAVE.spec[k]||[]).indexOf(id)>=0; }
 
+/* Jedno prislusenstvi na KAZDY z 28 pristroju (23 sbiratelnych + 5 hrdinu).
+   Do v101 jich bylo 12 na 9 pristroju: teodolit a GNSS mely po dvou, dron
+   dokonce dve NEDOSAZITELNA (hrdina se do SAVE.types nikdy nedostane),
+   a 15 pristroju nemelo zadne.
+   Efekt musi mit ZIVE napojeni, jinak vznikne mrtve vylepseni:
+     dmg 13244 · rng 13269 · crit 13295 · chain 15288 · spl 15312 a 15346
+     · sdur 15461 · inc 15927 · fly 13446 · ramp 15387 · pct 15400
+     · mk 13374 · supp 11296 · ball 13528 · br 13541
+   POZOR: thermal, meteo, prism, basecal a gnss maji dmg:[0,0,0,0], takze
+   dmg i crit jsou u nich nula; insar, basecal a zenit maji rng:[99,...],
+   takze u nich nema smysl ani dosah. */
 const ACC=[
- {id:'atr',  t:'theo',   n:'Automatické cílení ATR', d:'+3 % šance na dvojnásobnou ránu za úroveň',
+ // --- bezne ---
+ {id:'tapeSteel',t:'tape',   n:'Ocelové pásmo',        d:'+5 % poškození pásma za úroveň',
+  max:3,cost:l=>52+l*38,eff:{dmg:0.05}},
+ {id:'plumbOpt',t:'plumb',   n:'Optický centrovač',    d:'+3 % šance na dvojnásobnou ránu za úroveň',
+  max:3,cost:l=>52+l*38,eff:{crit:0.032}},
+ {id:'atr',  t:'theo',       n:'Automatické cílení ATR', d:'+3 % šance na dvojnásobnou ránu za úroveň',
   max:3,cost:l=>72+l*54,eff:{crit:0.033}},
- {id:'libela',t:'theo',  n:'Přesná libela',          d:'+4 % poškození teodolitové řady za úroveň',
-  max:3,cost:l=>61+l*47,eff:{dmg:0.044}},
- // Retez dalkomeru se pocita cyklem `for(j=0;j<=jumps;j++)`, takze zlomek pod
- // jednickou se ztrati: pri 0,55 za uroven nedelala PRVNI uroven za 99 vyzkumu
- // vubec nic (3 zasahy pred i po, zmereno) a odraz pribyl az u druhe. Jedna
- // uroven za tutez celkovou cenu (99+180) dava tentyz vysledek bez slepe
- // urovne, na kterou se dal vyhodit vyzkum.
- {id:'prism',t:'edm',    n:'Hranol 360°',            d:'+1 odraz dálkoměrů',
+ {id:'prism',t:'edm',        n:'Hranol 360°',          d:'+1 odraz dálkoměrů',
   max:1,cost:l=>279,eff:{chain:1}},
- {id:'motor',t:'lidar',  n:'Rotační hlava',          d:'+6 % plošného záběru skenerů za úroveň',
-  max:3,cost:l=>68+l*50,eff:{spl:0.066}},
- {id:'invar',t:'nivel',  n:'Invarová lať',           d:'+8 % délky zpomalení za úroveň',
+ {id:'invar',t:'nivel',      n:'Invarová lať',         d:'+8 % délky zpomalení za úroveň',
   max:3,cost:l=>58+l*43,eff:{sdur:0.083}},
- {id:'tilt', t:'gnss',   n:'Naklápěcí senzor',       d:'+8 % dosahu aury GNSS za úroveň',
-  max:3,cost:l=>76+l*58,eff:{rng:0.083}},
- {id:'radio',t:'gnss',   n:'Radiomodem',             d:'+2,2 dotace za etapu na stanici za úroveň',
+ {id:'mensAl',t:'mensula',   n:'Hliníková deska',      d:'+5 % poškození měřického stolu za úroveň',
+  max:3,cost:l=>76+l*58,eff:{dmg:0.05}},
+ // --- vzacne ---
+ {id:'motor',t:'lidar',      n:'Rotační hlava',        d:'+6 % plošného záběru skenerů za úroveň',
+  max:3,cost:l=>68+l*50,eff:{spl:0.066}},
+ {id:'compDamp',t:'compass', n:'Tlumená střelka',      d:'+5 % poškození buzoly za úroveň',
+  max:3,cost:l=>65+l*50,eff:{dmg:0.05}},
+ {id:'radio',t:'gnss',       n:'Radiomodem',           d:'+2,2 dotace za etapu na stanici za úroveň',
   max:3,cost:l=>65+l*50,eff:{inc:2.2}},
- {id:'rtk',  t:'photo',  n:'RTK modul dronu',        d:'+6 % doletu a rychlosti dronů za úroveň',
+ {id:'thermMk',t:'thermal',  n:'Chlazený detektor',    d:'+9 % síly označení za úroveň',
+  max:3,cost:l=>65+l*50,eff:{mk:0.09}},
+ {id:'sonarMB',t:'sonar',    n:'Vícepaprskový měnič',  d:'+6 % poškození hloubkoměru za úroveň',
+  max:3,cost:l=>65+l*50,eff:{dmg:0.06}},
+ {id:'prismNet',t:'prism',   n:'Reflexní fólie',       d:'+10 % dosahu, který hranol přidává sousedům, za úroveň',
+  max:3,cost:l=>65+l*50,eff:{br:0.10}},
+ {id:'pentaTwin',t:'penta',  n:'Dvojitý pentagon',     d:'+5 % poškození po ose za úroveň',
+  max:3,cost:l=>65+l*50,eff:{dmg:0.05}},
+ {id:'planWheel',t:'planim', n:'Přesné kolečko',       d:'+5 % poškození planimetru za úroveň',
+  max:3,cost:l=>65+l*50,eff:{dmg:0.05}},
+ // --- epicke ---
+ {id:'quadArc',t:'quadrant', n:'Jemný dělený oblouk',  d:'+7 % plošného záběru kvadrantu za úroveň',
+  max:3,cost:l=>76+l*58,eff:{spl:0.07}},
+ {id:'backLi',t:'backpack',  n:'Lehčí akumulátor',     d:'+5 % poškození batohu za úroveň',
+  max:3,cost:l=>76+l*58,eff:{dmg:0.05}},
+ {id:'meteoSens',t:'meteo',  n:'Vyhřívané čidlo',      d:'+9 % potlačení nepříznivých podmínek za úroveň',
+  max:3,cost:l=>76+l*58,eff:{supp:0.09}},
+ {id:'zenCcd',t:'zenit',     n:'CCD na zenitu',        d:'+6 % poškození zenitového teleskopu za úroveň',
+  max:3,cost:l=>76+l*58,eff:{dmg:0.06}},
+ {id:'graviSpr',t:'gravi',   n:'Křemenná pružina',     d:'+6 % poškození gravimetru za úroveň',
+  max:3,cost:l=>76+l*58,eff:{dmg:0.06}},
+ {id:'rtk',  t:'photo',      n:'RTK modul dronu',      d:'+6 % doletu a rychlosti dronů za úroveň',
   max:3,cost:l=>72+l*54,eff:{fly:0.066}},
- {id:'thermo',t:'photo', n:'Termokamera',            d:'+5 % poškození dronů za úroveň',
-  max:3,cost:l=>65+l*50,eff:{dmg:0.055}},
- {id:'mprism',t:'machine',n:'Prizma na stroji',      d:'+13 % rychlosti rozběhu naváděcí TS za úroveň',
+ {id:'rotSpin',t:'rotlaser', n:'Rychlejší rotor',      d:'+5 % poškození rotačního laseru za úroveň',
+  max:3,cost:l=>76+l*58,eff:{dmg:0.05}},
+ // --- legendarni ---
+ {id:'mprism',t:'machine',   n:'Prizma na stroji',     d:'+13 % rychlosti rozběhu naváděcí TS za úroveň',
   max:3,cost:l=>79+l*58,eff:{ramp:0.138}},
- {id:'freq', t:'gpr',    n:'Vyšší frekvence',        d:'+6 % poškození georadaru za úroveň',
+ {id:'freq', t:'gpr',        n:'Vyšší frekvence',      d:'+6 % poškození georadaru za úroveň',
   max:3,cost:l=>68+l*50,eff:{dmg:0.066}},
- {id:'atrp', t:'multi',  n:'ATRplus',                d:'+13 % podílu z odolnosti cíle za úroveň',
-  max:3,cost:l=>90+l*68,eff:{pct:0.138}}
+ {id:'atrp', t:'multi',      n:'ATRplus',              d:'+13 % podílu z odolnosti cíle za úroveň',
+  max:3,cost:l=>90+l*68,eff:{pct:0.138}},
+ {id:'insarPol',t:'insar',   n:'Polarimetrie',         d:'+6 % poškození radarového snímku za úroveň',
+  max:3,cost:l=>90+l*68,eff:{dmg:0.06}},
+ {id:'baseEt',t:'basecal',   n:'Etalonové měřítko',    d:'+10 % zpřesnění, které základna dává všem, za úroveň',
+  max:3,cost:l=>90+l*68,eff:{ball:0.10}},
+ // --- hrdinove ---
+ {id:'vanSusp',t:'scanvan',  n:'Odpružený podvozek',   d:'+5 % poškození skenovacího vozu za úroveň',
+  max:3,cost:l=>90+l*68,eff:{dmg:0.05}},
+ {id:'mastServo',t:'masttheo',n:'Servo na stožáru',    d:'+3 % šance na dvojnásobnou ránu za úroveň',
+  max:3,cost:l=>90+l*68,eff:{crit:0.032}}
 ];
 function accEff(type,key){
  let v=0;
@@ -13371,7 +13415,8 @@ function nearestPathIdx(t){
 }
 function updateMark(t,dt){
  if(t.jam)return;
- const R=rngOf(t)*(hasPerk(t,'aura2')?1.5:1), mk=T.thermal.mk[t.l]*(hasPerk(t,'markstrong')?2:1);
+ const R=rngOf(t)*(hasPerk(t,'aura2')?1.5:1),
+   mk=T.thermal.mk[t.l]*(hasPerk(t,'markstrong')?2:1)*(1+accEff('thermal','mk'));
  t.pulse=(t.pulse||0)+dt;
  S.enemies.forEach(e=>{ if(e.dead)return;
    const q=pathPos(e.p,e.pi);
@@ -13525,7 +13570,7 @@ function recalcBuffs(){
    }));
  });
  S.towers.filter(t=>t.k==='basecal').forEach(g=>{
-   const bd=T.basecal.ball[g.l]*(hasPerk(g,'supdmg')?1.5:1);
+   const bd=T.basecal.ball[g.l]*(hasPerk(g,'supdmg')?1.5:1)*(1+accEff('basecal','ball'));
    S.towers.forEach(t=>{ if(t!==g)t.buffD+=bd; });
  });
  // Korekce delek: meteostanice posiluje sousedy v dosahu.
@@ -13538,7 +13583,7 @@ function recalcBuffs(){
    S.towers.forEach(t=>{ if(t===g)return;
      if(Math.hypot(ccx(t)-ccx(g),ccy(t)-ccy(g))<=R+.001){
        t.buffT+=T.prism.bt[g.l]*(hasPerk(g,'boostrate')?1.6:1);
-       t.buffR+=T.prism.br[g.l];
+       t.buffR+=T.prism.br[g.l]*(1+accEff('prism','br'));
        if(hasPerk(g,'boostdmg'))t.buffD+=.15;}});
  });
  S.towers.forEach((t,i)=>{ if((t.syn||[]).length>(prevSyn[i]||0)){
@@ -21856,7 +21901,9 @@ function renderAcc(){
    return;
  }
  ACC.forEach(a=>{
-   if(!hasType(a.t))return;
+   // Hrdina se do SAVE.types nikdy nedostane, takze hasType() by jeho
+   // prislusenstvi schovalo navzdy (presne to se delo dronu).
+   if(jeHrdina(a.t)?!hrdOdemcen(a.t):!hasType(a.t))return;
    const lv=SAVE.acc[a.id]||0, cost=lv>=a.max?null:a.cost(lv);
    const row=document.createElement('div');row.className='up accUp';
    row.style.setProperty('--ak',T[a.t].c);
