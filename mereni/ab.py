@@ -17,7 +17,10 @@ def run(url):
         pg.evaluate("document.getElementById('intro').classList.remove('on');SAVE.opts.snd=0;SAVE.opts.mus=0;")
         pg.add_script_tag(content=BOT)
         pg.evaluate("window.__botInit()")
-        for m in range(12):
+        # Pocet uzemi uz neni dvanact - od v102 je jich patnact. Cislo se
+        # bere z MAPS, at mereni nezapomene na nove uzemi.
+        pocet = pg.evaluate("MAPS.length")
+        for m in range(pocet):
             res["u%d" % m] = pg.evaluate("m=>window.__bot2(m,false)", m)
         res["errors"] = errs[:8]
         b.close()
@@ -45,7 +48,8 @@ def souhrn(res, jmeno):
             first = next((e["w"] for e in lg if e["ztrata"] > 0), lg[-1]["w"])
             rozpeti.append(lg[-1]["w"] - first + 1)
     print("--- %s" % jmeno)
-    print("  vyher: %d/12   etap: %d" % (vyhry, etap))
+    uzemi = len([k for k in res if k != "errors"])
+    print("  vyher: %d/%d   etap: %d" % (vyhry, uzemi, etap))
     print("  etap bez ztraty: %d (%.1f %%)" % (nula, nula / etap * 100))
     print("  etap s castecnou ztratou: %d (%.1f %%)" % (cast, cast / etap * 100))
     print("  etap od prvni ztraty do konce (medián): %s  prumer %.1f" % (
