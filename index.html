@@ -9612,7 +9612,9 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
    80 px a nejdelsi nazev v ni ma rezervu +13,6 px pri BEZNEM prostrkani.
    Trojice taky sedi k rade hrdinu pod tim, ktera uz tri sloupce ma. */
 @media (max-width:360px){
-  #vbPane0 .vbGrp--pri #deckRow{grid-template-columns:repeat(3,1fr);gap:6px}
+  /* Po zruseni vnorenych rameckov (v102) ma prihradka i pri 360 px vic
+     mista nez driv na 390 px, takze uz neni duvod lamat pet pristroju
+     na 3+2. Radek zustava jen na prostrkani nazvu. */
   #deckRow .dslot .dn{margin-left:0;margin-right:0;letter-spacing:-.02em}
 }
 
@@ -9662,6 +9664,74 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
    pocita velikost pole. Je siroky pres celou obrazovku a vede jen na zalozku
    Etapa, dostupnou i z panelu. */
 #game #tut .tuX{min-height:44px;height:44px}
+/* ====================================================================
+   v102 — VYBAVENI: pryc s ramecky, sestava -> metody -> sbirka
+   --------------------------------------------------------------------
+   Vizual z v98 postavil ramecek do ramecku do ramecku (.page > .hlavni
+   .vbSet > .vbGrp). Kazdy pridal lem i odsazeni a protoze jsou vnorene,
+   SCITALY se: z 390 px displeje zbylo na dlazdice 316 px, tedy 74 px
+   (19 %) padlo na lemy. Na peti sloupcich se to projevi petkrat.
+   Ramecky proto jdou pryc a skupiny rozlisuje jen nadpis s prouzkem.
+   ==================================================================== */
+#vbPane0 .vbSet{border:0;border-radius:0;padding:0;background:none;box-shadow:none}
+#vbPane0 .vbGrp{padding:0;border:0;border-radius:0;background:none;
+  box-shadow:none;margin-top:var(--m3)}
+#vbPane0 .vbBar{border-bottom:0;padding-bottom:0;margin-bottom:var(--m2)}
+html[data-theme="hc"] #vbPane0 .vbGrp{background:none;border:0;box-shadow:none}
+html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
+/* Prepinac sestav uz neni pilulka v pilulce. */
+.vbSeg{padding:0;background:none;border:0;box-shadow:none;gap:6px}
+.vbSeg button{border:var(--w2) solid var(--stroke);border-radius:var(--r1);
+  background:linear-gradient(180deg,var(--s3),var(--s2))}
+/* Dlazdice pristroju: 2 id + 1 trida, aby prebily radek 7966. */
+#vbPane0 .vbGrp--pri #deckRow{gap:6px}
+#vbPane0 #deckRow .dslot canvas{width:46px;height:46px}
+/* Nazev v prihradce mel ZAPORNY okraj -3 px, aby se 'Dalkomer' vesel.
+   Text tim ale prelezl pres lem dlazdice VEN (mereno: -2 px vlevo i
+   vpravo) a na 320 px se navic orezaval o 4 px bez moznosti rolovat.
+   Po zruseni rameckov je prihradka 68 px misto 59, takze hack neni
+   potreba: okraje na nulu a nazev se smi zalomit do dvou radku. */
+#deckRow .dslot .dn{margin-left:0;margin-right:0;
+  white-space:normal;line-height:1.12;overflow:visible;
+  letter-spacing:-.02em;word-break:break-word}
+
+/* ---------- C7: JEDEN hrdina misto peti stejnych karet ---------- */
+#hrdRow{display:block}
+.hslotJeden{display:flex;flex-direction:row;align-items:center;gap:var(--m2);
+  width:100%;min-height:0;height:auto;padding:var(--m2);text-align:left;
+  justify-content:flex-start}
+.hslotJeden canvas{flex:0 0 auto;margin:0}
+.hslotJeden .hTx{flex:1 1 auto;min-width:0;display:flex;
+  flex-direction:column;gap:2px}
+.hslotJeden .hn{white-space:normal}
+.hslotJeden .hon{position:static;align-self:flex-start;margin-top:2px}
+.hAkce{flex:0 0 auto;display:flex;flex-direction:column;gap:6px}
+.hAkce .hDet{position:static;margin:0;margin-top:0;white-space:nowrap;
+  padding:7px 10px;font-size:calc(12px*var(--fs,1))}
+.hrdRow2 .rezIc canvas{width:52px;height:52px;display:block}
+.ptDet{margin-left:auto;align-self:center}
+
+/* ---------- C12: sbirka pod sestavou, mensi dlazdice ---------- */
+#vbPane0 .vbGrp--sb{--ak:var(--brass)}
+#vbPane0 .cgrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));
+  gap:var(--m1)}
+#vbPane0 .vbCollBody{max-height:none}
+#vbPane0 .cgrid .rcard{padding-bottom:var(--m1)}
+#vbPane0 .cgrid .rcard canvas{width:44px;height:44px}
+/* Pet moznosti razeni se do jedne rady nevejde (posledni se orezavala),
+   takze se rada smi zalomit a knofliky si berou jen sirku textu. */
+.filtRow--raz{margin-top:6px;flex-wrap:wrap;overflow-x:visible;
+  border-radius:var(--r1);row-gap:4px}
+.filtRow--raz button{flex:0 0 auto;padding:8px 11px;min-height:34px;
+  font-size:calc(11px*var(--fs,1));letter-spacing:0}
+@media (max-width:360px){
+  #vbPane0 .cgrid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+}
+/* Dlazdice sbirky uz nema tlacitka - misto nich jen tichy stitek. */
+.rReady{margin:6px var(--m2) 0;font-size:calc(11px*var(--fs,1));
+  font-weight:800;color:var(--laserL);text-align:center}
+.tiDeckBtn{margin-top:8px}
+.tiDeckBtn.on{--plA:var(--brassL,#e8c67a);--plB:var(--brass);color:#2a1f06}
 </style>
 </head>
 <body>
@@ -9771,7 +9841,6 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
 
     <div class="filtRow vbTabs" id="vbTabs">
       <button type="button" data-vb="0" class="on">Sestava</button>
-      <button type="button" data-vb="1">Sbírka</button>
       <button type="button" data-vb="2">Příslušenství</button>
     </div>
 
@@ -9803,7 +9872,6 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
       <div class="vbGrp vbGrp--hrd">
        <div class="vbLbl">Hrdina <span id="hrdHint"></span></div>
        <div id="hrdRow"></div>
-       <p class="vbOne">Do měření si bereš právě jednoho.</p>
       </div>
 
       <div class="vbGrp vbGrp--met">
@@ -9811,47 +9879,35 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
        <div id="abilRow"></div>
        <p class="vbOne">Do měření si bereš dvě metody.</p>
       </div>
+
+      <!-- SBIRKA se od v102 stehuje SEM, pod sestavu (drive vlastni
+           zalozka). Dlazdice jsou mensi a "do sestavy"/"vylepsit" se
+           resi az po klepnuti na pristroj, v jeho detailu. -->
+      <div class="vbGrp vbGrp--sb">
+       <div class="vbLbl">Sbírka <span id="collHint"></span></div>
+       <div class="filtRow" id="collFilter">
+        <button data-f="all" class="on">Vše</button>
+        <button data-f="have">Vlastním</button>
+        <button data-f="miss">Chybí mi</button>
+        <button data-f="deck">V sestavě</button>
+       </div>
+       <div class="filtRow filtRow--raz" id="collSort">
+        <button data-s="def" class="on">Výchozí</button>
+        <button data-s="rar">Vzácnost</button>
+        <button data-s="lvl">Úroveň</button>
+        <button data-s="new">Nově odemčené</button>
+        <button data-s="use">Nejvíc hraju</button>
+       </div>
+       <div id="collBody" class="vbCollBody"></div>
+      </div>
      </div>
 
     </div>
 
     <!-- ===== záložka 2: sbírka přístrojů ===== -->
-    <div class="vbPane vbOff" id="vbPane1">
-     <div class="karta vbCollTop karta--pruh" style="--ak:var(--brass)">
-      <div class="radek radek--rozraz">
-       <div class="vbLbl" id="collHead">Sbírka přístrojů</div>
-       <span class="mince"><b id="collRes">0</b><i>výzkum</i></span>
-      </div>
-      <div class="ownBar">
-       <div><b id="ownHave">0</b><span>vlastníš</span></div>
-       <div><b id="ownLock">0</b><span>čeká v bednách</span></div>
-       <div><b id="ownMax">0</b><span>plně vylepšeno</span></div>
-      </div>
-      <!-- "Vylepsit vse, na co mam" slo pryc: hrac ho oznacil za zbytecne
-           a hromadne vylepseni navic obchazelo volbu specializace, ktera
-           se nabizi na 4. a 8. urovni. -->
-     </div>
-
-     <div class="filtRow" id="collFilter">
-      <button data-f="all" class="on">Vše</button>
-      <button data-f="have">Vlastním</button>
-      <button data-f="miss">Chybí mi</button>
-      <button data-f="deck">V sestavě</button>
-     </div>
-
-     <p class="vbOne vbOne--sirka">Karty padají z beden a polovina z nich míří na přístroje
-       z tvojí sestavy.</p>
-
-     <div class="sbal vbSbal" data-zavreno>
-      <button type="button" class="hlava">K čemu jsou úrovně</button>
-      <div class="telo">
-       <p class="pgNote">Za karty a výzkum zvyšuješ úroveň přístroje — každá dá +8 %
-         poškození a +4 % dosahu <b>natrvalo, ve všech dalších měřeních</b>.</p>
-      </div>
-     </div>
-
-     <div id="collBody" class="vbCollBody"></div>
-    </div>
+    <!-- Zalozka "Sbirka" (#vbPane1) zanikla ve v102 - jeji obsah
+         je nove primo pod sestavou. Prehled "vlastnis / ceka v
+         bednach / plne vylepseno" sel pryc na prani uzivatele. -->
 
     <!-- ===== záložka 3: příslušenství ===== -->
     <div class="vbPane vbOff" id="vbPane2">
@@ -16913,6 +16969,8 @@ function boardTap(ev){
    if(S.cr<cost)return toast('Nedostatek rozpočtu.');
    S.cr-=cost;
    S.towers.push({k,l:M('startlvl')?1:0,c,r:rw,cal:M('presets')?Math.min(4,M('presets')):0,cd:0,buffD:0,buffR:0,buffT:0,spawn:.45,built:performance.now(),paid:cost});
+ // C40: podklad pro razeni sbirky podle toho, co hrac opravdu hraje.
+ SAVE.pouzil=SAVE.pouzil||{}; SAVE.pouzil[k]=(SAVE.pouzil[k]|0)+1;
    rebuildOcc();
    for(let i=0;i<8;i++){const a=Math.random()*6.283,v=30+Math.random()*45;
      S.fx.push({type:'part',x:cx(c),y:cy(rw),vx:Math.cos(a)*v,vy:Math.sin(a)*v-30,
@@ -19491,36 +19549,77 @@ function renderHrd(){
  const h=$('hrdHint');
  if(h)h.textContent=HRDINOVE.filter(hrdOdemcen).length+'/'+HRDINOVE.length+' odemčeno';
  row.innerHTML='';
+ // Do mereni jde vzdy jen JEDEN hrdina (hrdAktivni(), pouziva se na 12874),
+ // ale do v101 se kreslilo vsech pet stejne velkych karet vedle sebe, takze
+ // to vypadalo jako deck peti hrdinu - a zabiralo to 396 z 936 px panelu.
+ const k=hrdAktivni(), def=T[k];
+ const d=document.createElement('div');
+ d.className='hslot on hslotJeden';
+ d.style.setProperty('--hc',def.c);
+ d.appendChild(mini(k,3,90));
+ const tx=document.createElement('div'); tx.className='hTx';
+ const nm=document.createElement('div');nm.className='hn';
+ nm.textContent=def.hn||SHORT[k]||def.n[0];tx.appendChild(nm);
+ const sub=document.createElement('div');sub.className='hs';
+ sub.textContent=def.n[0];tx.appendChild(sub);
+ const bd=document.createElement('div');bd.className='hon';bd.textContent='V TERÉNU';
+ tx.appendChild(bd);
+ d.appendChild(tx);
+ const ak=document.createElement('div'); ak.className='hAkce';
+ const det=document.createElement('button');
+ det.className='hDet';det.type='button';det.textContent='Detail';
+ det.setAttribute('aria-label','Podrobnosti o hrdinovi '+(def.hn||def.n[0]));
+ det.onclick=e=>{e.stopPropagation();snd('ui');openTinfo(k);};
+ const vym=document.createElement('button');
+ vym.className='hDet hVym';vym.type='button';vym.textContent='Vyměnit';
+ vym.onclick=e=>{e.stopPropagation();snd('ui');openHrdPick();};
+ ak.appendChild(det);ak.appendChild(vym);
+ d.appendChild(ak);
+ d.onclick=()=>{snd('ui');openHrdPick();};
+ row.appendChild(d);
+}
+/* Vyber hrdiny - drive slo vybirat primo z peti karet v sestave. */
+function openHrdPick(){
+ const L=$('ptList'); if(!L)return;
+ L.innerHTML='';
+ ptNadpis('Vyber hrdinu');
+ const lead=$('ptLead');
+ if(lead)lead.textContent='Do měření si bereš právě jednoho. '+
+   'Hrdinové se odemykají za poháry na trofejní cestě.';
+ ptSloupec();
+ const akt=hrdAktivni();
  HRDINOVE.forEach(k=>{
-   const def=T[k], ok=hrdOdemcen(k), akt=(hrdAktivni()===k);
+   const def=T[k], ok=hrdOdemcen(k);
    const d=document.createElement('div');
-   d.className='hslot'+(ok?'':' lock')+(akt?' on':'');
-   d.style.setProperty('--hc',def.c);
-   d.appendChild(mini(k,ok?3:0,90));
-   const nm=document.createElement('div');nm.className='hn';nm.textContent=def.hn||SHORT[k]||def.n[0];
-   d.appendChild(nm);
-   const sub=document.createElement('div');sub.className='hs';
-   sub.textContent=ok?def.n[0]:('od '+def.tr+' pohárů');
-   d.appendChild(sub);
-   if(akt){const b=document.createElement('div');b.className='hon';b.textContent='V TERÉNU';d.appendChild(b);}
-   // Hrdinu neslo do verze 92 vubec rozkliknout: klepnuti ho jen vybralo a
-   // zadna cesta k jeho podrobnostem ani k tomu, jak roste, neexistovala.
-   // Bezne pristroje maji '?' v nabidce sestavy, hrdinove nemeli nic.
+   d.className='ptrow hrdRow2'+(k===akt?' on':'')+(ok?'':' nohave');
+   d.style.setProperty('--ak',def.c||'var(--violet)');
+   d.innerHTML='<div class="pi"><div class="pn2">'+(def.hn||SHORT[k]||def.n[0])+
+     (ok?'':'<span class="prar" style="background:var(--ink3)">od '+def.tr+' pohárů</span>')+
+     (k===akt?'<span class="prar">v terénu</span>':'')+'</div>'+
+     '<div class="pd2">'+def.n[0]+'</div></div>';
+   const ik=document.createElement('div'); ik.className='rezIc';
+   ik.appendChild(mini(k,ok?3:0,64));
+   d.insertBefore(ik,d.firstChild);
    const det=document.createElement('button');
-   det.className='hDet';det.textContent='Detail';
-   det.setAttribute('aria-label','Podrobnosti o hrdinovi '+(def.hn||def.n[0]));
+   det.type='button';det.className='hDet ptDet';det.textContent='Detail';
    det.onclick=e=>{e.stopPropagation();snd('ui');openTinfo(k);};
    d.appendChild(det);
    d.onclick=()=>{
      if(!ok)return toast2('Odemkne se na '+def.tr+' pohárech. Máš '+(SAVE.tr||0)+'.');
-     SAVE.hrdOn=k;save();snd('ui');renderHrd();
+     SAVE.hrdOn=k;save();snd('ui');
+     $('pickTower').classList.remove('on');
+     renderHrd();
      toast2(def.n[0]+' — hrdina pro další měření.');
    };
-   row.appendChild(d);
+   L.appendChild(d);
  });
+ $('pickTower').classList.add('on');
 }
 function renderDeck(){
  renderHrd();
+ // Sbirka lezi od v102 na teze strance pod sestavou, takze se musi
+ // prekreslit spolu s ni (drive to delalo prepnuti zalozky).
+ try{ renderColl(); }catch(e){}
  const row=$('deckRow'); if(!row)return;
  SAVE.deck=(SAVE.deck||[]).filter(ownsType).slice(0,DECKMAX);
  const n=SAVE.deck.length;
@@ -20023,6 +20122,28 @@ function openTinfo(k){
      else openTinfo(k);
    };
    up.appendChild(bt);
+ }
+ // Prepinac "do sestavy" se ve v102 presunul sem z dlazdicky ve Sbirce.
+ if(!jeHrdina(k)&&hasType(k)&&((SAVE.cards[k]||0)>0||(SAVE.lvl[k]||0)>0)){
+   const vDecku=(SAVE.deck||[]).indexOf(k)>=0;
+   const sb=document.createElement('button');
+   sb.type='button';
+   sb.className='big tiUpBtn tiDeckBtn'+(vDecku?' on':'');
+   sb.textContent=vDecku?'VYJMOUT ZE SESTAVY':'DO SESTAVY';
+   sb.onclick=function(){
+     const i=SAVE.deck.indexOf(k);
+     if(i>=0){SAVE.deck.splice(i,1);snd('ui');}
+     else{
+       if(SAVE.deck.filter(Boolean).length>=DECKMAX)
+         return toast2('Sestava je plná. Nejdřív z ní něco vyjmi.');
+       SAVE.deck.push(k);snd('merge');
+     }
+     SAVE.deck=SAVE.deck.filter(Boolean).slice(0,DECKMAX);
+     save();
+     try{ renderDeck(); }catch(e){}
+     openTinfo(k);
+   };
+   up.appendChild(sb);
  }
  }
  const tiZnovu=$('tinfo').classList.contains('on')&&window.__tiK===k;
@@ -21581,6 +21702,36 @@ function kaSbalit(h){
 }
 // Funkce upgradeAll() slo pryc s tlacitkem "Vylepsit vse, na co mam"
 // (hrac ho oznacil za zbytecne). Nevolal ji uz nikdo.
+/* --- C40: razeni sbirky -------------------------------------------
+   Hra do v101 nesbirala ani "kdy jsem to odemkl", ani "jak casto to
+   stavim", takze podle nich neslo radit. Obojí se ted zaznamenava:
+   razitko odemceni lazily (poprve, kdy je pristroj videt jako odemceny)
+   a pocet postaveni primo pri stavbe v mereni. */
+function razitkujOdemceni(){
+ SAVE.odemkl=SAVE.odemkl||{};
+ let zmena=false, n=0;
+ for(const k in SAVE.odemkl) n=Math.max(n,SAVE.odemkl[k]|0);
+ ORD.forEach(k=>{ if(hasType(k)&&!SAVE.odemkl[k]){ SAVE.odemkl[k]=++n; zmena=true; } });
+ if(zmena)save();
+}
+function initCollSort(){
+ const row=$('collSort'); if(!row||row.dataset.init)return;
+ row.dataset.init='1';
+ [...row.children].forEach(b=>b.onclick=()=>{
+   window.__collSort=b.dataset.s;
+   [...row.children].forEach(x=>x.classList.toggle('on',x===b));
+   snd('ui');renderColl();
+ });
+}
+function collPorovnej(a,b){
+ const s=window.__collSort||'def';
+ const rar=k=>['c','r','e','l'].indexOf(TRAR[k]||'c');
+ if(s==='rar'){ const d=rar(b)-rar(a); if(d)return d; }
+ else if(s==='lvl'){ const d=(SAVE.lvl[b]||0)-(SAVE.lvl[a]||0); if(d)return d; }
+ else if(s==='new'){ const d=((SAVE.odemkl||{})[b]||0)-((SAVE.odemkl||{})[a]||0); if(d)return d; }
+ else if(s==='use'){ const d=((SAVE.pouzil||{})[b]||0)-((SAVE.pouzil||{})[a]||0); if(d)return d; }
+ return null;   // null = rozhodni vychozim poradim
+}
 function initCollFilter(){
  const row=$('collFilter'); if(!row||row.dataset.init)return;
  row.dataset.init='1';
@@ -21592,20 +21743,22 @@ function initCollFilter(){
 }
 function renderColl(){
  initCollFilter();
- $('collRes').textContent=SAVE.res;
- const b=$('collBody');b.innerHTML='';
+ initCollSort();
+ const b=$('collBody'); if(!b)return; b.innerHTML='';
  const filt=window.__collFilter||'all';
- let nHave=0,nLock=0,nMax=0;
- ORD.forEach(k=>{ const have=(SAVE.cards[k]||0)+(SAVE.lvl[k]||0);
-   if(!hasType(k))nLock++; else if(have>0)nHave++; if((SAVE.lvl[k]||0)>=CARDNEED.length)nMax++; });
- $('ownHave').textContent=nHave;
- $('ownLock').textContent=ORD.length-nHave;
- $('ownMax').textContent=nMax;
+ // Prehled "vlastnis / ceka v bednach / plne vylepseno" sel ve v102 pryc
+ // (uzivatel ho oznacil za zbytecny) - vcetne prvku #collRes/#ownHave/...
+ {const ch=$('collHint');
+  if(ch){const mam=ORD.filter(k=>hasType(k)).length;
+    ch.textContent=mam+' z '+ORD.length;}}
+ razitkujOdemceni();
  const grid=document.createElement('div');grid.className='cgrid';
  const order=ORD.slice().sort((a,b)=>{
    const oa=hasType(a)&&((SAVE.cards[a]||0)+(SAVE.lvl[a]||0))>0?0:hasType(a)?1:2;
    const ob=hasType(b)&&((SAVE.cards[b]||0)+(SAVE.lvl[b]||0))>0?0:hasType(b)?1:2;
-   if(oa!==ob)return oa-ob;
+   if(oa!==ob)return oa-ob;               // vlastnene, pak odemcene, pak zamcene
+   const zvol=collPorovnej(a,b);           // volba hrace ma prednost
+   if(zvol!==null&&zvol!==0)return zvol;
    const ra=['c','r','e','l'].indexOf(TRAR[a]||'c'), rb=['c','r','e','l'].indexOf(TRAR[b]||'c');
    if(ra!==rb)return rb-ra;
    return (SAVE.lvl[b]||0)-(SAVE.lvl[a]||0);
@@ -21656,29 +21809,12 @@ function renderColl(){
        if(SPEC[lv+1])openSpec(k,lv+1); else renderColl();
      };
    }
-   card.appendChild(btn);
+   // VYLEPSIT ani DO SESTAVY uz na dlazdici nejsou: dlazdice tim mela
+   // 292 px vysky a na obrazovku se jich vesly sotva dve rady. Obe akce
+   // jsou v detailu pristroje, ktery se otevre klepnutim (zadani v102).
+   if(can){const zn=document.createElement('div');zn.className='rReady';
+     zn.textContent='lze vylepšit';card.appendChild(zn);}
    card.onclick=()=>{snd('ui');openTinfo(k);};
-   // Prepinac "do sestavy" primo na karte ve Sbirce - jinak se musel hrac
-   // vracet na zalozku Sestava a otevirat vyber.
-   if(owned){
-     const sb=document.createElement('button');
-     sb.className='rDeckBtn'+(inDeck?' on':'');
-     sb.type='button';
-     sb.textContent=inDeck?'V SESTAVĚ ✓':'DO SESTAVY';
-     sb.onclick=e=>{
-       e.stopPropagation();
-       const i=SAVE.deck.indexOf(k);
-       if(i>=0){SAVE.deck.splice(i,1);snd('ui');}
-       else{
-         if(SAVE.deck.filter(Boolean).length>=DECKMAX)
-           return toast2('Sestava je plná. Nejdřív z ní něco vyjmi.');
-         SAVE.deck.push(k);snd('merge');
-       }
-       SAVE.deck=SAVE.deck.filter(Boolean).slice(0,DECKMAX);
-       save();renderColl();renderDeck();
-     };
-     card.appendChild(sb);
-   }
    grid.appendChild(card);
  });
  b.appendChild(grid);
