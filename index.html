@@ -7691,6 +7691,31 @@ html[data-theme="hc"] #pgTeren .tProfil .arenaBar #arenaFill{background:#06131c}
 }
 html[data-theme="hc"] #playBar .playBig b{-webkit-text-stroke:0}
 
+/* --- v102: POKRACOVAT bylo tmave hned trikrat naraz -------------------
+   Vypln #06280f + obrys 1,6 px var(--stroke) (tez tmavy) + stin 2 px dolu.
+   U SVETLEHO pisma obrys tvar oddeli, u tmave zeleneho ho zalepi, takze se
+   pri 21 px v kulatem tucnem rezu pismena slevaji. Uprava z v100 ubrala
+   vahu a silu obrysu, ale nechala ho tmavy. Obrys pryc, podklad SVETLY
+   (zelen tlacitka je svetla), vaha 700 a velikost, ktera smi na uzkem
+   telefonu klesnout, aby se desetiznakove POKRACOVAT vzdy veslo. */
+#playBar .playBig b,
+#playBar #playLabel{
+  font-weight:700;
+  -webkit-text-stroke:0;
+  letter-spacing:.015em;
+  font-size:clamp(15px, calc(19px*var(--fs,1)), calc(21px*var(--fs,1)));
+  color:#05300f;
+  text-shadow:0 1px 0 rgba(255,255,255,.55);
+  white-space:nowrap;
+}
+html[data-theme="hc"] #playBar .playBig b,
+html[data-theme="hc"] #playBar #playLabel{
+  color:#000;text-shadow:0 1px 0 rgba(255,255,255,.6);
+}
+/* Volba obtiznosti vyzvy uvnitr vyberu rezimu. */
+.mpTiers{display:flex;gap:6px;margin-top:var(--m2);flex-wrap:wrap}
+.mpTiers button{flex:1 1 0;min-width:84px}
+
 /* Nad nazvem rezimu je slovo "Rezim", aby bylo poznat, ze KAMPAN je volba. */
 #playBar .modeChip .mcK{
   display:block;
@@ -9860,7 +9885,6 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
     </div>
     <div class="tPod">
      <p class="tTip">Začínáš dole a propracováváš se nahoru. Klepni na území a vydej se měřit.</p>
-     <button type="button" id="worldFullBtn" class="tCela">CELÁ TRASA</button>
     </div>
 
     <button class="big key hide" id="bResume">POKRAČOVAT V MĚŘENÍ</button>
@@ -9893,13 +9917,9 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
      <div id="dailyBox" class="dailyJob"></div>
     </div>
 
-    <!-- 4. zastavka: REZIMY. Tri sekce pres celou sirku -> jedna karuselka. -->
-    <div class="secTitle tRezimyN">Režimy</div>
-    <div class="karuselka karuselka--siroka tRezimy">
-     <div id="bossCard"></div>
-     <div id="sprintCard"></div>
-     <div id="chalCard"></div>
-    </div>
+    <!-- Spodni seznam rezimu byl od v102 pryc: byl to doslovny dvojnik
+         vyberu rezimu u tlacitka HRAT (tytez volani newRun se stejnymi
+         parametry). Volba obtiznosti vyzvy se presunula do openModePick. -->
 
     <p class="tVer">GeoGame verze <span class="verTxt">81</span></p>
 
@@ -9998,7 +10018,6 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
       <div class="telo"><div id="achDoneList"></div></div>
     </div>
 
-    <button class="big" id="bOpt"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>Nastavení</button>
    </section>
 
   </div>
@@ -13935,12 +13954,18 @@ function terrain(g,W,H,seed,small){
   zg.addColorStop(0,shade(p.bg,.045));zg.addColorStop(1,shade(p.bg,-.055));
   g.fillStyle=zg;}
  g.fillRect(0,0,W,H);
- // vodní plocha
+ // SVETLINA (driv tu bylo dekorativni jezero)
+ // Kreslilo se barvou p.water, coz je ve vsech tri paletach PRESNE tataz
+ // hodnota jako p.terWater u skutecneho vodniho pole - a jeste bez alfy .62,
+ // kterou ma prava voda, takze dekorace byla SYTEJSI nez opravdovy rybnik.
+ // Hrac na ni rozumne necekal stavbu (canBuild ji ale povoluje, protoze
+ // se S.ter nema nic spolecneho). Zadna modr, ktera neni voda.
  if(!small){
  g.save();g.beginPath();
  const wx=W*(.16+rnd(seed+3)*.6),wy=H*(.12+rnd(seed+5)*.7),wr=Math.min(W,H)*(.10+rnd(seed+7)*.06);
  g.ellipse(wx,wy,wr*1.5,wr,rnd(seed+9)*3,0,7);
- g.fillStyle=p.water;g.fill();g.strokeStyle=p.waterL;g.lineWidth=1;g.stroke();
+ g.globalAlpha=.45;g.fillStyle=p.c2;g.fill();
+ g.globalAlpha=.7;g.strokeStyle=p.c1;g.lineWidth=1;g.stroke();
  g.restore(); }
  // travnaté chomáče
  if(!small){
@@ -18876,6 +18901,23 @@ function openModePick(){
    d.onclick=()=>{
      if(zam)return toast2('Tenhle režim se otevře, až '+zam+'.');
      SAVE.mode=m.id;save();snd('ui');$('pickTower').classList.remove('on');renderPlay();};
+   // Obtiznost vyzvy sla driv nastavit JEDINE ze spodni karty #chalCard,
+   // ktera od v102 neexistuje - bez tohohle by SAVE.chalTier zamrzl na 0.
+   if(m.id==='chal'&&!zam){
+     const row=document.createElement('div'); row.className='chTiers mpTiers';
+     CHTIERS.forEach(tr=>{
+       const b2=document.createElement('button'); b2.type='button';
+       b2.className=(tr.id===chalTier()?'sel':'');
+       b2.innerHTML='<b>'+tr.n+'</b><s>'+tr.d+'</s><i>'+CRATES[tr.rew].n+'</i>';
+       b2.onclick=(ev)=>{
+         ev.stopPropagation();
+         snd('ui'); SAVE.mode='chal'; SAVE.chalTier=tr.id; save();
+         $('pickTower').classList.remove('on'); renderPlay();
+       };
+       row.appendChild(b2);
+     });
+     d.appendChild(row);
+   }
    L.appendChild(d);
  });
  $('pickTower').classList.add('on');
@@ -19042,12 +19084,16 @@ function initPager(){
    }
  },{passive:false});
  const end=()=>{
-   if(x0===null){mode=0;return;}
-   const moved=dx; const wasH=mode===1;
+   const wasH=(mode===1), moved=dx;
    x0=null;mode=0;dx=0;
+   // goPage() konci na window.scrollTo(0,0), takze se SMI volat jen tehdy,
+   // kdyz slo opravdu o vodorovny tah po strankach menu. Driv se volalo
+   // i pri kazdem klepnuti mimo tlacitko a hlavne pri 'pointercancel',
+   // kterym si prohlizec bere gesto pro SVISLE rolovani - hrace to
+   // uprostred rolovani v Rezimech vykoplo na zacatek stranky.
+   if(!wasH)return;
    $('pager').style.transition='';
-   if(wasH&&Math.abs(moved)>50)goPage(PAGE+(moved<0?1:-1));
-   else goPage(PAGE);
+   goPage(Math.abs(moved)>50 ? PAGE+(moved<0?1:-1) : PAGE);
  };
  wrap.addEventListener('pointerup',end);
  wrap.addEventListener('pointercancel',end);
@@ -22670,7 +22716,6 @@ $('bLab').onclick=()=>{renderLab();show('lab');};
 $('labBack').onclick=()=>{zpetDoMenu();};
 $('bCdx').onclick=()=>{snd('ui');renderCodex();show('cdxs');};
 mapaPripoj($('world'),function(){return MAPA_ROZVRH;},null);
-$('worldFullBtn').onclick=openWorldFull;
 $('worldFullX').onclick=function(){$('worldFull').classList.remove('on');};
 $('worldFullClose').onclick=function(){$('worldFull').classList.remove('on');};
 $('rzInfoX').onclick=function(){$('rezimInfo').classList.remove('on');};
@@ -22789,7 +22834,6 @@ $('odOk').onclick=()=>{$('odOv').classList.remove('on');};
 $('crOk').onclick=()=>{$('crates').classList.remove('on');window.__crates=null;renderTitle();};
 $('tkClose').onclick=()=>{ if(TK&&TK.motion)window.removeEventListener('deviceorientation',TK.motion);
  TK=null;$('task').classList.remove('on');renderSlots();};
-$('bOpt').onclick=()=>{snd('ui');renderOpts();show('opts');};
 $('optBack').onclick=()=>{zpetDoMenu();};
 $('bResume').onclick=()=>{snd('ui');if(loadRun()){show('game');resize();ui();window.scrollTo(0,0);}else{renderTitle();}};
 $('cdxBack').onclick=()=>{zpetDoMenu();};
