@@ -12505,21 +12505,35 @@ function accEff(type,key){
  return v;
 }
 
+/* Cena kazde dalsi urovne je o 38 % vyssi a zaokrouhluje se na petky.
+   Do v101 byl cenik linearni a zacinal na 9-26 vyzkumu, tedy na zlomku
+   jedine dokoncene zakazky (67-97). Cela laborka stala 4 459, zatimco
+   jednorazove odmeny (uspechy 5 520 + hvezdy 1 790 + trofejni cesta 1 760)
+   davaji 9 070 - vykoupila se 2x driv, nez hrac dojde na tezka uzemi,
+   a od te chvile uz zadna volba "do ceho investovat" neexistovala.
+   Nove stoji 69 955, takze pri ~1 200 vyzkumu denne je to prace na tydny
+   a hrac MUSI volit. */
+const labCena=b=>l=>Math.round(b*Math.pow(1.38,l)/5)*5;
+const LAB_A=100, LAB_B=75, LAB_C=55;   // silne / stredni / podpurne
 const META=[
  // --- zaklad mereni ---
- {id:'budget',n:'Provozní záloha',d:'+6 startovního rozpočtu',max:10,cost:l=>10+l*4},
- {id:'cap',n:'Stálý tým',d:'+1 základní kapacita stanovisek',max:6,cost:l=>21+l*14},
- {id:'prec',n:'Etalon',d:'+2,5 % poškození po celé měření',max:10,cost:l=>18+l*6},
- {id:'rng',n:'Dalekohledy',d:'+2 % dosahu všech stanovisek',max:10,cost:l=>17+l*6},
- {id:'rate',n:'Servisní prohlídky',d:'+2 % rychlosti měření',max:10,cost:l=>19+l*7},
- {id:'crit',n:'Měření ve dvou polohách',d:'+2 % šance na dvojnásobnou ránu',max:8,cost:l=>24+l*11},
+ {id:'budget',n:'Provozní záloha',d:'+6 startovního rozpočtu',max:10,cost:labCena(LAB_B)},
+ {id:'cap',n:'Stálý tým',d:'+1 základní kapacita stanovisek za dvě úrovně',max:10,cost:labCena(LAB_A)},
+ {id:'prec',n:'Etalon',d:'+2,5 % poškození po celé měření',max:10,cost:labCena(LAB_A)},
+ {id:'rng',n:'Dalekohledy',d:'+2 % dosahu všech stanovisek',max:10,cost:labCena(LAB_B)},
+ {id:'rate',n:'Servisní prohlídky',d:'+2 % rychlosti měření',max:10,cost:labCena(LAB_A)},
+ {id:'crit',n:'Měření ve dvou polohách',d:'+1,5 % šance na dvojnásobnou ránu',max:10,cost:labCena(LAB_A)},
+ {id:'boss',n:'Rozbor odchylek',d:'+2 % poškození bossům a elitám',max:10,cost:labCena(LAB_B)},
  // --- prubeh mereni ---
- {id:'acd',n:'Rychlonabíjení',d:'+1 náboj metody za dvě úrovně',max:8,cost:l=>15+l*4},
- {id:'rep',n:'Údržba značek',d:'+1 % přesnosti po každé etapě',max:6,cost:l=>26+l*16},
+ {id:'acd',n:'Rychlonabíjení',d:'+1 náboj metody za dvě úrovně',max:10,cost:labCena(LAB_B)},
+ {id:'apow',n:'Metodika měření',d:'+2 % síly všech měřických metod',max:10,cost:labCena(LAB_B)},
+ {id:'rep',n:'Údržba značek',d:'+1 % přesnosti po etapě za úroveň',max:10,cost:labCena(LAB_C)},
  // --- ekonomika ---
- {id:'disc',n:'Vlastní dílna',d:'Přístroje o 3 % levnější',max:10,cost:l=>9+l*4},
- {id:'resb',n:'Grantové oddělení',d:'+6 % získaného výzkumu',max:10,cost:l=>12+l*4},
- {id:'mez',n:'Styk s katastrem',d:'+1 mezník za dokončené území',max:5,cost:l=>60+l*45}
+ {id:'inc',n:'Průběžná fakturace',d:'+1,2 rozpočtu za každou etapu',max:10,cost:labCena(LAB_C)},
+ {id:'disc',n:'Vlastní dílna',d:'Přístroje o 2 % levnější',max:10,cost:labCena(LAB_C)},
+ {id:'resb',n:'Grantové oddělení',d:'+5 % získaného výzkumu',max:10,cost:labCena(LAB_C)},
+ {id:'slot',n:'Expediční sklad',d:'Bedny se odemykají o 3 % rychleji',max:10,cost:labCena(LAB_C)},
+ {id:'mez',n:'Styk s katastrem',d:'+1 mezník za dokončené území za dvě úrovně',max:10,cost:labCena(LAB_C)}
 ];
 
 // Vychozi stav laborky se odvodi ze seznamu META, at pridani polozky
@@ -12573,6 +12587,20 @@ function normalize(s){
        const _p={budget:1.5,cap:1,prec:1.2,acd:2,disc:2,resb:2};
        for(const _k in _p)SAVE.meta[_k]=Math.min(6,Math.round((SAVE.meta[_k]||0)*_p[_k]));
        SAVE.metaV6=1;
+     }
+     // v102: cely cenik laborky je jinde a stupnu je vsude deset. Uz koupene
+     // urovne se ODKOUPI za stare ceny, at hrac o nic neprijde, a poridi si
+     // je znovu podle noveho ceniku. MUSI bezet az za metaV6.
+     if(!SAVE.metaV102){
+       const _st={budget:[10,4,10],cap:[21,14,6],prec:[18,6,10],rng:[17,6,10],
+         rate:[19,7,10],crit:[24,11,8],acd:[15,4,8],rep:[26,16,6],
+         disc:[9,4,10],resb:[12,4,10],mez:[60,45,5]};
+       let _v=0;
+       for(const _k in _st){ const _lv=Math.min(SAVE.meta[_k]||0,_st[_k][2]);
+         for(let _i=0;_i<_lv;_i++)_v+=_st[_k][0]+_i*_st[_k][1];
+         SAVE.meta[_k]=0; }
+       SAVE.res=(SAVE.res||0)+_v;
+       SAVE.metaV102=1;
      }
      SAVE.opts=Object.assign({snd:1,vib:1,spd:1,mus:1,auto:0,board:1,vol:2,fs:0,theme:'day'},s.opts||{});
      ['best','stars','endless','won'].forEach(k=>{
@@ -15218,6 +15246,8 @@ function shieldOf(e){
  return sh;
 }
 function hurt(e,amount,pierce,crit,src){
+ // Laborka 'Rozbor odchylek': + poskozeni bossum a elitam.
+ if(SAVE.meta.boss&&(e.k==='boss'||e.elite))amount*=(1+.02*SAVE.meta.boss);
  if(src){
    if(hasPerk(src,'g_first')&&e.hp>=e.mhp*.999)amount*=1.4;
    if(hasPerk(src,'g_low')&&e.hp<=e.mhp*.30)amount*=1.5;
@@ -15525,7 +15555,7 @@ function myAbils(){
 }
 function abilLv(id){return SAVE.abilLvl[id]||0;}
 function abilUpCost(id){const l=abilLv(id);return l>=4?null:60+l*70;}
-function abilPow(id){return 1+.18*abilLv(id);}
+function abilPow(id){return (1+.18*abilLv(id))*(1+.02*(SAVE.meta.apow||0));}
 // Zakladni pocet naboju uz NENI dva pro vsechny - viz komentar u ABIL.
 function abilNab(id){ const a=ABIL.find(x=>x.id===id); return (a&&a.nab)||3; }
 function naboju(n){ return n+' '+(n===1?'náboj':(n<5?'náboje':'nábojů')); }
@@ -15975,6 +16005,8 @@ function endWave(){
  // Radiomodem pridava 2,2 za stanici, takze bonus vysel zlomkovy a hra hlasila
  // "+18.2 rozpoctu". Rozpocet je cele cislo, zaokrouhli se az tady, aby se
  // po ceste nic neztratilo.
+ // Laborka 'Prubezna fakturace': pevna dotace za kazdou etapu.
+ bonus+=1.2*(SAVE.meta.inc||0);
  bonus=Math.round(bonus);
  // Kdo drzi trasu daleko od nuloveho bodu, dostane zaplaceno. Je to jediny
  // duvod stavet vys po trase misto tesne pred cil - a zaroven to dela z etapy
@@ -20322,7 +20354,9 @@ function renderSlots(){
          SAVE.slots.splice(i,1);save();showCrate([cr]);renderSlots();renderTitle();
        } else if(state==='idle'){
          if(anyUnlocking){toast2('Odemyká se jiná bedna. Počkej, nebo ji urychli geodetickou úlohou.');return;}
-         sl.end=Date.now()+c.min*60000;save();snd('ui');
+         // Laborka 'Expedicni sklad': bedny se odemykaji rychleji.
+        sl.end=Date.now()+c.min*60000*Math.max(.4,1-.03*(SAVE.meta.slot||0));
+        save();snd('ui');
          toast2(c.n+' se otevře za '+fmtTime(c.min*60000)+'. Čas zkrátíš geodetickou úlohou.');
          renderSlots();
        } else {
@@ -20971,10 +21005,15 @@ const LABIC={
  rate:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13V8.4M9.6 2.4h4.8"/></svg>',
  crit:'<svg viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6"/><path d="M4 6.5 9 11.5 12.5 8"/></svg>',
  rep:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>',
- mez:'<svg viewBox="0 0 24 24"><path d="M12 2.6 16.4 6v11.4H7.6V6z"/><path d="M4.4 20.4h15.2"/></svg>'
+ mez:'<svg viewBox="0 0 24 24"><path d="M12 2.6 16.4 6v11.4H7.6V6z"/><path d="M4.4 20.4h15.2"/></svg>',
+ apow:'<svg viewBox="0 0 24 24"><path d="M4 19 9 8l3 6 2-3 6 8z"/><circle cx="9" cy="5" r="2"/></svg>',
+ boss:'<svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.4 3.4 7.6 8 9 4.6-1.4 8-4.6 8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
+ inc:'<svg viewBox="0 0 24 24"><path d="M4 19h16M6 15l4-5 3 3 5-7"/><path d="M18 6h3v3"/></svg>',
+ slot:'<svg viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5v7L12 20l-9-4.5z"/><path d="M3 8.5 12 13l9-4.5M12 13v7"/></svg>'
 };
 const LABC={budget:'brass',cap:'violet',prec:'tape',acd:'sky',disc:'moss',resb:'laser',
- rng:'sky',rate:'laser',crit:'tape',rep:'moss',mez:'violet'};
+ rng:'sky',rate:'laser',crit:'tape',rep:'moss',mez:'violet',
+ apow:'laser',boss:'tape',inc:'brass',slot:'sky'};
 function renderLabPeek(){
  const el=$('labPeek'); if(!el)return;
  el.innerHTML=META.map(u=>{
