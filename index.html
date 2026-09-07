@@ -132,11 +132,11 @@ html[data-theme="night"]{
 /* lesk přes horní hranu karet */
 .pan:after,.map:after,#profile:after,.dq:after,.slot:after,.todoI:after,.ach:after,
 .starRew:after,.aslot:after,.dslot:after,#seasonBox:after,#sprintCard:after,#bossCard:after,
-#chalCard:after,.foldSec:after{content:'';position:absolute;left:0;right:0;top:0;height:42%;
+#chalCard:after,.foldSec:after,.pfKarta:after{content:'';position:absolute;left:0;right:0;top:0;height:42%;
   background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0));
   pointer-events:none;border-radius:inherit}
 #profile,.dq,.slot,.todoI,.ach,.starRew,.aslot,.dslot,#seasonBox,#sprintCard,#bossCard,
-#chalCard,.foldSec{position:relative;overflow:hidden}
+#chalCard,.foldSec,.pfKarta{position:relative;overflow:hidden}
 /* displejové písmo pro nadpisy a čísla: systémová tučná gro­teska s fallbackem */
 :root{
   /* Volba Nastaveni -> Velikost pisma. 1 = jak to bylo navrzeno.
@@ -2792,6 +2792,11 @@ html[data-theme="hc"] .ov .box{background:#fff}
   touch-action:pan-y}
 html[data-theme="hc"] .ov.ovCela{background:#fff}
 html[data-theme="hc"] .ov.ovCela .box{background:#fff}
+#profOv .box{
+  background:
+    radial-gradient(90% 40% at 50% 0%,color-mix(in srgb,var(--brass) 12%,transparent),transparent 70%),
+    linear-gradient(180deg,var(--s2) 0%,var(--s1) 100%)}
+html[data-theme="hc"] #profOv .box{background:#fff}
 /* Hlavicka celoobrazovkoveho okna zustava viset nahore. */
 .ovCela .celaHlava{position:sticky;top:calc(-1*var(--m3));z-index:3;
   margin:calc(-1*var(--m3)) calc(-1*var(--m3)) var(--m2);
@@ -2806,7 +2811,18 @@ html[data-theme="hc"] .ov.ovCela .box{background:#fff}
   width:100%;margin-top:var(--m2)}
 #profTelo{display:flex;flex-direction:column;gap:var(--m2)}
 .pfKarta{display:grid;grid-template-columns:72px 1fr;gap:var(--m3);align-items:center;
-  background:linear-gradient(150deg,var(--s3),var(--s2));
+  /* v102: jedina plocha karta mezi kartami, ktere vsechny maji texturu,
+     akcentni prouzek a lesk (#profile/#bossCard/#sprintCard/.dailyJob).
+     Mrizka 22 px je zmensena kopie site z #bgPlast:after - hra tim kresli
+     "geodeticky list", takze je to jeji vlastni jazyk; mosazne svetlo vlevo
+     nahore navazuje na mosazny kotouc .pfIc pod nim. */
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.055) 0 1px,transparent 1px 22px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.055) 0 1px,transparent 1px 22px),
+    radial-gradient(120% 150% at 16% -10%,color-mix(in srgb,var(--brass) 24%,transparent),transparent 64%),
+    linear-gradient(150deg,var(--s3),var(--s2));
+  box-shadow:inset 4px 0 0 var(--brass),inset 0 3px 0 rgba(255,255,255,.10),
+             inset 0 -7px 0 rgba(6,12,32,.35);
   border:var(--w3) solid var(--stroke);border-radius:var(--r3);padding:var(--m3)}
 .pfKarta .pfIc{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;
   background:radial-gradient(circle at 50% 28%,var(--brassL),var(--brass) 60%,var(--brassD));
@@ -2837,6 +2853,7 @@ html[data-theme="hc"] .ov.ovCela .box{background:#fff}
 .pfMr span{display:block;font-size:calc(10.5px*var(--fs,1));color:var(--t3);margin-top:3px;
   text-transform:uppercase;letter-spacing:.04em}
 html[data-theme="hc"] .pfKarta,html[data-theme="hc"] .pfMr>div{background:#fff;border-color:#000}
+html[data-theme="hc"] .pfKarta{box-shadow:none}
 html[data-theme="hc"] .pfKarta .pfJm,html[data-theme="hc"] .pfMr b{color:#000}
 
 /* --- 4.13 dolni lista --- */
@@ -3043,7 +3060,9 @@ html[data-theme="hc"] .postup>i{background:#000}
    prouzek, ram nebo ikona. Ostatni bloky se toho MUSI drzet.
    ============================================================ */
 #seasonBox{
-  background:linear-gradient(180deg,var(--s3) 0%,var(--s2) 58%,#1c2356 100%);
+  background:
+    radial-gradient(96% 58% at 50% -12%,color-mix(in srgb,var(--violet) 24%,transparent),transparent 62%),
+    linear-gradient(180deg,var(--s3) 0%,var(--s2) 58%,#1c2356 100%);
   border:var(--w4) solid var(--stroke);border-radius:var(--r3);
   box-shadow:var(--hranaSilna),0 5px 0 var(--stroke),0 14px 30px rgba(4,8,28,.45)}
 #seasonBox:before{background:none}
@@ -3051,7 +3070,9 @@ html[data-theme="hc"] .postup>i{background:#000}
 /* barvu prestize nese jen prouzek pod hornim okrajem */
 #seasonBox{position:relative}
 html[data-theme="night"] #seasonBox{
-  background:linear-gradient(180deg,var(--s3) 0%,var(--s2) 58%,#0f2033 100%)}
+  background:
+    radial-gradient(96% 58% at 50% -12%,color-mix(in srgb,var(--violet) 20%,transparent),transparent 62%),
+    linear-gradient(180deg,var(--s3) 0%,var(--s2) 58%,#0f2033 100%)}
 html[data-theme="hc"] #seasonBox{background:#fff}
 .seD{color:var(--t3)}
 .seN{text-shadow:none;color:var(--t1)}
@@ -3932,10 +3953,28 @@ html[data-theme="hc"] .skTile s{color:#06131c}
 @media (min-width:560px){
   .cgrid{grid-template-columns:repeat(auto-fill,minmax(172px,1fr))}
 }
+/* v102: vrstva "30.7" sjednotila povrchy karet a smazala pritom i barvu
+   vzacnosti z plochy dlazdice - hrac videl 23 shodnych obdelniku, ktere se
+   lisily jen tenkou linkou nahore. Promenna --rc se na kartu vpisuje uz dnes
+   (renderColl), jen se nepouzivala. */
 .rcard,html[data-theme="night"] .rcard{
   padding:0 0 var(--m2);border:var(--w3) solid var(--stroke);border-radius:var(--r2);
-  background:linear-gradient(180deg,var(--s3) 0%,var(--s3) 44%,var(--s2) 100%);
-  box-shadow:var(--hrana),0 4px 0 var(--stroke),0 10px 20px rgba(4,8,28,.40)}
+  background:
+    radial-gradient(120% 68% at 50% 0%,
+      color-mix(in srgb,var(--rc,var(--s5)) 26%,transparent) 0%,transparent 72%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 1px,transparent 1px 8px),
+    linear-gradient(180deg,
+      color-mix(in srgb,var(--rc,var(--s5)) 12%,var(--s3)) 0%,
+      color-mix(in srgb,var(--rc,var(--s5)) 12%,var(--s3)) 44%,
+      var(--s2) 100%);
+  box-shadow:var(--hrana),0 4px 0 var(--stroke),0 10px 20px rgba(4,8,28,.40),
+    inset 0 0 0 1px color-mix(in srgb,var(--rc,var(--s5)) 22%,transparent)}
+/* Vzacna a legendarni maji navic zar, aby "legendarni" bylo opravdu jine
+   nez "bezne". Vesi se na tridu, protoze vzacnost je v CSS jen jako --rc. */
+.rcard.rar-e{box-shadow:var(--hrana),0 4px 0 var(--stroke),0 10px 20px rgba(4,8,28,.40),
+  0 0 26px -14px var(--rc)}
+.rcard.rar-l{box-shadow:var(--hrana),0 4px 0 var(--stroke),0 12px 24px rgba(4,8,28,.45),
+  0 0 34px -12px var(--rc);border-color:color-mix(in srgb,var(--rc) 45%,var(--stroke))}
 /* Vzacnost nese prouzek u horni hrany, ne cela plocha karty. */
 .rcard:after{top:0;bottom:auto;height:4px;background:var(--rc,var(--s5));z-index:2}
 .rcard.ready{box-shadow:0 0 0 1.5px var(--laser),0 0 22px -10px var(--laser),
@@ -4630,12 +4669,34 @@ html[data-theme="hc"] .lbRead:after{border-color:#000}
   font-variant-numeric:tabular-nums;
   color:color-mix(in srgb,var(--sc) 74%,#ffffff)}
 .stCell span{color:var(--t3);font-size:calc(10.5px*var(--fs,1));margin-top:4px}
+/* v102: sest statistik bylo ve DNE sest identickych sedych dlazdic. Barevny
+   prechod z --sc (radek 933) prebilo spolecne pravidlo odlitku na 2686
+   (.pan,...,.stCell) a posledni vrstva uz pozadi nenastavovala vubec - barvu
+   nesla jen cislice. V noci to bylo barevne, protoze nocni pravidlo ma vyssi
+   specificitu. Barva se vraci tady, v posledni vrstve. */
+.stCell{position:relative;overflow:hidden;
+  background:
+    radial-gradient(130% 92% at 50% 0%,color-mix(in srgb,var(--sc) 24%,transparent),transparent 72%),
+    linear-gradient(180deg,var(--s3) 0%,var(--s2) 100%);
+  border-color:color-mix(in srgb,var(--sc) 38%,var(--stroke))}
+.stCell:before{content:'';position:absolute;left:0;right:0;top:0;height:3px;
+  background:var(--sc);opacity:.9}
 html[data-theme="hc"] .stCell{background:#fff;box-shadow:0 0 0 2px #000}
 html[data-theme="hc"] .stCell b,html[data-theme="hc"] .stCell span{color:#06131c}
 
 #runLog{max-height:none}
 .rlRow{padding:10px var(--m2);border-top:0;margin-top:var(--m1);border-radius:var(--r1);
   background:rgba(8,11,38,.34);gap:var(--m2)}
+/* Denik mereni: plocha rgba(8,11,38,.34) nerozlisovala dokoncene mereni od
+   nedokonceneho - poznalo se to az z barvy nazvu. Levy prouzek to rekne driv,
+   nez hrac docte radek. Odsazeni musi narust, jinak prouzek nabehne pod datum
+   (.rlD je siroke 42 px). */
+.rlRow{position:relative;overflow:hidden;padding-left:calc(var(--m2) + 7px);
+  background:linear-gradient(180deg,var(--s3) 0%,var(--s2) 100%);
+  box-shadow:var(--hrana),0 2px 0 var(--stroke)}
+.rlRow:before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:var(--tape);opacity:.7}
+.rlRow.ok:before{background:var(--moss);opacity:1}
 html[data-theme="night"] .rlRow{background:rgba(2,8,18,.34)}
 .rlRow:first-child{margin-top:0}
 .rlD{color:var(--t3);width:42px}
@@ -4932,7 +4993,7 @@ html[data-theme="hc"] .cmpB{background:#fff;border:2px solid #000}
 /* ---------- 3. SEZONNI CESTA (fialova) ---------- */
 #seasonBox{padding:var(--m3);border-radius:var(--r2)}
 #seasonBox:before{content:'';position:absolute;left:0;right:0;top:0;height:4px;
-  background:var(--violet);z-index:2}
+  background:linear-gradient(90deg,var(--violetD),var(--violetL),var(--violet));z-index:2}
 .seHead{align-items:center}
 .seN{font-size:calc(17px*var(--fs,1));font-weight:800;font-family:var(--display)}
 .seD{font-size:calc(11.5px*var(--fs,1));color:var(--t3);line-height:1.5}
@@ -8163,6 +8224,12 @@ html[data-theme="hc"] #lab .labD{color:#06131c}
   overflow:visible;touch-action:auto;
   background:none;border:0;box-shadow:none;border-radius:0;
   padding:0;margin:var(--m3,14px) 0 0;
+  /* v102: vodorovna maska zbyla po puvodnim rolovacim prouzku (radek 4855).
+     Na svislem seznamu uz nemela co maskovat (scrollWidth == clientWidth),
+     zato jeji dobeh (26 px vlevo, 30 px vpravo) je SIRSI nez odsazeni
+     obsahu (14 px), takze zezrala levych 10 px kolecka uzlu (kryti 0,62)
+     a pravych 16 px poharku (kryti 0,47). Odtud "poharky mizi na okraji". */
+  -webkit-mask-image:none;mask-image:none;
 }
 .pas{display:flex;flex-direction:column;position:relative;padding:0 var(--m3,14px)}
 .pasVic{
@@ -8176,14 +8243,19 @@ html[data-theme="hc"] #lab .labD{color:#06131c}
   position:relative;display:flex;gap:var(--m3,14px);align-items:flex-start;
   padding:var(--m2,10px) 0;cursor:pointer;
 }
-/* svisla pater pasu */
-.pasSp{position:relative;flex:none;width:38px;display:flex;justify-content:center;
-  padding-top:2px}
-.pasSp:before{content:'';position:absolute;left:50%;transform:translateX(-50%);
-  top:-14px;bottom:-14px;width:4px;border-radius:2px;background:var(--s1)}
-.pasR.je .pasSp:before{background:color-mix(in srgb,var(--laser) 55%,var(--s1))}
-.pasR:first-of-type .pasSp:before{top:14px}
-.pasR:last-child .pasSp:before{bottom:auto;height:20px}
+/* v102: "cary nalevo" byly pahyly, ne cara. Pater se kreslila do .pasSp,
+   ktera je vysoka jen 36 px (2 px odsazeni + 34 px kolecko), zatimco radek
+   ma 172-221 px - mezi useky tedy zbyvalo 108 az 157 px prazdna. A pravidlo
+   `.pasR:last-child` nikdy neplatilo, protoze poslednim ditetem .pas je
+   tlacitko .pasVic (BUTTON), takze spodni pahyl visel do prazdna.
+   Nahled ted kresli tytez KARTY jako cela obrazovka (#kaFull .arena) -
+   tu uzivatel oznacil za citelnou ("po rozkliknuti to vypada dobre") -
+   a odmeny tim koneckoncu maji viditelneho vlastnika. */
+.pasSp{position:relative;flex:none;width:34px;display:flex;justify-content:center}
+.pasR{background:color-mix(in srgb,var(--s4) 32%,transparent);
+  border-radius:var(--r2,16px);padding:var(--m3,14px) var(--m2,10px);
+  margin-bottom:var(--m2,10px);gap:var(--m2,10px)}
+.pasR:last-of-type{margin-bottom:0}
 .pasUz{
   position:relative;z-index:1;width:34px;height:34px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -8232,6 +8304,12 @@ html[data-theme="hc"] #lab .labD{color:#06131c}
   border-radius:var(--r2,16px);padding:var(--m2,10px) var(--m3,14px);
   margin:-2px 0}
 .pasR:active .pasTx{transform:translateY(1px)}
+/* Zvyrazneni "JSI TADY" se presunulo z vnitrniho boxu na celou kartu -
+   stejne jako #kaFull .arena.next. Jinak by byl ramecek v ramecku a
+   poharek na tomhle radku by stal o 15 px jinde nez na ostatnich. */
+.pasR.ted{background:color-mix(in srgb,var(--laser) 10%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--laser) 34%,transparent)}
+.pasR.ted .pasTx{background:none;border:0;padding:0;margin:0;border-radius:0}
 .kaTip{margin-top:var(--m3,14px)}
 
 /* ==========================================================================
@@ -8302,6 +8380,25 @@ html[data-theme="hc"] #lab .labD{color:#06131c}
 .sePasC.rdy .sePasZn{display:none}
 .sePasC:active{transform:translateY(1px)}
 .sePasVic{margin:var(--m3,14px) 0 0;align-self:flex-start}
+/* v102: sloupec cisel 1..6 visel ve vzduchu - kampan nevypadala jako postup.
+   Kolejnice je JEDEN prvek na .sePas, ne pseudoprvek na kazdem radku, takze
+   se nemuze rozpadnout na pahyly jako pater trofejni cesty (viz C37). */
+.sePas{position:relative}
+.sePas:after{content:'';position:absolute;left:16px;top:8px;bottom:8px;width:2px;
+  border-radius:1px;background:color-mix(in srgb,var(--violet) 32%,var(--s1));z-index:0}
+.sePasNum{position:relative;z-index:1}
+/* Splnena uroven menila JEN barvu cisla, takze uroven 2 a uroven 6 vypadaly
+   stejne. Poradi je zavazne: .open musi byt PRED .ted, jinak zelena splnene
+   urovne prebije fialovou te rozdelane. */
+.sePasR.open .sePasNum{background:color-mix(in srgb,var(--moss) 20%,var(--s1));
+  border-color:color-mix(in srgb,var(--moss) 45%,transparent);color:var(--t1)}
+.sePasR.ted .sePasNum{box-shadow:0 0 0 3px color-mix(in srgb,var(--violet) 26%,transparent)}
+/* Vyzvednuta odmena mela opacity .62 - kryti fadne pismo i podklad naraz.
+   Tatáz vada, kterou uz jednou resila trofejni cesta. Ztlumeni nese barva. */
+.sePasC.got{opacity:1;background:linear-gradient(180deg,var(--s2),var(--s1))}
+.sePasC.got .sePasI span{color:var(--t3)}
+.sePasC.got .karIko{filter:saturate(.4)}
+html[data-theme="hc"] .sePas:after{background:#06131c}
 #seBuy{margin-top:var(--m3,14px)}
 
 /* ==========================================================================
@@ -8579,14 +8676,13 @@ html[data-theme="hc"] .karDl{background:#fff;border:2px solid #000}
 html[data-theme="hc"] .karDlT b{color:#06131c}
 html[data-theme="hc"] .karDlT s,html[data-theme="hc"] .karBez{color:#06131c}
 html[data-theme="hc"] .pasVic,html[data-theme="hc"] .sePasVic{background:#fff;border:2px solid #000;color:#06131c}
-html[data-theme="hc"] .pasSp:before{background:#c9d3da}
-html[data-theme="hc"] .pasR.je .pasSp:before{background:#06131c}
 html[data-theme="hc"] .pasUz{background:#fff;border:2px solid #000;color:#06131c;box-shadow:none}
 html[data-theme="hc"] .pasR.je .pasUz,
 html[data-theme="hc"] .pasR.ted .pasUz{background:#06131c;color:#fff;box-shadow:none}
 html[data-theme="hc"] .pasTy{background:#06131c;color:#fff}
 html[data-theme="hc"] .pasNm,html[data-theme="hc"] .pasTr{color:#06131c}
-html[data-theme="hc"] .pasR.ted .pasTx{background:#fff;border:2px solid #000}
+html[data-theme="hc"] .pasR{background:#fff;border:2px solid #000}
+html[data-theme="hc"] .pasR.ted{background:#fff;border:2px solid #000}
 html[data-theme="hc"] .seLv2{background:#06131c;color:#fff;border-color:#000}
 html[data-theme="hc"] .seN2,html[data-theme="hc"] .seD2{color:#06131c}
 html[data-theme="hc"] .seBar2{background:#fff;border:2px solid #000}
@@ -21870,7 +21966,7 @@ function renderColl(){
    if(filt==='deck'&&!inDeck)return;
    const rr=rarOf(k);
    const card=document.createElement('div');
-   card.className='rcard'+(owned?'':' notowned')+(unlocked?'':' locked')+(can?' ready':'');
+   card.className='rcard rar-'+(TRAR[k]||'c')+(owned?'':' notowned')+(unlocked?'':' locked')+(can?' ready':'');
    card.style.setProperty('--rc',rr.col);card.style.setProperty('--rcL',rr.colL||rr.col);
    // horní plocha s glyfem
    const art=document.createElement('div');art.className='rart';
