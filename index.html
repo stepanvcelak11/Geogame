@@ -691,7 +691,7 @@ html[data-theme="night"] .introBtns .key{color:#0a1626}
 html[data-theme="hc"] .stIco{fill:#ffffff;stroke:#000000;stroke-width:2}
 html[data-theme="hc"] .stIco.on{fill:#8a4a00;stroke:#000000}
 .lvMeta{font-size:calc(11.5px*var(--fs,1));color:var(--dim);margin-top:5px}
-.tiBox{padding:0;overflow:hidden}
+.tiBox{overflow-x:hidden}
 .tiBanner{display:flex;gap:14px;align-items:center;padding:16px 16px 14px;
   background:linear-gradient(180deg,var(--rcL,var(--ink2)) 0 34%,var(--rc,var(--ink2b)));position:relative}
 html[data-theme="night"] .tiBanner{background:linear-gradient(150deg,
@@ -6099,8 +6099,7 @@ html[data-board="0"] .card canvas{width:33px;height:33px}
 #tiUp{margin-top:var(--m3);border-radius:var(--r1);
   background:rgba(8,11,38,.42);border:1px solid rgba(255,255,255,.10)}
 #tiUp>div{margin:0 !important;padding:var(--m2) var(--m3);color:var(--t2)}
-#tiClose{width:calc(100% - 2*var(--m4));margin:var(--m4);
-  margin-bottom:max(var(--m4),var(--sbot))}
+#tiClose{width:100%;margin:0}
 
 /* ---------- 8. VZACNOST: pilulky mely bile pismo na svetlem ---------- */
 /* #7d8ea8 s bilym pismem = 2,6:1. Tmavy text sedi na vsech ctyrech
@@ -9160,6 +9159,39 @@ html[data-theme="hc"] #confetti{opacity:.5}
 #tinfo #tiUp{margin-top:var(--m3)}
 #tinfo #tiUp>div{font-size:calc(12.5px*var(--fs,1));line-height:1.55}
 
+/* ---------- v102: detail pristroje je celoobrazovkove okno ----------
+   Vnitrni bloky (.tiBars, .tiSect, #tiUp, .tiNav) si nesou vlastni
+   vodorovne odsazeni, takze karta uz zadne pridavat nesmi - jinak se
+   scita na dvojnasobek. Lepiva hlavicka si ho ale musi vratit, protoze
+   se zapornym okrajem prekryva prave to odsazeni karty. */
+#tinfo.ovCela .box{padding-left:0;padding-right:0}
+/* Banner je vysoky 250 px - jako LEPIVY by sezral tretinu obrazovky,
+   takze se roluje normalne a misto nej drzi nahore jen krizek. */
+#tinfo.ovCela .celaHlava{position:static;margin:0;padding:0;background:none}
+#tinfo .tiBanner{position:relative;padding-right:calc(var(--m4) + 50px)}
+#tinfo #tiX{position:fixed;z-index:6;
+  top:calc(10px + env(safe-area-inset-top,0px));right:12px}
+/* Paticka drzi u spodni hrany, aby ZAVRIT slo trefit bez rolovani. */
+#tinfo.ovCela .celaPata{position:sticky;bottom:0;z-index:4;margin-top:auto;
+  padding:var(--m2) var(--m3) max(var(--m2),var(--sbot));
+  background:linear-gradient(0deg,var(--s1) 58%,transparent 100%)}
+html[data-theme="hc"] #tinfo.ovCela .celaPata{background:#fff}
+
+/* Pozadi karty pristroje: zar barvy vzacnosti (--rc nastavuje openTinfo)
+   a jemna meridni sit misto jednolite modre plochy. */
+#tinfo .box{
+  background:
+    radial-gradient(120% 75% at 78% -6%,
+      color-mix(in srgb,var(--rc,var(--sky)) 26%,transparent),transparent 60%),
+    radial-gradient(85% 55% at 8% 106%,
+      color-mix(in srgb,var(--rc,var(--sky)) 13%,transparent),transparent 62%),
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.030) 0 1px,transparent 1px 46px),
+    repeating-linear-gradient(0deg,
+      rgba(255,255,255,.030) 0 1px,transparent 1px 46px),
+    linear-gradient(180deg,var(--s2) 0%,var(--s1) 100%)}
+html[data-theme="hc"] #tinfo .box{background:#fff}
+
 /* ============================================================
    36  #pickTower - VYBER PRISTROJE DO SESTAVY
    ------------------------------------------------------------
@@ -10265,15 +10297,16 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
 </div></div>
 
 <!-- ============ DETAIL PŘÍSTROJE ============ -->
-<div class="ov" data-okno="info" id="tinfo" style="z-index:25"><div class="box tiBox">
-  <div class="tiBanner" id="tiBanner">
+<div class="ov ovCela" data-okno="info" id="tinfo" style="z-index:25"><div class="box tiBox">
+  <div class="celaHlava"><div class="tiBanner" id="tiBanner">
     <canvas id="tiGlyph" width="140" height="140"></canvas>
     <div class="tiBt">
       <div class="tiRarChip" id="tiRar"></div>
       <div class="tiName" id="tiName"></div>
       <div class="tiSub" id="tiSub"></div>
     </div>
-  </div>
+    <button class="xBtn" id="tiX" type="button" aria-label="Zavřít">✕</button>
+  </div></div>
 
   <div class="filtRow tiNav" id="tiNav" role="tablist">
     <button type="button" data-tk="a" class="on">Přehled</button>
@@ -10304,7 +10337,7 @@ html[data-theme="hc"] #intro .introBtns #introSkip{
     <div class="tiSect">Řady po sloučení</div>
     <div id="tiTiers"></div>
   </div>
-  <button class="big key" id="tiClose">ZAVŘÍT</button>
+  <div class="celaPata"><button class="big key" id="tiClose">ZAVŘÍT</button></div>
 </div></div>
 
 <!-- ============ VÝBĚR PŘÍSTROJE DO SESTAVY ============ -->
@@ -19488,6 +19521,9 @@ const DEMONOTE={
 };
 function stopDemo(){ if(DEMO){cancelAnimationFrame(DEMO.raf);DEMO=null;} }
 function startDemo(k){
+ /* Okno detailu je tmave; denni paleta by uprostred nej svitila jako
+    svetly obdelnik. Ukazka proto kresli tmavou (v kontrastnim motivu hc). */
+ const PD=()=>(((SAVE.opts&&SAVE.opts.theme)==='hc')?PALS.hc:PALS.night);
  stopDemo();
  const c=$('tiDemo'); if(!c)return;
  const w=c.clientWidth||320, h=110, dpr=Math.min(2,window.devicePixelRatio||1);
@@ -19495,17 +19531,18 @@ function startDemo(k){
  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
  const lv=Math.min(3,(SAVE.lvl[k]||0)?Math.min(3,(SAVE.lvl[k]||0)-1):1);
  DEMO={k,lv,g,w,h,t:0,cd:0,face:0,ang:0,drone:{x:w*.5,dir:1},lock:null,ramp:0,
-   foes:[0,1,2].map(i=>({x:w*(.12+i*.30),hp:1,hit:0,dead:0})),fx:[],raf:0};
+   foes:[0,1,2].map(i=>({x:w*(.12+i*.30),hp:1,hit:0,dead:0,tuh:i===1?2.4:1})),
+   vir:null,fx:[],raf:0};
  const step=()=>{
   if(!DEMO)return;
   const D=DEMO, dt=1/60; D.t+=dt;
   const ty=h*.72, tx=w*.5;
   g.clearRect(0,0,w,h);
   // podklad: kus trasy
-  g.fillStyle=P().bg;g.fillRect(0,0,w,h);
-  g.strokeStyle=P().road;g.lineWidth=20;g.lineCap='round';
+  g.fillStyle=PD().bg;g.fillRect(0,0,w,h);
+  g.strokeStyle=PD().road;g.lineWidth=20;g.lineCap='round';
   g.beginPath();g.moveTo(10,h*.34);g.lineTo(w-10,h*.34);g.stroke();
-  g.strokeStyle=P().roadIn;g.lineWidth=16;
+  g.strokeStyle=PD().roadIn;g.lineWidth=16;
   g.beginPath();g.moveTo(10,h*.34);g.lineTo(w-10,h*.34);g.stroke();
   g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=1.5;g.setLineDash([5,6]);
   g.lineDashOffset=-D.t*22;
@@ -19516,7 +19553,7 @@ function startDemo(k){
     f.x+=26*dt;
     if(f.x>w+20){f.x=-20;f.hp=1;}
     if(f.hit>0)f.hit-=dt;
-    const R=9;
+    const R=9*((f.tuh||1)>1?1.5:1);
     g.save();g.translate(f.x,h*.34);
     g.fillStyle=f.hit>0?'#fff':'#9aa7ad';g.strokeStyle='rgba(20,40,30,.55)';g.lineWidth=1.6;
     g.beginPath();g.arc(0,0,R,0,7);g.fill();g.stroke();
@@ -19539,7 +19576,7 @@ function startDemo(k){
     g.globalAlpha=1;
   });
   const kind=T[k].kind, col=T[k].c;
-  const hitFoe=(f,dmg)=>{f.hp-=dmg;f.hit=.14;
+  const hitFoe=(f,dmg)=>{f.hp-=dmg/(f.tuh||1);f.hit=.14;
     if(f.hp<=0&&!f.dead){f.dead=.35;
       D.fx.push({type:'ring',x:f.x,y:h*.34,r:12,c:col,t:.3,d:.3});}};
   const near=()=>D.foes.filter(f=>f.hp>0&&f.dead<=0&&f.x>0&&f.x<w);
@@ -19574,7 +19611,7 @@ function startDemo(k){
       g.beginPath();g.arc(-sD*.6,sD*.8,sD*.32,0,7);g.stroke();
       g.beginPath();g.arc(sD*.6,sD*.8,sD*.32,0,7);g.stroke();
     }
-    g.fillStyle=P().tile;g.strokeStyle=col;g.lineWidth=1.8;
+    g.fillStyle=PD().tile;g.strokeStyle=col;g.lineWidth=1.8;
     g.beginPath();g.arc(0,0,sD*.62,0,7);g.fill();g.stroke();
     g.restore();
   } else if(kind==='sweep'){
@@ -19596,8 +19633,41 @@ function startDemo(k){
     g.strokeRect(x0,h*.34-11,x1-x0,22);g.setLineDash([]);
     D.cd-=dt;
     if(D.cd<=0){D.cd=.4;near().forEach(f=>{if(f.x>x0&&f.x<x1)hitFoe(f,.16);});}
-  } else if(kind==='mark'||kind==='weather'||kind==='support'||kind==='boost'){
-    const R=46, pu=.5+.5*Math.sin(D.t*3);
+  } else if(kind==='global'){
+    /* insar, zenit: zasahnou VSECHNO na mape bez ohledu na dosah */
+    D.cd-=dt;
+    if(D.cd<=0){D.cd=1.6;
+      near().forEach(f=>{hitFoe(f,.45);
+        D.fx.push({type:'ring',x:f.x,y:h*.34,r:13,c:col,t:.35,d:.35});});
+      D.fx.push({type:'ring',x:tx,y:ty,r:Math.min(w,h)*.46,c:col,t:.4,d:.4});
+      D.fx.push({type:'txt',x:tx,y:h*.16,s:'zásah VŠUDE',c:col,t:.9,d:.9});}
+  } else if(kind==='ortho'){
+    /* penta: meri vyhradne v pravem uhlu - po rade NEBO po sloupci */
+    D.cd-=dt;
+    const svisle=Math.floor(D.t/2.4)%2===1;
+    if(D.cd<=0){D.cd=1.2;
+      if(!svisle){ near().forEach(f=>hitFoe(f,.30));
+        D.fx.push({type:'beam',x1:6,y1:h*.34,x2:w-6,y2:h*.34,c:col,w:3,t:.22,d:.22});
+        D.fx.push({type:'txt',x:tx,y:h*.16,s:'celá řada',c:col,t:.7,d:.7}); }
+      else { near().forEach(f=>{if(Math.abs(f.x-tx)<13)hitFoe(f,.30);});
+        D.fx.push({type:'beam',x1:tx,y1:4,x2:tx,y2:h-4,c:col,w:3,t:.22,d:.22});
+        D.fx.push({type:'txt',x:tx,y:h*.16,s:'celý sloupec',c:col,t:.7,d:.7}); }}
+  } else if(kind==='pull'){
+    /* gravi: tihova anomalie, ktera tahne cile zpatky po trase */
+    D.cd-=dt;
+    if(D.cd<=0){const fs2=near();
+      if(fs2.length){D.cd=1.8;const e=fs2.reduce((a,b)=>b.x>a.x?b:a);
+        D.vir={x:e.x,t:1.5};
+        D.fx.push({type:'beam',x1:tx,y1:ty,x2:e.x,y2:h*.34,c:col,w:1.6,t:.16,d:.16});}
+      else D.cd=.1;}
+    if(D.vir){ D.vir.t-=dt;
+      g.strokeStyle=col;g.globalAlpha=.55;g.lineWidth=2;
+      for(let i=0;i<3;i++){g.beginPath();g.arc(D.vir.x,h*.34,8+i*7,D.t*3+i,D.t*3+i+4);g.stroke();}
+      g.globalAlpha=1;
+      near().forEach(f=>{ if(Math.abs(f.x-D.vir.x)<28){ f.x-=70*dt; hitFoe(f,.10*dt*6); }});
+      if(D.vir.t<=0)D.vir=null; }
+  } else if(kind==='mark'||kind==='weather'||kind==='support'||kind==='boost'||kind==='boostall'){
+    const R=(kind==='boostall')?Math.min(w,h)*.42:46, pu=.5+.5*Math.sin(D.t*3);
     g.strokeStyle=col;g.globalAlpha=.25+pu*.3;g.lineWidth=2;g.setLineDash([5,5]);
     g.lineDashOffset=-D.t*14;
     g.beginPath();g.arc(tx,ty,R,0,7);g.stroke();g.setLineDash([]);g.globalAlpha=1;
@@ -19606,10 +19676,11 @@ function startDemo(k){
       g.beginPath();g.arc(f.x,h*.34,13,0,7);g.stroke();g.setLineDash([]);
       if(kind==='mark')f.hit=Math.max(f.hit,.05);
     }});
-    if(kind==='support'||kind==='boost'){
-      g.fillStyle=col;g.font='700 10px "Helvetica Neue",Arial';g.textAlign='center';
-      g.fillText('+'+(kind==='support'?'poškození sousedům':'rychlost sousedům'),tx,ty-38);
-    }
+    {const POP={mark:'označuje cíle',weather:'potlačuje podmínky',
+       support:'+poškození sousedům',boost:'+rychlost sousedům',
+       boostall:'+přesnost VŠEM na mapě'};
+     g.fillStyle=col;g.font='700 10px "Helvetica Neue",Arial';g.textAlign='center';
+     g.fillText(POP[kind]||'',tx,ty-38);}
   } else {
     D.cd-=dt;
     const rate=kind==='chain'?.28:kind==='mortar'?1.1:kind==='pulse'?.9:kind==='lock'?.35:.55;
@@ -19646,9 +19717,12 @@ function startDemo(k){
           D.fx.push({type:'beam',x1:tx,y1:ty,x2:D.lock.x,y2:h*.34,c:col,w:1.4+D.ramp*.25,t:.12,d:.12});
           if(D.ramp%3===0)D.fx.push({type:'txt',x:D.lock.x,y:h*.20,s:'×'+(1+D.ramp*.2).toFixed(1),c:col,t:.6,d:.6});
         } else if(kind==='exec'){
-          hitFoe(target,.6);
-          D.fx.push({type:'beam',x1:tx,y1:ty,x2:target.x,y2:h*.34,c:col,w:3.5,t:.2,d:.2});
-          D.fx.push({type:'txt',x:target.x,y:h*.18,s:'% odolnosti',c:col,t:.8,d:.8});
+          /* V bitve exec prioritu hrace ignoruje a bere vzdy NEJSILNEJSI cil
+             (fire(): cand.reduce((a,b)=>b.hp>a.hp?b:a)) - ukazka to musi delat taky. */
+          const cil=fs.reduce((a,b)=>((b.tuh||1)*b.hp>(a.tuh||1)*a.hp)?b:a);
+          hitFoe(cil,.6);
+          D.fx.push({type:'beam',x1:tx,y1:ty,x2:cil.x,y2:h*.34,c:col,w:3.5,t:.2,d:.2});
+          D.fx.push({type:'txt',x:cil.x,y:h*.18,s:'nejsilnější · % odolnosti',c:col,t:.9,d:.9});
         } else if(kind==='econ'){
           hitFoe(target,.3);
           D.fx.push({type:'beam',x1:tx,y1:ty,x2:target.x,y2:h*.34,c:col,w:2,t:.14,d:.14});
@@ -19669,7 +19743,7 @@ function startDemo(k){
     const velky=!!(T[k].sz&&T[k].sz>1);
     const pol=velky?25:17;
     g.save();
-    g.fillStyle=P().plinth;g.strokeStyle=P().plinthEdge;g.lineWidth=1.4;
+    g.fillStyle=PD().plinth;g.strokeStyle=PD().plinthEdge;g.lineWidth=1.4;
     g.beginPath();
     if(g.roundRect)g.roundRect(tx-pol,ty-pol,pol*2,pol*2,velky?12:9);
     else g.rect(tx-pol,ty-pol,pol*2,pol*2);
@@ -19694,7 +19768,8 @@ function tiTab(k){
  o.querySelectorAll('#tiNav button').forEach(x=>x.classList.toggle('on',x.dataset.tk===k));
  o.querySelectorAll('.tiPane').forEach(x=>{x.hidden=(x.dataset.tk!==k);});
  window.__tiTab=k;
- o.scrollTop=0;
+ // .ovCela sama neroluje - roluje az .box uvnitr.
+ const _b=o.querySelector('.box'); if(_b)_b.scrollTop=0; o.scrollTop=0;
 }
 (function(){
  const n=document.getElementById('tiNav'); if(!n)return;
@@ -22670,6 +22745,8 @@ $('bFree').onclick=()=>{
  showCrate([cr]);renderQuests();
 };
 $('tiClose').onclick=()=>{stopDemo();$('tinfo').classList.remove('on');};
+$('tiX').onclick=()=>{snd('ui');stopDemo();$('tinfo').classList.remove('on');};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('tinfo').classList.contains('on')){stopDemo();$('tinfo').classList.remove('on');}});
 $('bQuiz').onclick=()=>{snd('ui');openQuiz();};
 $('qzClose').onclick=()=>{QZ=null;$('quiz').classList.remove('on');renderTitle();};
 [...document.querySelectorAll('.deckPresets [data-ps]')].forEach(btn=>{
@@ -22831,7 +22908,11 @@ document.querySelectorAll('.verTxt,#verOpt').forEach(e=>{e.textContent=VERZE;});
  }catch(e){}
 })();
 window.__G={get S(){return S},canBuild,openNewSpot,isOpen,TER,openLevel,PERKS,GEN,ORD,perksFor,treeFor,waveComp,waveScale,E,AREN,bus,duck,setMasterVolume,dmgOf,rngOf,rateOf,openDraft,CARDS,openNewSpotForce,capMax,M,bossName,seasonLvl,cardCost,rollCrate,cardCost,grantCards,CARDNEED,RAR,CRATES,TRAR,T,E,MAPS,CARDS,COLS,ROWS,get PATH(){return PATH},get ONPATH(){return ONPATH},
- occupied,recalcBuffs,rollShop,capMax,priceOf,calCost,startWave,step,newRun,NET,SAVE};
+ occupied,recalcBuffs,rollShop,capMax,priceOf,calCost,startWave,step,newRun,NET,SAVE,
+ openTinfo,ui,show,renderColl,renderDeck,renderHrd,renderAbilDeck,openAbilPick,
+ renderShop,renderMez,renderLab,renderRoad,renderSeason,renderAcc,renderStats,
+ openModePick,openWorldFull,renderPlay,renderProfile,ABIL,HRDINOVE,jeHrdina,
+ hrdAktivni,skinPristroje,SHORT,rarOf,perkPath,SILA,HRD_SILA,save};
 </script>
 <script>
 /* 50 - zalozky Laborky. Ciste zobrazovaci vrstva, do herni logiky nesaha. */
