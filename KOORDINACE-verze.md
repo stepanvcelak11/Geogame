@@ -1,5 +1,24 @@
 # Koordinace mezi AI — kdo zvedá verzi (4. 9. 2026)
 
+## AKTUÁLNÍ STAV: VERZE 102 (7. 9., session „dodělávky v102“) — DOKONČENÍ SEZNAMU K 101
+
+**Číslo 102 je zabrané, další si berte 103.** Větev **`vylepseni-v102`**,
+vlastní git worktree `Desktop\geogame-v102`, základ `a9cfd9c` (špička main).
+Na main to ZATÍM NEJDE — vydání si drží uživatel.
+
+Tahle větev **navazuje na rozdělanou práci předchozí session**, která na témže
+seznamu připomínek odpracovala sedm commitů a skončila na limitu uprostřed
+ladění obtížnosti. Dodělalo se: kariéra (trofejní i sezónní cesta), profil,
+Záznamy, dlaždice sbírky, strom vývoje se čtvrtým patrem, hrdinovy řady,
+**tři nové přístroje**, **tři nová území**, tři opravy pravidel terénu a
+**obtížnost** (lineární člen ve `waveScale` 0,44 → 0,56).
+
+⚠ Do pravidel hry se TENTOKRÁT sáhlo — kdo bude slučovat, ať počítá s tím, že
+`waveScale`, `T`, `MAPS`, `ORD`, `TRAR`, `PERKS`, `TREE2` a `ACC` se změnily.
+
+---
+
+
 Na `index.html` pracovalo dnes víc session naráz. Tenhle soubor je tu proto, aby
 **číslo verze nezvedly dvě** — to se u tohohle uživatele už jednou stalo a skončilo
 to tím, že dvě různé verze nesly totéž číslo.

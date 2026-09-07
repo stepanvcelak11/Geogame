@@ -1,4 +1,4 @@
-# GeoGame — verze 101
+# GeoGame — verze 102
 
 ## Co nahrát na hosting
 
@@ -26,12 +26,12 @@ spuštění s internetem a projeví se po zavření a otevření hry. Ručně:
 **Nastavení → Zkontrolovat aktualizaci**. Číslo verze je dole pod mapou světa
 a v hlavičce Nastavení.
 
-Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=101;` v `index.html`.
+Číslo verze se od verze 82 píše na **jediné místo** — `const VERZE=102;` v `index.html`.
 Odtud se rozsype do stránky i do adresy, kterou se registruje `sw.js`. Jinam se nesahá.
 
 ## Bez hostingu
 
-`geogame-v101-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
+`geogame-v102-jediny-soubor.html` stáhni do telefonu a otevři v Chromu.
 Funguje offline, jen se sám neaktualizuje.
 
 Od verze 82 je tenhle soubor **přesná kopie `index.html`**. Hra si sama pozná, že běží
@@ -39,7 +39,7 @@ ze staženého souboru, a manifest si přepíše. Novou verzi tedy vyrobíš pro
 a není co udržovat dvakrát:
 
 ```
-copy index.html geogame-v101-jediny-soubor.html
+copy index.html geogame-v102-jediny-soubor.html
 ```
 
 ## Záloha postupu
@@ -54,6 +54,140 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 102
+
+Pokračování dlouhého seznamu připomínek k verzi 101 — a poprvé od verze 97 se
+sáhlo i do **pravidel hry**: přibyly tři přístroje, tři území a hra je od
+poloviny těžší. Každé číslo v téhle sekci je změřené odehraným během, ne
+odhadnuté.
+
+### Tři nové přístroje, každý s mechanikou, kterou hra neměla
+
+Zadání znělo „přidej další tři, ale pozor, ty současné jsou si příliš podobné,
+útočí stejně“. Proto se nejdřív vypsalo všech 22 mechanik, které hra má, a
+nové tři se hledaly mimo ně:
+
+| Přístroj | Druh | Co dělá jinak než všechno ostatní |
+|---|---|---|
+| **Vytyčovací kolík** | `mine` | **Nestřílí.** Osazuje na trasu značky, které čekají, dokud po nich někdo nešlápne. Jako jediný neztratí nic, když je trasa prázdná — zato neumí zareagovat na to, co už projelo. |
+| **Terénní kontroler** | `stack` | Je tím silnější, **čím dýl cíl žije**: každý zásah přidá systematickou odchylku a ta z cíle sama ubírá. Na stropu se pořad uzavře a odchylky se vybijí naráz. Na roje slabý, bosse rozebere sám. |
+| **Dopplerova stanice** | `dopp` | Jako jediná čte **rychlost cíle**. Proti refrakci (sp 2,25) a zrychleným elitám nejsilnější, proti zpomalenému skoro slepá — přímý protiklad niveláku. |
+
+Každý je zapojený úplně: tabulka, sklad, vzácnost, cesta k získání, větev
+v boji, kresba na desce, strom vývoje, vzhledy, zvuk, encyklopedie, ukázka
+v akci i **příslušenství** (hra od verze 102 drží pravidlo „právě jedno na
+každý přístroj“). Změřeno: 0 přístrojů bez cesty k získání, 0 bez
+příslušenství, 31 přístrojů ve 25 druzích ukázky, 0 chyb v konzoli.
+
+### Tři nová území — a proč první verze nefungovala
+
+Každé nové území odemyká jeden z nových přístrojů, stejnou cestou jako
+zbytek hry:
+
+- **Dálniční těleso** (kolík) — dva jízdní pásy naráz, svodidlo mezi nimi.
+- **Přístavní bazén** (Doppler) — bazén leží **uvnitř smyčky trasy**, takže
+  se hráč celou etapu rozhoduje, jestli si na hladinu vezme sonar, dron
+  nebo batoh.
+- **Tunelová roura** (kontroler) — serpentina v hornině, družicové přístroje
+  tam nefungují, stavět jde jen ve výklencích.
+
+Dvě věci odhalilo až měření. **Terén mimo okolí trasy je hráči neviditelný** —
+odkrytá je jen plocha kolem cesty, takže z dvaceti vodních polí Přístavního
+bazénu viděl hráč **nulu** a ze 48 skal Tunelové roury také nulu; území se
+lišila jen čísly. Terén se proto přestěhoval k trase. A **první čísla byla nad
+hranicí, kterou lze uhrát**: všechna tři končila na 0 % přesnosti už v půlce.
+Po dvou kolech ladění (delší trasy místo vyššího násobku, výklenky místo
+souvislé skály) vychází ze tří běhů **2 výhry na každém z nich** — tedy území,
+která se občas prohrají.
+
+### Hra už nejde prolézt zadarmo
+
+Přání znělo: „potřebuju, aby v té hře člověk třeba občas i prohrál“. Odolnost
+vln nese hlavně lineární člen ve `waveScale`. Změřeno robotem na všech
+patnácti územích, několik kol na každou variantu:
+
+| lineární člen | výher z 15 | etap bez jediné ztráty |
+|---|---|---|
+| 0,44 (do 101) | 14 | 91,5 % |
+| **0,56 (od 102)** | **11** | **83 %** |
+| 0,62 | 9 | 83 %, ale posledních **šest** území už neprojde vůbec |
+
+Při 0,56 zůstává prvních sedm území klidných a zápasí se až v druhé polovině —
+tam, kde už hráč něco umí. Robot navíc hraje jen se základní sestavou bez
+perků, metod a laborky, takže skutečný hráč je na tom lépe; číslo je spodní
+odhad, ne strop.
+
+### Vývoj: čtvrté patro a celý strom dopředu
+
+U nerozehraného přístroje byly na obrazovce doopravdy jen **dvě klikací karty**
+a pod nimi dva šedé řádky textu („2. patro se ukáže, až si vybereš směr“) —
+odtud „vidím jen dvě možnosti a nějaké čtverce, nuda“. Zamčená patra se teď
+ukazují jako náhled, takže je vidět, kam která větev vede: **10 karet místo 2**.
+Všem 22 druhům přibylo **čtvrté patro** (podmínky 2/4/6/8, cena 80/190/300/410 ×
+vzácnost). Ověřeno, že se na žádné cestě stromem uzel neopakuje sám se sebou.
+Patra visí na jedné páteři, hotové patro má zelené kolečko, zvolený uzel fajfku.
+
+### Hrdinovy řady lhaly o ceně
+
+Nad řadami hrdiny stál nadpis **„Řady po sloučení“**, ačkoli o dva řádky výš
+hra říká „nelze sloučit“ a řady se kupují za rozpočet. A ceny byly vypsané
+**posunuté o jednu**: u dronu slibovaly 150 za druhou řadu, zatímco hra strhne
+60 — přitom tabulka o pár řádků výš to počítala správně, takže si dvě místa
+v jednom okně odporovala.
+
+### Kariéra: pohárky mizely ve zbytku staré masky
+
+Trofejní cesta má ještě **vodorovnou masku** po původním rolovacím proužku.
+Od přestavby na svislý seznam neměla co maskovat (obsah se nikam neroluje),
+zato její doběh (26 px vlevo, 30 px vpravo) je **širší než odsazení obsahu**
+(14 px) — sežrala tedy levých 10 px kolečka uzlu (krytí 0,62) a pravých 16 px
+pohárku (krytí 0,47). Odtud „pohárky jsou až hodně na okraji a mizí“.
+Po opravě stojí pohárky i uzly u všech řádků na **24 px**.
+
+„Čáry nalevo“ nebyly čára, ale **pahýly**: páteř se kreslila do prvku vysokého
+36 px, zatímco řádek má 172–221 px, takže mezi úseky zbývalo 108 až 157 px
+prázdna. A pravidlo pro poslední řádek nikdy neplatilo, protože posledním
+dítětem pásu je tlačítko. Páteř šla pryč a každá oblast má teď **vlastní kartu**
+jako v celé obrazovce — tu uživatel označil za čitelnou.
+
+Sezónní cesta dostala fialový zář, žebřík úrovní kolejnici a splněná úroveň je
+konečně poznat (dřív se měnila jen barva číslice). Vyzvednutá odměna měla
+`opacity: .62` — krytí zeslabí písmo i podklad naráz, tatáž vada, kterou už
+jednou řešila trofejní cesta.
+
+### Profil, Záznamy a Sbírka
+
+Karta profilu byla jediná plochá mezi kartami, které všechny mají texturu a
+akcent — dostala měřickou síť 22 px (zmenšená mřížka z pozadí hry) a mosazné
+světlo od kotouče pod ní. Šest statistik byly ve dne **šest identických šedých
+dlaždic**: barevný přechod přebilo společné pravidlo odlitku a barvu nesla jen
+číslice (v noci to barevné bylo, protože noční pravidlo má vyšší specificitu).
+Deník měření rozliší dokončené měření od nedokončeného levým proužkem. A
+dlaždice ve sbírce byly **23 vizuálně shodných obdélníků** — vzácnost nesla jen
+tenká linka nahoře; teď ji nese i plocha a vzácné a legendární mají zář.
+
+### Terén platil jen zpola
+
+Tři místa, kde pravidlo políčka neplatilo, ačkoli ho hra hráči slibuje:
+
+- **aura GNSS** terén nečetla vůbec — stanovisko na vyvýšenině mělo stejný
+  okruh jako v lese,
+- **hrdina 2×2** četl jen svůj levý horní roh, takže hrdina napůl v lese a
+  napůl na kopci dostal náhodně jedno z toho; teď je to průměr přes pole,
+- u **pentagonálního hranolu** měnil terén délku kříže, ale ne jeho šířku —
+  náhled i zásah tedy tvrdily něco jiného než pravidlo políčka.
+
+### Co je změřené
+
+- **Robot** na 15 územích, opakovaně: 11 výher z 15, 83 % etap bez ztráty,
+  0 chyb v konzoli.
+- **Nové přístroje**: 0 bez cesty k získání, 0 bez příslušenství, 0 s víc než
+  jedním, 0 mrtvých efektů.
+- **Nová území**: trasy souvislé a uvnitř desky, každý kraj má svou kresbu,
+  terén leží v odkryté ploše.
+- **Kariéra**: maska `none`, pohárky 24/24/24 px, statistiky 6 různých pozadí,
+  sbírka 4 podle vzácnosti — na 390×844 den i noc a na 320×640.
 
 ## Co je nového ve verzi 101
 
