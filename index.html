@@ -9291,6 +9291,30 @@ html[data-theme="hc"] #confetti{opacity:.5}
   background:color-mix(in srgb,var(--brass) 15%,transparent);
   border:1px solid color-mix(in srgb,var(--brass) 38%,transparent)}
 #tinfo .perkLocked{font-size:calc(12.5px*var(--fs,1))}
+/* v102: strom byl "nejake ctverce" - jedina grafika vetve byla 2x9 px
+   carka nad dvojici a vodorovna spojka, ktera se skoro nikdy neukazala,
+   protoze mezi patra se vkladal zamek nebo tlacitko Preladit a sousednost
+   `+` se tim rozbila. Ted patra visi na jedne pateri a dvojice se z ni
+   vetvi. Prefix #tinfo je nutny: bez nej to prebije vrstva v 80-okna. */
+#tinfo .perkTree{position:relative;padding-left:16px;margin-right:var(--m4)}
+#tinfo .perkTree:before{content:'';position:absolute;left:5px;top:12px;bottom:16px;width:2px;
+  border-radius:2px;background:linear-gradient(180deg,var(--moss),
+    color-mix(in srgb,var(--brass) 55%,transparent),var(--stroke2))}
+#tinfo .perkTier{position:relative;margin-bottom:var(--m3)}
+#tinfo .perkTier:before{content:'';position:absolute;left:-11px;top:10px;width:11px;height:2px;
+  background:var(--stroke2)}
+#tinfo .perkTier:after{content:'';position:absolute;left:-16px;top:5px;width:11px;height:11px;
+  border-radius:50%;background:var(--s2);border:2px solid var(--stroke2)}
+#tinfo .perkTier.hotovo:after{background:var(--moss);border-color:var(--moss)}
+#tinfo .perkTier.prev{opacity:.62}
+#tinfo .perkTier.prev .perk{border-style:dashed;filter:grayscale(.45)}
+#tinfo .perkTier+.perkTier .perkRow:after{display:none}
+#tinfo .perkRow{gap:var(--m2)}
+#tinfo .perkRow:before{left:25%;right:25%;top:-9px;width:auto;height:9px;transform:none;
+  background:none;border:2px solid var(--stroke2);border-bottom:0;border-radius:6px 6px 0 0}
+#tinfo .perk.on{position:relative}
+#tinfo .perk.on:after{content:'✓';position:absolute;right:9px;top:7px;
+  color:var(--mossT);font-weight:900;font-size:calc(13px*var(--fs,1))}
 #tinfo #tiUp{margin-top:var(--m3)}
 #tinfo #tiUp>div{font-size:calc(12.5px*var(--fs,1));line-height:1.55}
 
@@ -10519,7 +10543,7 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
     <div class="tiSect">Jak to funguje v praxi</div>
     <p class="tiP" id="tiPrax"></p>
     <div class="tiFact" id="tiFact"></div>
-    <div class="tiSect">Řady po sloučení</div>
+    <div class="tiSect" id="tiTiersHd">Řady po sloučení</div>
     <div id="tiTiers"></div>
   </div>
   <div class="celaPata"><button class="big key" id="tiClose">ZAVŘÍT</button></div>
@@ -11968,7 +11992,8 @@ function challengeDef(){
 function chMod(id){ return S&&S.chal&&S.chal.mods.some(m=>m.id===id); }
 
 // ===== VÝVOJOVÝ STROM PŘÍSTROJŮ =====
-// dvě patra, v každém volba ze dvou směrů; mění chování, ne jen čísla
+// dvě dvojice VLASTNÍCH perků na druh (mění chování, ne jen čísla);
+// zbylá patra stromu se skládají z obecných uzlů TREE2
 // obecné uzly stromu — fungují u všech druhů přístrojů
 const GEN={
  g_dmg:  {n:'Zesílené měření',   d:'+25 % poškození.'},
@@ -11984,30 +12009,31 @@ const GEN={
  g_low:  {n:'Dorážka',           d:'+50 % poškození cíli pod 30 % odolnosti.'},
  g_boss: {n:'Rozbor systematiky',d:'+35 % poškození bossům.'}
 };
-// třetí patro a druhá větev se skládají z obecných uzlů
+// Obecne uzly pro 2. vetev a pro 3. a 4. patro. Kazdy druh ma tri dvojice
+// a ani jedna nekoliduje s tim, co uz ten druh pouziva ve vlastnich perkach.
 const TREE2={
- single:[['g_crit','g_pierce'],['g_first','g_low']],
- chain:[['g_mark','g_rate'],['g_crit','g_gold']],
- splash:[['g_slow','g_rng'],['g_dmg','g_low']],
- slow:[['g_mark','g_dmg'],['g_rng','g_vet']],
- mortar:[['g_boss','g_rng'],['g_dmg','g_crit']],
- lock:[['g_pierce','g_boss'],['g_low','g_vet']],
- zone:[['g_slow','g_gold'],['g_dmg','g_rng']],
- exec:[['g_boss','g_crit'],['g_pierce','g_rate']],
- sweep:[['g_rate','g_slow'],['g_rng','g_crit']],
- pulse:[['g_pierce','g_mark'],['g_dmg','g_rate']],
- push:[['g_slow','g_first'],['g_gold','g_dmg']],
- drone:[['g_mark','g_rate'],['g_low','g_rng']],
- walker:[['g_dmg','g_slow'],['g_vet','g_rate']],
- mark:[['g_rng','g_vet'],['g_gold','g_slow']],
- support:[['g_rng','g_gold'],['g_vet','g_crit']],
- boost:[['g_rng','g_crit'],['g_vet','g_gold']],
- weather:[['g_rng','g_gold'],['g_vet','g_dmg']],
- econ:[['g_gold','g_crit'],['g_dmg','g_rate']],
- global:[['g_boss','g_mark'],['g_rate','g_low']],
- boostall:[['g_gold','g_vet'],['g_crit','g_rng']],
- ortho:[['g_pierce','g_rng'],['g_dmg','g_crit']],
- pull:[['g_slow','g_dmg'],['g_mark','g_rng']]
+ single:[['g_crit','g_pierce'],['g_first','g_low'],['g_dmg','g_rate']],
+ chain:[['g_mark','g_rate'],['g_crit','g_gold'],['g_pierce','g_dmg']],
+ splash:[['g_slow','g_rng'],['g_dmg','g_low'],['g_boss','g_rate']],
+ slow:[['g_mark','g_dmg'],['g_rng','g_vet'],['g_low','g_crit']],
+ mortar:[['g_boss','g_rng'],['g_dmg','g_crit'],['g_slow','g_gold']],
+ lock:[['g_pierce','g_boss'],['g_low','g_vet'],['g_rate','g_dmg']],
+ zone:[['g_slow','g_gold'],['g_dmg','g_rng'],['g_boss','g_mark']],
+ exec:[['g_boss','g_crit'],['g_pierce','g_rate'],['g_low','g_dmg']],
+ sweep:[['g_rate','g_slow'],['g_rng','g_crit'],['g_dmg','g_gold']],
+ pulse:[['g_pierce','g_mark'],['g_dmg','g_rate'],['g_slow','g_crit']],
+ push:[['g_slow','g_first'],['g_gold','g_dmg'],['g_pierce','g_boss']],
+ drone:[['g_mark','g_rate'],['g_low','g_rng'],['g_gold','g_dmg']],
+ walker:[['g_dmg','g_slow'],['g_vet','g_rate'],['g_gold','g_boss']],
+ mark:[['g_rng','g_vet'],['g_gold','g_slow'],['g_crit','g_pierce']],
+ support:[['g_rng','g_gold'],['g_vet','g_crit'],['g_dmg','g_rate']],
+ boost:[['g_rng','g_crit'],['g_vet','g_gold'],['g_dmg','g_slow']],
+ weather:[['g_rng','g_gold'],['g_vet','g_dmg'],['g_crit','g_slow']],
+ econ:[['g_gold','g_crit'],['g_dmg','g_rate'],['g_vet','g_rng']],
+ global:[['g_boss','g_mark'],['g_rate','g_low'],['g_slow','g_dmg']],
+ boostall:[['g_gold','g_vet'],['g_crit','g_rng'],['g_rate','g_dmg']],
+ ortho:[['g_pierce','g_rng'],['g_dmg','g_crit'],['g_gold','g_boss']],
+ pull:[['g_slow','g_dmg'],['g_mark','g_rng'],['g_crit','g_boss']]
 };
 const PERKS={
  global:[[{id:'globfast',n:'Kratší perioda',d:'Pulzy chodí o 45 % častěji.'},
@@ -12100,14 +12126,17 @@ const PERKS={
         {id:'pullcrush',n:'Tíhový tlak',d:'Vír průběžně bere trojnásobek.'}]]
 };
 function perksFor(k){ return PERKS[T[k].kind]||PERKS.single; }
-// strom: 1. patro 2 volby, 2. patro 2 volby podle první větve, 3. patro 2 obecné uzly
+// strom: 1. patro 2 volby, 2. patro 2 volby podle první větve,
+// 3. a 4. patro po dvou obecných uzlech (4. patro přibylo ve v102)
 function treeFor(k){
  const kind=T[k].kind, base=perksFor(k), gen=TREE2[kind]||TREE2.single;
  const mk=id=>({id:id,n:GEN[id].n,d:GEN[id].d,gen:true});
  return {
    t1:base[0],
    t2:{ [base[0][0].id]:base[1], [base[0][1].id]:gen[0].map(mk) },
-   t3:gen[1].map(mk)
+   t3:gen[1].map(mk),
+   // pojistka, kdyby nekteremu druhu v TREE2 zustaly jen dve dvojice
+   t4:(gen[2]||gen[1]).map(mk)
  };
 }
 function perkImpact(k,id){
@@ -12132,7 +12161,10 @@ function perkImpact(k,id){
  return tab?tab():'';
 }
 function perkPath(k){ return (SAVE.perk&&SAVE.perk[k])||[]; }
-function perkReqT(t){ return t===0?2:t===1?4:6; }
+// v102: ctyri patra (drive tri). 8 je strop urovne pristroje - CARDNEED
+// ma osm polozek a cardCost vraci null pri lv>=8, takze 4. patro je
+// mistrovsky uzel na konci cesty, ne bezna zastavka.
+function perkReqT(t){ return t===0?2:t===1?4:t===2?6:8; }
 function perkCostT(k,t){ return Math.round((80+t*110)*rarOf(k).need); }
 function hasPerk(t,id){
  const k=typeof t==='string'?t:t.k;
@@ -20155,6 +20187,11 @@ function openTinfo(k){
  $('tiPrax').textContent=inf.p;
  $('tiFact').textContent=inf.f;
  const tt=$('tiTiers');tt.innerHTML='';
+ // Hrdina se slucovat NEDA (lzeSloucit ho odmita) a jeho rady se kupuji za
+ // rozpocet - nadpis "Rady po slouceni" nad nimi si odporoval s vetou
+ // "nelze sloucit" o dva radky vys.
+ {const tth=$('tiTiersHd');
+  if(tth)tth.textContent=jeHrdina(k)?'Řady hrdiny (za rozpočet)':'Řady po sloučení';}
  const hs=(jeHrdina(k)&&typeof hrdSila==='function')?hrdSila(k):1;
  const hr=(jeHrdina(k)&&typeof hrdKadence==='function')?hrdKadence(k):1;
  def.n.forEach((nm,i)=>{
@@ -20195,7 +20232,7 @@ function openTinfo(k){
    const rowFor=(opts,tier,title)=>{
      const req=perkReqT(tier), cost=perkCostT(k,tier);
      const chosen=opts.find(o=>taken.indexOf(o.id)>=0);
-     const box=document.createElement('div');box.className='perkTier';
+     const box=document.createElement('div');box.className='perkTier'+(chosen?' hotovo':'');
      box.innerHTML='<div class="perkHd"><span>'+title+'</span><span>'+
        (chosen?'zvoleno':('od úrovně '+req+' · '+cost+' výzkumu'))+'</span></div>';
      const row=document.createElement('div');row.className='perkRow';
@@ -20244,28 +20281,47 @@ function openTinfo(k){
      };
      pt.appendChild(reset);
    }
+   // v102: drive se zamcene patro nahradilo JEDNOU VETOU, takze u
+   // nerozehraneho pristroje byly na obrazovce doopravdy jen dve klikaci
+   // karty a pod nimi dva sede radky textu ("vidim jen dve moznosti a
+   // nejake ctverce"). Obsah dalsich pater si hrac nemohl prohlednout
+   // PRED volbou, takze se nedal planovat. Ted je videt cely strom -
+   // zamcena patra jako nahled, ktery rekne, cim se odemyka.
+   const nahled=(opts,tier,title,duvod)=>{
+     const box=rowFor(opts,tier,title);
+     box.classList.add('prev');
+     box.querySelectorAll('.perk').forEach(d=>{
+       d.classList.remove('on','blocked'); d.classList.add('locked');
+       const c=d.querySelector('.pkc'); if(c)c.textContent=duvod;
+       d.onclick=()=>showHint(duvod);
+     });
+     return box;
+   };
    pt.appendChild(rowFor(tree.t1,0,'1. patro · směr vývoje'));
    const first=tree.t1.find(o=>taken.indexOf(o.id)>=0);
    if(first){
      pt.appendChild(rowFor(tree.t2[first.id],1,'2. patro · větev „'+first.n+'"'));
    } else {
-     const hint=document.createElement('div');hint.className='perkLocked';
-     hint.textContent='2. patro se ukáže, až si vybereš směr v prvním.';
-     pt.appendChild(hint);
+     tree.t1.forEach(o=>pt.appendChild(nahled(tree.t2[o.id],1,
+       '2. patro · větev „'+o.n+'"','nejdřív zvol „'+o.n+'" v 1. patře')));
    }
    const second=first&&tree.t2[first.id].find(o=>taken.indexOf(o.id)>=0);
-   if(second){
-     pt.appendChild(rowFor(tree.t3,2,'3. patro · dokončení'));
-   } else {
-     const hint=document.createElement('div');hint.className='perkLocked';
-     hint.textContent='3. patro se otevře po volbě ve druhém patře.';
-     pt.appendChild(hint);
-   }
+   pt.appendChild(second?rowFor(tree.t3,2,'3. patro · dokončení')
+     :nahled(tree.t3,2,'3. patro · dokončení','otevře se po volbě ve 2. patře'));
+   const third=second&&tree.t3.find(o=>taken.indexOf(o.id)>=0);
+   pt.appendChild(third?rowFor(tree.t4,3,'4. patro · mistrovský uzel')
+     :nahled(tree.t4,3,'4. patro · mistrovský uzel','otevře se po volbě ve 3. patře'));
  }
  const up=$('tiUp');up.innerHTML='';
  if(jeHrdina(k)){
-   const ceny=(T[k].up||[]).map(function(c,i){return (i+1)+'. řada '+
-     (i===0?'zdarma':Math.round(c*(1-.018*(SAVE.meta.disc||0)))); });
+   // Cena z rady i na radu i+1 je up[i-1] (hrdUpCost bere u[t.l]), takze
+   // vypis podle indexu byl o jednu vedle: u dronu sliboval 150 za druhou
+   // radu, ale hra strhne 60. Tabulka #tiTiers o par radku vys to pritom
+   // pocitala spravne - dve mista v jednom okne si odporovala.
+   const u4=T[k].up||[];
+   const ceny=(T[k].n||[]).map(function(nm,i){return (i+1)+'. řada '+
+     (i===0?'zdarma':(u4[i-1]!=null
+       ?Math.round(u4[i-1]*(1-.018*(SAVE.meta.disc||0))):'—')); });
    up.innerHTML='<div style="margin-top:12px;font-size:11.5px;color:var(--dim)">'+
      'Hrdina se nesbírá z karet — postavíš ho zdarma na začátku měření a '+
      'roste za rozpočet přímo v terénu: <b style="color:var(--paper)">'+
