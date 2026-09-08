@@ -1468,10 +1468,27 @@ co bylo rozbité — včetně dvou věcí, které braly hráči postup.
 
 ## Co je ve hře
 
-12 území s vlastními bossy · 20 přístrojů + 3 hrdinové · čtyři řady a nad nimi
-mistrovská řada ★ až ★★★ · 13 druhů vlivů,
-elity a pravidla vln · vývojový strom 3 patra × 8 cest s možností přeladit ·
-6 režimů · obchod s denní nabídkou · sezónní cesta · trofejní cesta · 25 úspěchů ·
-sbírka karet · laboratoř · příslušenství · encyklopedie · zkouška z geodézie
-(36 otázek) · zakázka dne · terénní služby · offline provoz
+15 území, každé s vlastním bossem · 26 sbíratelných přístrojů + 5 hrdinů ·
+čtyři řady a nad nimi mistrovská řada ★ až ★★★ · 12 druhů vlivů, elity,
+5 pravidel vln a 8 nepříznivých podmínek · vývojový strom o čtyřech patrech
+(uzly na úrovni 2, 4, 6 a 8, dvě volby na patro, tedy 16 cest) s možností
+přeladit · 10 měřických metod · 36 karet do měření · 4 druhy beden ·
+6 režimů · obchod s denní nabídkou · sezónní cesta · trofejní cesta ·
+27 úspěchů · sbírka karet · laboratoř · 31 kusů příslušenství ·
+100 vzhledů přístrojů · encyklopedie · zkouška z geodézie (60 otázek) ·
+zakázka dne · terénní služby · offline provoz
+
+### Jak si ta čísla ověřit
+
+Čísla v odstavci výše se **nehádají**. Grep na zdroj je na tohle nespolehlivý —
+každá tabulka je formátovaná jinak a `grep -c` na `{n:'` napočítá i věci, které
+do ní nepatří. Hra si ale všechny tabulky vystavuje do `window.__G`, takže
+stačí otevřít `index.html` v prohlížeči a do konzole vložit jeden řádek:
+
+```js
+JSON.stringify({uzemi:__G.MAPS.length, pristroje:__G.ORD.length, hrdinove:__G.HRDINOVE.length, vlivy:Object.keys(__G.E).length, karty:__G.CARDS.length, metody:__G.ABIL.length, otazky:QUIZ.length, uspechy:ACH.length, patra:Object.keys(__G.treeFor('theo')).length, vzhledy:Object.values(SKINY).reduce((a,v)=>a+v.length,0)})
+```
+
+K 8. 9. 2026 vrací:
+`{"uzemi":15,"pristroje":26,"hrdinove":5,"vlivy":12,"karty":36,"metody":10,"otazky":60,"uspechy":27,"patra":4,"vzhledy":100}`
 

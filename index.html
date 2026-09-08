@@ -1635,6 +1635,10 @@ html[data-theme="night"] #go.hot{color:#06111a}
   border-radius:var(--r1);font-size:calc(17px*var(--fs,1));color:var(--dim);background:var(--scrim);
   box-shadow:var(--elev2)}
 #shopbar #reroll .rc{font-size:calc(11px*var(--fs,1));color:var(--brassT);font-weight:800}
+/* Tlacitko melo jen ikonu ⟳ a cislo (cenu), takze z nej nesel poznat ucel.
+   Slovo je zamerne male - vejde se do 46px sloupce vedle karet skladu. */
+#shopbar #reroll .rl{font-size:calc(7.5px*var(--fs,1));font-weight:900;
+  letter-spacing:.02em;line-height:1;color:var(--dim)}
 .card{border:3px solid var(--stroke);color:var(--onPlast);
   background:linear-gradient(180deg,
     color-mix(in srgb,var(--cardc,var(--ink2)) 30%,var(--ink2)) 0%,
@@ -5598,6 +5602,7 @@ html[data-theme="hc"] #go.hot,html[data-theme="hc"] .tog.on{background:#06131c;c
   box-shadow:var(--hrana),inset 0 -5px 0 var(--plC),
              0 3px 0 var(--stroke),0 7px 14px rgba(4,8,28,.4)}
 #shopbar #reroll .rc{font-size:calc(11px*var(--fs,1));color:var(--brassT);font-weight:900}
+#shopbar #reroll .rl{color:var(--t2)}
 html[data-theme="hc"] .card{background:#fff;color:#06131c;border:2px solid #000;
   box-shadow:0 0 0 3px #000}
 html[data-theme="hc"] .card:before{background:#000}
@@ -5609,7 +5614,8 @@ html[data-theme="hc"] .card.sel,html[data-theme="hc"] .hrdCard{box-shadow:0 0 0 
 html[data-theme="hc"] .clev{background:#000;color:#fff}
 html[data-theme="hc"] #shopbar #reroll{background:#fff;color:#06131c;
   border:3px solid #000;box-shadow:0 0 0 3px #000}
-html[data-theme="hc"] #shopbar #reroll .rc{color:#06131c}
+html[data-theme="hc"] #shopbar #reroll .rc,
+html[data-theme="hc"] #shopbar #reroll .rl{color:#06131c}
 
 /* ------------------------------------------------------------
    8. Rychla lista nad vybranym stanoviskem
@@ -7419,6 +7425,11 @@ html[data-board="2"] .card .n{font-size:calc(12.5px*var(--fs,1))}
 #game #hud .k,#game #capWrap,#game .card .n,#game .card .c,
 #game .ab .an,#game .ab .ad,#game .abLv,
 #game #shopbar #reroll .rc{font-size:calc(12px*var(--fs,1))}
+/* Behem tutorialu stoji ve spodnim radku tlacitka slovo "zdarma", ne cislo.
+   Pri 12 px meri 48,5 px a tlacitko ma 48 - text tedy lezel pres lem ven.
+   Vlastni trida musi mit VIC nez tri id + trida, jinak ji prebije pravidlo
+   o radek vyse i to v @media (max-height:730px). */
+#game #shopbar #reroll .rc.rcSlovo{font-size:calc(7.5px*var(--fs,1));letter-spacing:0}
 /* Popisky v liste jsou verzalky bez dolnich dotahu, ale sazi se do
    flexoveho radku: pri vysce radku 1,15 uz se do nej znak 12 px nevesel
    (obsah 16 px, ramec 14 px) a #hud .cell ho orezal. 1,3 to spravi. */
@@ -10644,7 +10655,7 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
     </div>
     <div id="shopbar">
       <div id="shop"></div>
-      <button id="reroll" title="Nová nabídka">⟳<span class="rc">6</span></button>
+      <button id="reroll" title="Vyměnit nabídku skladu">⟳<span class="rl">VYMĚNIT</span><span class="rc">6</span></button>
     </div>
   </div>
 
@@ -12431,7 +12442,19 @@ const INFO={
  gravi:{p:'Gravimetr měří tíhové zrychlení. Relativní přístroj porovnává tíži mezi body pružinovou soustavou, absolutní ji určí z volného pádu tělesa ve vakuu. Z tíhových anomálií se počítá průběh geoidu, tedy převod mezi elipsoidickou a nadmořskou výškou.',
    f:'Tíhové zrychlení se v Česku pohybuje kolem 9,81 m/s²; dnešní gravimetry rozliší změnu o miliardtinu této hodnoty — třeba pohyb podzemní vody.'},
  multi:{p:'Multistanice spojuje totální stanici, skener a kameru v jednom přístroji. Používá se na monitoring deformací mostů, hrází a tunelů, kde se stejná místa měří opakovaně v čase.',
-   f:'Automatické cílení dokáže sledovat desítky bodů v cyklu a odhalit posun pod 1 mm.'}
+   f:'Automatické cílení dokáže sledovat desítky bodů v cyklu a odhalit posun pod 1 mm.'},
+ // Pet pristroju, ktere v encyklopedii vyklad nemely vubec (tri sbiratelne
+ // z v96 a dva hrdinove). Bez zaznamu v INFO psala zalozka Popis prazdno.
+ plumb:{p:'Provažovač přenáší bod ve svislici. Optický provažovač centruje přístroj přesně nad značkou, zenitový a nadirový provažovač přenáší bod nahoru nebo dolů — mezi patry výškové budovy, ve výtahové šachtě nebo do důlní jámy. Svislici udává tíže, ne konstrukce přístroje.',
+   f:'Optický zenitový provažovač drží svislici asi na 1 mm na 30 metrů; laserový provažovač v trojnožce centruje na 1 mm na 1,5 m.'},
+ planim:{p:'Planimetr měří plochu obrazce tím, že se jeho obvod objede hrotem — kolečko na rameni sečte dráhu kolmou na rameno a z ní vyjde výměra. V geodézii se jím počítaly výměry parcel z map a plochy příčných řezů, ze kterých se pak dostanou kubatury zemních prací.',
+   f:'Polární planimetr sestrojil Jakob Amsler roku 1854; jeho dílna jich za prvních šedesát let prodala kolem padesáti tisíc.'},
+ zenit:{p:'Zenitový teleskop měří rozdíl zenitových vzdáleností dvojice hvězd, které kulminují těsně u zenitu. Z toho vyjde astronomická zeměpisná šířka, a po porovnání s polohou ze sítě i tížnicová odchylka — o kolik se svislice odklání od normály k elipsoidu.',
+   f:'Cirkumzenitál je český přístroj: sestrojili ho František Nušl a Josef Jan Frič od roku 1903 a šířku i délku určoval naráz z časů, kdy hvězdy protnou kružnici stálé zenitové vzdálenosti.'},
+ scanvan:{p:'Mobilní mapovací systém veze na střeše laserové skenery a kamery spřažené s GNSS a inerciální jednotkou. Mračno bodů vzniká za jízdy, takže se poloha vozu musí počítat průběžně — a při výpadku družicového signálu drží dráhu inerciální jednotka.',
+   f:'Zkalibrovaná sestava zaměří silniční koridor na 2 až 3 cm; při zhoršeném příjmu družic chyba naroste i na metr.'},
+ masttheo:{p:'Automatický monitoring staví robotickou totální stanici natrvalo na pilíř nebo stožár a ta v pravidelných cyklech obměřuje hranoly na sledované konstrukci — na hrázi, mostě nebo v tunelu. Výsledek jde rovnou do výpočtu a překročení meze hlásí sestava sama.',
+   f:'Sledovací stanice musí v každém cyklu měřit i na stálé body mimo sledovaný objekt. Bez nich by se posun samotné stanice připsal konstrukci.'}
 };
 const RAR={
  c:{n:'Běžná',   col:'#7d8ea8', colL:'#c3cedb', w:58, need:1.0},
@@ -13924,7 +13947,10 @@ const NEWTIPS=[
  {k:'tier5',  c:s2=>s2&&s2.towers.some(t=>t.l>=3),
   m:'<b>Čtvrtá řada není strop.</b> Nad ní je mistrovská řada ★ až ★★★, každá hvězda +90 % poškození. Buď sloučíš dva stejně označené přístroje, nebo hvězdu koupíš v panelu stanoviska.'},
  {k:'spend',  c:s2=>s2&&s2.cr>=250&&s2.wave>=6,
-  m:'<b>Rozpočet se dá utratit i jinak.</b> V panelu ☰ posílíš četu o další stanovisko, v záložce Síť koupíš vylepšení celé sítě a u přístroje čtvrté řady mistrovskou hvězdu ★.'},
+  // "Posilit cetu" v panelu uz neni (kapacita roste za slucovani sama), takze
+  // rada posilala hrace na tlacitko, ktere tam nestoji. Sluzby dnes nabizeji
+  // zrychleni mereni, dokalibrovani site a nove vybaveni do skladu.
+  m:'<b>Rozpočet se dá utratit i jinak.</b> V panelu ☰ máš Síť (vylepšení celé sítě do konce měření) a Služby — zrychlit měření, dokalibrovat síť, objednat nové vybavení. U přístroje čtvrté řady si koupíš mistrovskou hvězdu ★.'},
  {k:'finalb', c:s2=>s2&&s2.wave===lastWaveOf()-1,
   m:'<b>Příští etapa je finále území.</b> Přijdou dva bossové naráz — nech si náboje metod.'}
 ];
@@ -13940,12 +13966,25 @@ function checkNewTips(){
    break;
  }
 }
+// Prouzek `feed` zije UVNITR obrazovky #game a jeste pod pripadnym oknem.
+// Prvni otevreni bedny, draftu karet, stromu vyvoje a trofejni cesty se
+// odehrava v nabidce nebo nad oknem, kde by hlaska nebyla videt vubec -
+// tam se proto misto prouzku ukaze okenko '?' (showHint), ktere si hrac
+// odklikne. Diky tomu se tyhle ctyri veci nemusi vysvetlovat dopredu v uvodu.
 function firstTime(key,msg,color){
  SAVE.seen=SAVE.seen||{};
  if(SAVE.seen[key])return;
  if(S&&S.phase==='combat'&&S.enemies.length>8)return;
  SAVE.seen[key]=1;save();
- feed('<b>Novinka:</b> '+msg,color||'var(--violet)');
+ const g=$('game'), f=$('feed');
+ // Prouzek se smi pouzit, jen kdyz je deska OPRAVDU na obrazovce. Pozor:
+ // `S.phase==='combat'` samo nestaci - mereni bezi dal i potom, co hrac
+ // odejde do nabidky, a hlaska by pak spadla do neviditelneho prouzku.
+ const hraVidet=!!(g&&g.classList.contains('on')&&f&&f.offsetParent!==null);
+ const oknoNahore=!!document.querySelector('.ov.on');
+ if(hraVidet&&(!oknoNahore||(S&&S.phase==='combat')))
+   feed('<b>Novinka:</b> '+msg,color||'var(--violet)');
+ else showHint(msg);
 }
 function checkAchInGame(){
  if(!SAVE.ach)SAVE.ach={};
@@ -17928,6 +17967,11 @@ function fmtTime(ms){
 function showCrate(list){
  const box=$('crList');box.innerHTML='';
  $('crates').classList.add('on');
+ // Prvni bedna v zivote. Driv o nich mluvila 4. karta uvodu, tedy dvacet
+ // minut predtim, nez hrac nejakou uvidel.
+ firstTime('bedna','Tohle je bedna. Padají z ní karty přístrojů a výzkum. '+
+   'Bedny čekají ve Skladu a otevírají se na čas — vždycky jen jedna. '+
+   'Čekání zkrátíš geodetickou úlohou.');
  const cr=list[0];
  const pocet=list.reduce((a,x)=>a+Object.keys(x.cards||{}).reduce((b,k)=>b+x.cards[k],0),0);
  const vyzk=list.reduce((a,x)=>a+(x.res||0),0);
@@ -18175,6 +18219,12 @@ function openDraft(){
    L.appendChild(d);
  });
  $('draft').classList.add('on');snd('coin');
+ // AZ TEDKA, s uz otevrenym oknem: prouzek `feed` lezi POD nim, takze
+ // se hlaska musi ukazat jako okenko. Prvni draft v zivote hrace -
+ // do v102 o kartach mluvila 4. karta uvodu, dvacet minut predem.
+ firstTime('draft','Po každé etapě si vybereš jedno vylepšení ze tří. '+
+   'Platí do konce tohohle měření a najdeš je v panelu Etapa. '+
+   'Do dalšího měření si ho nevezmeš.');
 }
 
 /* ==================== VSTUP ==================== */
@@ -18388,7 +18438,19 @@ function boardTap(ev){
    for(let i=0;i<8;i++){const a=Math.random()*6.283,v=30+Math.random()*45;
      S.fx.push({type:'part',x:cx(c),y:cy(rw),vx:Math.cos(a)*v,vy:Math.sin(a)*v-30,
        c:T[k].c,t:.4,d:.4,r:1.5+Math.random()*1.8});}
-   S.hoverCell=null;S.built++;S.maxTowers=Math.max(S.maxTowers||0,pocetStanovisek());S.shop[S.placing]=null;S.placing=null;recalcBuffs();snd('place');vib(12);
+   S.hoverCell=null;S.built++;S.maxTowers=Math.max(S.maxTowers||0,pocetStanovisek());
+   // TUTORIAL, 3. krok: "Postav jeste jeden stejny." Nabidka skladu ale nikdy
+   // nema dva stejne kusy (rollShop bere kazdy typ jen jednou), takze se ten
+   // krok bez vymeny skladu splnit NEDAL - a tlacitko vymeny je jen ikona ⟳
+   // s cislem, takze novacek nema jak poznat, ze prave ono je ta cesta ven.
+   // Pri PRVNI stavbe v tutorialu se proto vycerpany slot doplni TYMZ
+   // pristrojem: druhy kus lezi hraci rovnou pred ocima a ⟳ neni potreba.
+   // POZOR: `S.shop[S.placing]` je v tuhle chvili JESTE `k`, takze se
+   // stejny kus musi hledat MIMO prave pouzity slot.
+   const jinySteny=S.shop.some((x,i)=>i!==S.placing&&x===k);
+   if(SAVE.tut===1&&S.map===0&&!S.endless&&!S.chal&&!jinySteny)S.shop[S.placing]=k;
+   else S.shop[S.placing]=null;
+   S.placing=null;recalcBuffs();snd('place');vib(12);
    if(SAVE.tut===1)SAVE.tut=2;
    ui();return;
  }
@@ -18562,19 +18624,28 @@ function renderPrevTab(){
    box.appendChild(d);
  });
 }
+// Napoveda musi popisovat hru, jaka JE. Kazda veta tady ma oporu v kodu:
+//   naboje metod .... abilMax() + abilRefill(), doplneni v endWave()
+//   kapacita ....... capMax(): 6 + etapy/6 + ceta ze slucovani (strop 3)
+//   kalibrace ...... dmgOf(): (1+.18*t.cal), cal nejvys 4
+//   sluzby ......... zalozka 'spend': zrychlit, dokalibrovat, nove vybaveni
+//   sit ............ tabulka NET (6 polozek)
+//   podminky ....... pickCond(w): w<6 vraci null
+//   pravidla vln ... pickRule(w): w<7 vraci null
 function napovedaHtml(){
  return [
-  ['Přesnost sítě','Tvoje životy. Každý rušivý vliv, který dojde k oranžovému nulovému bodu, ji sníží. Na nule končíš.'],
-  ['Rozpočet','Peníze na přístroje. Dostáváš je za zničené vlivy a za dokončenou etapu.'],
-  ['Stanoviska','Kolik přístrojů smíš mít na desce. Roste s etapami a každé třetí sloučení přidá jedno místo.'],
-  ['Sklad dole','Nabídka přístrojů. Klepni na kartu, pak na volné pole vedle trasy.'],
-  ['Slučování','Dva stejné přístroje stejné řady dají jeden o řadu vyšší a mnohem silnější. Vyber stanovisko a zmáčkni SLOUČIT.'],
-  ['Kalibrace','Vylepší jedno konkrétní stanovisko o 18 % poškození za úroveň.'],
-  ['Měřické metody','Dvě dolní tlačítka. Fungují jen během etapy a pak se nabíjejí.'],
-  ['Síť','Vylepšení, která platí do konce tohohle měření — přesnost, dosah, dotace, kadence.'],
-  ['Služby','Jednorázové úkony uprostřed měření: nouzová oprava přesnosti, dokalibrování sítě, nová nabídka skladu.'],
+  ['Přesnost sítě','Tvoje životy. Každý rušivý vliv, který dojde k oranžovému nulovému bodu, ji sníží — čím větší kus vlny projde, tím víc. Na nule končíš.'],
+  ['Rozpočet','Peníze na přístroje. Dostáváš je za zničené vlivy, za dokončenou etapu a navíc za to, že další etapu spustíš rychle.'],
+  ['Stanoviska','Kolik přístrojů smíš mít na desce. Začínáš na šesti, přibývají s etapami a každé třetí sloučení přidá jedno místo — to nejvýš třikrát za měření.'],
+  ['Sklad dole','Nabídka přístrojů. Klepni na kartu, pak na volné pole vedle trasy. Tlačítko VYMĚNIT vedle karet dá za rozpočet novou nabídku.'],
+  ['Slučování','Dva stejné přístroje stejné řady dají jeden o řadu vyšší a mnohem silnější. Vyber stanovisko a zmáčkni SLOUČIT. Čtvrtá řada se dál slučuje na hvězdy ★.'],
+  ['Kalibrace','Vylepší jedno konkrétní stanovisko o 18 % poškození za stupeň. Stupně jsou čtyři.'],
+  ['Měřické metody','Dvě tlačítka hned nad tlačítkem etapy. Fungují jen během etapy a mají náboje — jeden se doplní na konci každé etapy.'],
+  ['Síť','Vylepšení, která platí do konce tohohle měření: poškození, dosah, dotace za etapu, obnova přesnosti, rychlost měření, levnější přístroje.'],
+  ['Služby','Jednorázové úkony uprostřed měření: zrychlit měření na dvě etapy, dokalibrovat celou síť, objednat nové vybavení do skladu.'],
   ['Karty','Po každé etapě si vybíráš jednu ze tří. Platí do konce měření a najdeš je v záložce Etapa.'],
-  ['Podmínky','Od 6. etapy může přijít počasí. Meteostanice jeho vliv potlačí.']
+  ['Podmínky','Od 6. etapy může přijít počasí. Meteostanice jeho vliv potlačí.'],
+  ['Pravidla vln','Od 7. etapy může etapa dostat vlastní pravidlo. Mění složení nepřátel i odměnu.']
  ].map(x=>'<div class="hlp"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>').join('');
 }
 function otevriNapovedu(){
@@ -18598,7 +18669,16 @@ function ui(){
  const sh=$('shop');sh.innerHTML='';
  // Dokud hrdina nestoji na desce, ma vlastni kartu na zacatku skladu.
  // Je zdarma a je jen jedna za mereni, proto vypada jinak nez zbozi.
- const hrdKarta=!S.hrdT&&S.hrd&&T[S.hrd]&&!banned(S.hrd);
+ // BEHEM PRVNICH KROKU TUTORIALU se ale neukazuje: prvni krok zni "klepni
+ // dole na kartu pristroje" a hrdina lezi na kraji rady jako prvni. Kdo na
+ // nej klepne, postavi ctyri pole velky kus, ktery se NESLUCUJE - a tretim
+ // krokem tutorialu ("postav jeste jeden stejny") neprojde. Karta se vrati
+ // uz u 4. kroku (slucovani), tedy dlouho pred prvni etapou - tam uz se sklad
+ // nepouziva, takze neni co splest. Mez je `<3` a ne `<4` schvalne: sklad se
+ // v ui() kresli DRIV, nez se o par set radku niz posune SAVE.tut, takze pri
+ // `<4` by se karta vratila az pri pristim prekresleni.
+ const hrdKarta=!S.hrdT&&S.hrd&&T[S.hrd]&&!banned(S.hrd)
+   &&!(SAVE.tut<3&&S.map===0&&!S.endless&&!S.chal);
  // Vycerpany slot dosud bral stejne siroky sloupec jako zivá karta a psal do
  // nej "pouzito". Pri sesti slotech (vylepseni slot+depot) a karte hrdiny to
  // delalo sedm sloupcu po 30 px a ze VSECH nazvu zbyly triznaky:
@@ -18664,7 +18744,12 @@ function ui(){
    };
    sh.appendChild(d);
  });
- const rc=$('reroll').querySelector('.rc'); if(rc)rc.textContent=SAVE.tut<4?'0':String(Math.max(2,(6+3*(S.rerolls||0))-2*M('reroll')));
+ // Behem tutorialu je vymena zdarma - misto ceny "0" to i rekne slovem.
+ // Slovo se do 46px sloupce vejde jen mensim pismem, proto vlastni trida.
+ const rc=$('reroll').querySelector('.rc');
+ if(rc){ const zdarma=SAVE.tut<4;
+   rc.textContent=zdarma?'zdarma':String(Math.max(2,(6+3*(S.rerolls||0))-2*M('reroll')));
+   rc.classList.toggle('rcSlovo',zdarma); }
  const pl=$('place');
  if(S.stavimHrdinu&&S.hrd){
    pl.classList.add('on');
@@ -18939,7 +19024,10 @@ function ui(){
    const nw=S.wave+1;
 
    const box=$('wavePrev');box.innerHTML='';
-   if(nw>=4){
+   // Podminka se losuje az od 6. etapy (pickCond: `if(w<6)return null`).
+   // Tenhle nahled ji sliboval uz od 4. - a vetsi nahled v zalozce Etapa
+   // pritom ve stejne chvili rikal 6. Dve cisla pro jednu vec.
+   if(nw>=6){
      const d=document.createElement('div');d.className='wp';
      d.innerHTML='<i style="background:var(--dim)"></i>možné podmínky';
      box.appendChild(d);
@@ -18976,10 +19064,10 @@ function ui(){
    const steps=[
      {t:'Klepni dole na kartu přístroje.',h:'Vybereš, co budeš stavět.'},
      {t:'Teď klepni na volné pole vedle trasy.',h:'Přístroj musí na trasu dosáhnout.'},
-     {t:'Postav ještě jeden stejný přístroj.',h:'Není ve skladu? Klepni na ⟳ vedle karet — během tutoriálu je zdarma.'},
+     {t:'Postav ještě jeden stejný přístroj.',h:'Ve skladu na tebe čeká — klepni na jeho kartu a pak na volné pole.'},
      {t:'Klepni na stanovisko a zmáčkni SLOUČIT.',h:'Pak klepni na blikající druhý přístroj.'},
      {t:'Spusť etapu velkým tlačítkem.',h:'Přístroje začnou měřit samy.'},
-     {t:'Během etapy vyzkoušej měřickou metodu.',h:'Dvě tlačítka nad startem, fungují jen ve vlně.'}
+     {t:'Během etapy vyzkoušej měřickou metodu.',h:'Dvě tlačítka nad tlačítkem etapy, fungují jen ve vlně.'}
    ];
    if(SAVE.tut===0&&S.placing!==null)SAVE.tut=1;
    if(SAVE.tut===2&&S.towers.length>=2&&
@@ -19422,22 +19510,19 @@ function taskFrame(){
 
 const VERZE=103;
 /* ==================== ÚVOD ==================== */
+// Uvod ma DVE karty, ne pet. Karty o bednach, kartach pristroju, vetvich
+// vyvoje, poharich, dennich ukolech, vyzve a zkousce mluvily o sedmi vecech,
+// ktere novacek uvidi az za dlouho - a do prvni etapy pribyvaly tri klepnuti
+// a tri obrazovky navic. Kazde z tech temat se ted vysvetli az tam, kde na
+// nej hrac poprve narazi (firstTime: bedna, draft karet, strom vyvoje,
+// trofejni cesta). Slucovani uci primo tutorial na desce, 3. a 4. krok.
 const INTRO=[
  {t:'Braň geodetickou síť',
   p:'Po trase přicházejí chyby měření a míří k nulovému bodu. Každá, která dojde, ti sníží přesnost sítě. Na nule měření končí.',
   art:'path'},
  {t:'Stav měřické přístroje',
   p:'Ve skladu dole si vybereš přístroj a klepneš na volné pole vedle trasy. Každý druh měří jinak — teodolit přesně na jeden cíl, skener plošně, nivelák zpomaluje.',
-  art:'build'},
- {t:'Slučuj do vyšších řad',
-  p:'Dva stejné přístroje stejné řady sluč a vznikne jeden mnohem silnější. Tohle je nejrychlejší cesta k síle — kapacita stanovisek je omezená.',
-  art:'merge'},
- {t:'Sbírej karty a rozvíjej',
-  p:'Z beden padají karty přístrojů. Za ně zvyšuješ úroveň natrvalo a od druhé úrovně si volíš větve vývoje, které mění chování přístroje.',
-  art:'cards'},
- {t:'Postupuj po trofejní cestě',
-  p:'Za každé měření dostaneš poháry. Ty otevírají nové oblasti, přístroje a měřické metody. Denní úkoly, výzva a zkouška ti přidají výzkum navíc.',
-  art:'road'}
+  art:'build'}
 ];
 let INTROI=0, introRaf=0;
 function drawIntroArt(kind,t){
@@ -19475,44 +19560,17 @@ function drawIntroArt(kind,t){
    g.fill();g.stroke();
    glyph(g,k,x,y,S2*.86,1,T[k].c);g.restore();
  };
+ // Obrazky jsou jen dva - pro dve karty, ktere v uvodu zbyly. Vetve pro
+ // 'merge', 'cards' a 'road' zmizely spolu s kartami, ke kterym patrily.
  if(kind==='path'){
    const px=60+((t*70)%460);
    foe(px,px<200?230:(px<400?120:230));
    foe(Math.max(60,px-90),Math.max(60,px-90)<200?230:230,'#b07bff');
- } else if(kind==='build'){
+ } else {
    tower(200,60,'theo');tower(330,200,'lidar');
    foe(300,120);
    g.strokeStyle=T.theo.c;g.lineWidth=3;g.globalAlpha=.5+.5*Math.sin(t*7);
    g.beginPath();g.moveTo(200,80);g.lineTo(300,120);g.stroke();g.globalAlpha=1;
- } else if(kind==='merge'){
-   const k2=Math.min(1,(t%3)/1.4);
-   tower(250-40*k2,170,'theo');tower(350-60*k2,170,'theo');
-   if(k2>=1){tower(300,170,'theo',1.5);
-     g.fillStyle=T.theo.c;g.font='700 22px "Helvetica Neue",Arial';g.textAlign='center';
-     g.fillText('ŘADA 2',300,120);}
- } else if(kind==='cards'){
-   ['theo','lidar','gnss'].forEach((k,i)=>{
-     const x=190+i*110,y=150+Math.sin(t*2.4+i)*10;
-     g.save();g.translate(x,y);g.rotate(Math.sin(t*1.6+i)*.06);
-     g.fillStyle=p.plinth;g.strokeStyle=rarOf(k).col;g.lineWidth=4;
-     if(g.roundRect){g.beginPath();g.roundRect(-40,-52,80,104,12);g.fill();g.stroke();}
-     glyph(g,k,0,-10,52,2,T[k].c);
-     g.fillStyle=rarOf(k).col;g.fillRect(-28,30,56,9);
-     g.restore();
-   });
- } else {
-   const nodes=[[110,220],[230,150],[360,200],[490,120]];
-   g.strokeStyle='rgba(255,255,255,.8)';g.lineWidth=8;
-   g.beginPath();nodes.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.stroke();
-   g.strokeStyle=p.marker;g.setLineDash([10,10]);g.lineWidth=3;
-   g.beginPath();nodes.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.stroke();g.setLineDash([]);
-   nodes.forEach((q,i)=>{
-     const on=i<=((t*.7)%4);
-     g.fillStyle=on?'#fff':'#c8d4da';g.strokeStyle=on?p.marker:'#9fb0b8';g.lineWidth=4;
-     g.beginPath();g.arc(q[0],q[1],24,0,7);g.fill();g.stroke();
-     g.fillStyle=p.ink;g.font='800 20px "Helvetica Neue",Arial';g.textAlign='center';g.textBaseline='middle';
-     g.fillText(String(i+1),q[0],q[1]+1);
-   });
  }
 }
 function showIntro(i){
@@ -20582,6 +20640,11 @@ function goPage(n,anim){
    if(__m&&!__m.classList.contains('hide'))try{renderMez();}catch(e){}
  }
  if(typeof renderPlay==='function'){renderPlay();}
+ // Prvni otevreni Kariery - stranky, na ktere je trofejni cesta.
+ if(PAGE===4&&typeof firstTime==='function')firstTime('cesta',
+   'Poháry sbíráš za každé měření. Posouvají tě po trofejní cestě '+
+   'a otevírají nové oblasti, přístroje a měřické metody. '+
+   'Výzkum navíc dostaneš z denních úkolů, z výzvy a ze zkoušky z geodézie.');
  // Mapa se po otevreni Terenu srovna na uzemi, na kterem prave jsem.
  if(PAGE===2&&typeof centrujMapu==='function')
    requestAnimationFrame(function(){try{
@@ -21629,6 +21692,10 @@ function tiTab(k){
  o.querySelectorAll('#tiNav button').forEach(x=>x.classList.toggle('on',x.dataset.tk===k));
  o.querySelectorAll('.tiPane').forEach(x=>{x.hidden=(x.dataset.tk!==k);});
  window.__tiTab=k;
+ // Prvni otevreni zalozky Vyvoj - misto, kde je strom vyvoje poprve videt.
+ if(k==='b')firstTime('strom','Za karty z beden a za výzkum zvedáš úroveň přístroje. '+
+   'Od druhé úrovně si k tomu volíš větev vývoje — ta mění chování přístroje, '+
+   'ne jen čísla. Zvolená větev jde později přeladit.');
  // .ovCela sama neroluje - roluje az .box uvnitr.
  const _b=o.querySelector('.box'); if(_b)_b.scrollTop=0; o.scrollTop=0;
 }
@@ -24333,8 +24400,19 @@ function renderCodex(){
    const cis=v=>(Math.round(v*10)/10).toString().replace('.',',');
    const pct=v=>Math.round(v*100);
    // Co ten přístroj OPRAVDU umí. Čísla se počítají z tabulky T, ne opisují.
+   // Ceske mnozne cislo: "5 dalsi cile" a "5 drony" byly v tabulce od zacatku.
+   const mn=(n,a,b,c)=>n+' '+(n===1?a:(n<5?b:c));
    const CO=k=>{const d=T[k];switch(k){
-     case 'edm': return 'Rána se odrazí na '+d.chain[3]+' další cíle.';
+     // Sedm pristroju tuhle vetu nemelo vubec, takze u nich v tabulce
+     // srovnani zbyly jen dva pruhy a nic o tom, CO delaji.
+     case 'tape': return 'Nejbližší cíl, zato hodně ran za sebou — '+cis(d.rate[3])+'× za sekundu. Proti pancíři si neškrtne.';
+     case 'theo': return 'Jeden cíl a rána projde pancířem. Každá druhá je ve druhé poloze dalekohledu a bije o 60 % silněji.';
+     case 'plumb': return 'Nejrychlejší přístroj ve hře — '+cis(d.rate[3])+'× za sekundu, ale dohlédne jen '+cis(d.rng[3])+' pole.';
+     case 'planim': return 'Za každý zásah přisype '+d.gold[3]+' do rozpočtu. Na rozdíl od mensuly zabírá jediné pole.';
+     case 'zenit': return 'Nezaměřuje. Pulz zasáhne všechno na mapě, jeden za '+cis(1/d.rate[3])+' s.';
+     case 'scanvan': return 'Objíždí trasu a skenuje okolí o poloměru '+cis(d.rad[3])+' pole.';
+     case 'masttheo': return 'Míří na nejsilnější cíl a ubere mu i '+pct(d.pct[3])+' % jeho celkové odolnosti.';
+     case 'edm': return 'Rána se odrazí na '+mn(d.chain[3],'další cíl','další cíle','dalších cílů')+'.';
      case 'lidar': return 'Zasáhne plochu o poloměru '+cis(d.spl[3])+' pole kolem cíle.';
      case 'quadrant': return 'Plocha '+cis(d.spl[3])+' pole, ale blíž než '+cis(d.minr[3])+' pole je slepý.';
      case 'sonar': return 'Pulz do celého okolí. Projde pancířem, krytí ho nezajímá.';
@@ -24349,7 +24427,7 @@ function renderCodex(){
      case 'thermal': return 'Označené cíle dostávají od všech o '+pct(d.mk[3])+' % víc.';
      case 'meteo': return 'Potlačí až '+pct(d.supp[3])+' % nepříznivých podmínek · po etapě vrátí '+d.reg[3]+' přesnosti.';
      case 'basecal': return 'Zesílí o '+pct(d.ball[3])+' % úplně všechna stanoviska na mapě.';
-     case 'photo': return 'Nad trasou krouží '+d.drones[3]+' drony a označují cíle.';
+     case 'photo': return 'Nad trasou krouží '+mn(d.drones[3],'dron','drony','dronů')+' a označují cíle.';
      case 'rotlaser': return 'Paprsek se otáčí dokola a řeže vše, čím projde.';
      case 'mensula': return 'Za každý zásah přisype '+d.gold[3]+' do rozpočtu.';
      case 'machine': return 'S každou ranou do téhož cíle bije o '+pct(d.ramp[3])+' % tvrději.';
@@ -24364,10 +24442,10 @@ function renderCodex(){
    const SKUP=[
     {n:'Míří na jeden cíl',ak:'--laser',
      p:'Rána jde vždy jen do jednoho vlivu. Tady se čísla dají srovnat přímo.',
-     k:['tape','theo','compass','machine','multi','ctrl','dopp']},
+     k:['tape','plumb','theo','compass','planim','machine','multi','ctrl','dopp']},
     {n:'Zasáhne víc cílů naráz',ak:'--sky',
      p:'Pruh ukazuje poškození na JEDEN cíl. Ve skutečnosti tyhle přístroje bijí tím víc, čím hustší hlouček před nimi jde — s předchozí skupinou je proto nesrovnávej.',
-     k:['edm','lidar','quadrant','sonar','backpack','gpr','penta','insar','kolik','kladivo']},
+     k:['edm','lidar','quadrant','sonar','backpack','gpr','penta','insar','kolik','zenit','kladivo']},
     {n:'Drží vlnu na místě',ak:'--violet',
      p:'Poškození je u nich vedlejší. Jejich práce je zpomalení a tah.',
      k:['nivel','gravi']},
