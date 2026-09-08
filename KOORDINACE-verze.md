@@ -1,5 +1,15 @@
 # Koordinace mezi AI — kdo zvedá verzi (4. 9. 2026)
 
+## AKTUÁLNÍ STAV: VERZE 103 (8. 9., session „hodnocení v102“) — DVĚ OPRAVY Z PROHLÍDKY
+
+**Číslo 103 je zabrané, další si berte 104.** Větev **`opravy-v103`**, vlastní git
+worktree `Desktop\geogame-v103`, základ `472c4da` (špička main = v102).
+Na main to ZATÍM NEJDE — vydání si drží uživatel. Jen CSS: `#tinfo` (záložky
+`flex:none`, odsazení banneru), `.ov.ovCela .box>*{flex-shrink:0}`. Do pravidel
+hry se nesahalo. Hodnocení a návrhy k výběru: `geogame-hodnoceni-v102.md`.
+
+---
+
 ## AKTUÁLNÍ STAV: VERZE 102 (7. 9., session „dodělávky v102“) — DOKONČENÍ SEZNAMU K 101
 
 **Číslo 102 je zabrané, další si berte 103.** Větev **`vylepseni-v102`**,

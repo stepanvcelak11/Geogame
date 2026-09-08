@@ -9336,11 +9336,18 @@ html[data-theme="hc"] #confetti{opacity:.5}
    max-width se musi vratit: `.ov[data-okno="info"] .box{max-width:460px}`
    ma stejnou specificitu jako `.ov.ovCela .box{max-width:none}`, ale stoji
    o tri tisice radku niz, takze vyhravalo. */
-#tinfo.ovCela .box{padding-left:0;padding-right:0;padding-bottom:0;max-width:none}
+#tinfo.ovCela .box{padding:0;max-width:none}
 /* Banner je vysoky 250 px - jako LEPIVY by sezral tretinu obrazovky,
    takze se roluje normalne a misto nej drzi nahore jen krizek. */
 #tinfo.ovCela .celaHlava{position:static;margin:0;padding:0;background:none}
-#tinfo .tiBanner{position:relative;padding-right:calc(var(--m4) + 50px)}
+#tinfo .tiBanner{position:relative;padding-right:calc(var(--m4) + 50px);
+  padding-top:calc(var(--m3) + env(safe-area-inset-top,0px))}
+/* Radek zalozek Prehled/Vyvoj/Popis se v 844px vysokem sloupci flexu smrskl
+   na 10 px (min-height:auto = 0 kvuli overflow-x na .filtRow), takze dve
+   zalozky ze tri nebyly videt. Zadne dite celoobrazovkoveho okna se nesmi
+   smrsknout - rolovat ma box, ne jeho radky. */
+.ov.ovCela .box>*{flex-shrink:0}
+#tinfo .tiNav{flex:none}
 #tinfo #tiX{position:fixed;z-index:6;
   top:calc(10px + env(safe-area-inset-top,0px));right:12px}
 /* Paticka drzi u spodni hrany, aby ZAVRIT slo trefit bez rolovani. */
@@ -18578,7 +18585,7 @@ function taskFrame(){
  requestAnimationFrame(taskFrame);
 }
 
-const VERZE=102;
+const VERZE=103;
 /* ==================== ÚVOD ==================== */
 const INTRO=[
  {t:'Braň geodetickou síť',

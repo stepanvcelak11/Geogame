@@ -1,4 +1,4 @@
-# GeoGame — verze 102
+# GeoGame — verze 103
 
 ## Co nahrát na hosting
 
@@ -54,6 +54,18 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 - Když se ukládání nedaří, protože v zařízení došlo místo, řekne to hláškou
   místo tichého selhání.
 - Po vložení zálohy jde vrátit předchozí stav: **Nastavení → Vrátit obnovu**.
+
+## Co je nového ve verzi 103
+
+Dvě opravy z prohlídky verze 102 (hodnocení a návrhy jsou v `geogame-hodnoceni-v102.md`):
+
+- **Detail přístroje má zase záložky Přehled / Vývoj / Popis.** Ve verzi 102 se řádek
+  záložek v celoobrazovkovém okně smrskl na 10 px (flex sloupec s pevnou výškou nechal
+  řádek s vodorovným rolováním zmenšit na nulu), takže strom vývoje ani popis nešly otevřít.
+  Žádné dítě celoobrazovkového okna se už nesmí smrsknout.
+- **Detail přístroje sedí u horní hrany.** Nad bannerem s názvem zůstávalo 61 px prázdna
+  (odsazení okna + celá bezpečná zóna iPhonu); odsazení teď nese banner sám, takže
+  stavová lišta leží na jeho barvě.
 
 ## Co je nového ve verzi 102
 
