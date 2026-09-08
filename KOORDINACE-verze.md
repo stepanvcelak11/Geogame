@@ -1,12 +1,23 @@
 # Koordinace mezi AI — kdo zvedá verzi (4. 9. 2026)
 
-## AKTUÁLNÍ STAV: VERZE 103 (8. 9., session „hodnocení v102“) — DVĚ OPRAVY Z PROHLÍDKY
+## AKTUÁLNÍ STAV: VERZE 103 (8. 9., session „hodnocení v102") — SEZNAM K v102 ODPRACOVANÝ
 
-**Číslo 103 je zabrané, další si berte 104.** Větev **`opravy-v103`**, vlastní git
-worktree `Desktop\geogame-v103`, základ `472c4da` (špička main = v102).
-Na main to ZATÍM NEJDE — vydání si drží uživatel. Jen CSS: `#tinfo` (záložky
-`flex:none`, odsazení banneru), `.ov.ovCela .box>*{flex-shrink:0}`. Do pravidel
-hry se nesahalo. Hodnocení a návrhy k výběru: `geogame-hodnoceni-v102.md`.
+**Číslo 103 je zabrané, další si berte 104.** Větev **`opravy-v103`**, worktree
+`Desktop\geogame-v103`, základ `472c4da` (špička main = v102).
+Na main to ZATÍM NEJDE — vydání si drží uživatel.
+
+Padesát schválených položek z prohlídky v102 + nový přístroj (Měřické kladivo)
+na nápad uživatele. ⚠ **Do pravidel hry se sáhlo hodně**: `waveComp` (skladba
+vln), `waveScale`/`HARD_MM`, `MAPS` (hp všech patnácti, mix a terén tří území,
+delší trasa Mostu), `T` (čísla dvanácti přístrojů + nový), `E` (barvy, štít
+Zákrytu, síla léčitele), `CARDS`, `ABIL` (tři metody), `ACC`, `GEN`/`TREE2`
+(aurové uzly), `AREN`/`RANKS` (sloučeno), `trophyGain`, `MODES` (dva režimy
+splynuly), `INTRO`, `napovedaHtml`. Kdo bude slučovat, ať počítá s konflikty
+skoro všude.
+
+Pracovalo se ve čtyřech větvích naráz a slučovalo se do `opravy-v103`:
+`v103-menu` (M2–M12), `v103-kariera` (K1–K10, M7, M10), `v103-novacek`
+(N1–N3, O10-texty, NAVOD), zbytek přímo v `opravy-v103`.
 
 ---
 

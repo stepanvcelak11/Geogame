@@ -57,15 +57,114 @@ Od verze 82 si hra sama drží záchrannou kopii postupu:
 
 ## Co je nového ve verzi 103
 
-Dvě opravy z prohlídky verze 102 (hodnocení a návrhy jsou v `geogame-hodnoceni-v102.md`):
+Verze 103 je odpracovaný seznam z prohlídky verze 102 — padesát schválených
+položek (hodnocení i s důkazy je v `geogame-hodnoceni-v102.md`) a k tomu jeden
+nový přístroj podle nápadu hráče. Do pravidel hry se sáhlo hodně: kdo ladí
+balanc, ať si přečte i komentáře u `waveComp`, `MAPS` a tabulky `T`.
 
-- **Detail přístroje má zase záložky Přehled / Vývoj / Popis.** Ve verzi 102 se řádek
-  záložek v celoobrazovkovém okně smrskl na 10 px (flex sloupec s pevnou výškou nechal
-  řádek s vodorovným rolováním zmenšit na nulu), takže strom vývoje ani popis nešly otevřít.
-  Žádné dítě celoobrazovkového okna se už nesmí smrsknout.
-- **Detail přístroje sedí u horní hrany.** Nad bannerem s názvem zůstávalo 61 px prázdna
-  (odsazení okna + celá bezpečná zóna iPhonu); odsazení teď nese banner sám, takže
-  stavová lišta leží na jeho barvě.
+### Nový přístroj: Měřické kladivo
+
+Zatlouká do trasy měřické hřeby. Každý hřeb je **malé dočasné stanoviště**:
+sám tluče do všeho ve svém okolí a po pár vteřinách se otluče a vypadne.
+Kladivo samo nestřílí, takže na prázdné trase neztrácí čas — sází hřeby dopředu.
+Je to základní nástroj, hráč ho má od začátku.
+
+### Hraní: konec deseti prázdných etap
+
+- **Vlivy přicházejí postupně.** Rušička od 7. etapy (dřív rovnou tři v jedenácté),
+  drift od 9., překlep od 11., zákryt od 13. Naměřeno robotem: v prvních deseti
+  etapách stálo hráče něco 18 % etap místo nuly, a skok v jedenácté (0 → 24 %
+  etap se ztrátou) je pryč.
+- **Pozdní území začínají dál v pořadí vln.** První etapa patnáctého území už
+  nevypadá jako první etapa prvního.
+- **Vybavení se vybírá po každé druhé etapě** a tři nejsilnější karty jsou slabší.
+  Šest běžných karet má nově cenu („+2 stanoviska, ale −6 % poškození“).
+  Dřív rozhodoval o výsledku území draft: robot bez karet prohrál posledních
+  sedm území 20× z 28, s kartami na poškození vyhrál všechno se 100 % přesností.
+- **Žebřík obtížnosti je monotónní** (0,66 → 1,74). Dřív bylo druhé území lehčí
+  než první a po nejtěžším přišel propad na 1,35.
+- **Mistrovská řada má pět stupňů**, odměna za zásah roste s etapou a bonus za
+  uzávěr platí do 24. etapy — pozdní rozpočet má kam téct.
+- **Mistrovské měření je o 60 % tvrdší** (dřív 32 %, což bylo míň než skok mezi
+  dvěma sousedními územími).
+- **Obnova přesnosti je poloviční** a uzávěr etapy hlásí ztrátu i obnovu zvlášť.
+  Etapa s pěti průniky dřív ukázala 100 %.
+- **Měřické metody**: Polygonový pořad a Uzávěr pořadu vlnu shlukovaly a byly
+  měřitelně horší než metodu nepoužít (−2,8 a −1,0 vlivu). Teď pořad zaměří šest
+  cílů v čele a uzávěr je vrátí o tři pole zpět. Žádná metoda není v mínusu.
+- **Přístroje**: rozptyl síly stlačen z 4,9× na 2,7× mediánu. Gravimetr, nivelák,
+  multistanice, InSAR a buzola dolů; naváděcí TS, pentagon, batoh a olovnice
+  nahoru; tři přístroje z v102 nahoru na medián.
+- **Zákryt kryje 55 %** (bylo 25) a **léčitel opravdu léčí** — dřív byly oba
+  druhy měřitelně bezvýznamné a sestava rozhodovala jen proti rušičce.
+
+### Obsah
+
+- **Tři území z v102 už nejsou kopie**: vlastní mix vlivů, vlastní texty a vlastní
+  třetí cíl (tabulka měla dvanáct položek na patnáct území, takže tři nejtěžší
+  mapy dostaly ten nejtvrdší cíl ze záložní hodnoty).
+- **Čtvrté patro stromu vývoje** bylo u pěti podpůrných přístrojů úplně mrtvé —
+  nabízelo „+25 % poškození“ přístrojům, které mají poškození nula. Teď mají
+  aurové uzly, které posilují okolní stanoviska.
+- **Šest kusů příslušenství** místo dalšího „+x % poškození“ mění vlastní
+  mechaniku svého přístroje (průraz pásma, odhoz buzoly, šířka pentagonu,
+  chůze batohu, tah gravimetru, otáčky laseru).
+- Tunel už nezakazuje jediného hrdinu nováčka; terén nových území leží u trasy;
+  značky kolíku umí dvojnásobnou ránu; sonar opravdu prochází krytím; hrdina
+  Mapovací vůz už nečte dosah batohu; rys „Chodí po obou trasách“ konečně něco dělá.
+- **Průběžní bossové** mají chování podle jména, ne náhodné.
+- **Barvy vlivů**: čtyři dvojice splývaly (léčitel a drift byly obě zelené,
+  refrakce měla barvu dálkoměru). Jméno vlivu se navíc ukáže při jeho prvním
+  výskytu v etapě.
+- **Slovník**: jedno slovo = jedna věc. „Přesnost“ je jen síť, ne poškození;
+  „kalibrace“ jen vylepšení stanoviska; „Rozbor systematiky“ byl třikrát něco
+  jiného; Les je „Porost“, ne „Zákryt“; Multipath je „Odražený signál“; režim má
+  jedno jméno; ceny v bitvě už nemají příponu „v.“ (platí se rozpočtem).
+
+### Menu, kariéra a nováček
+
+- **Detail přístroje** má zase záložky Přehled / Vývoj / Popis (ve verzi 102 se
+  řádek smrskl na 10 px, takže strom vývoje ani popis nešly otevřít) a sedí
+  u horní hrany. Nově pod pruhy říká, **odkud se síla bere**.
+- **Dohrání kampaně má konec**: po patnáctém území přijde vlastní obrazovka
+  s titulem Vrchní zeměměřič, souhrnem a třemi cestami dál.
+- **Jeden žebříček místo dvou.** Hodnost je stupeň trofejní cesty; oblasti se
+  přejmenovaly, aby se nepletly s územími.
+- **Opakovaná výhra už nedává plné poháry** (92 → 5), zato prahy cesty klesly
+  a vrchol sedí na kampaň plus mistrovská měření.
+- **„Co teď“ začíná hraním**, ne administrativou, a řadí se podle priority.
+- **Jedenáct denních háčků na tři.** Zakázka dne je denní úkol, Rychlé měření
+  a Samí bossové jsou jeden režim, který se střídá podle dne; přihlašovací
+  okno zmizelo (odměna se připíše dál).
+- **Terén**: mapa je jediné, co roluje, sokl je o 28 px nižší a „Co teď“ se
+  složilo za lištu s počtem.
+- **Sbírka**: podmínka odemčení je čitelná na všech dlaždicích, řazení je
+  jeden knoflík, odznak V SESTAVĚ nepřekrývá ikonu.
+- **Ikony**: jedna sada pro výzkum, poháry a mezníky; profil a Kariéra mají
+  vlastní znak (dřív byly tři různé věci pohár).
+- **Písmo pod 12 px nikde** (bylo jedenáct míst) a tlačítko „?“ má dotykový
+  terč 44 px.
+- **Úvod má dvě karty místo pěti**; bedny, karty, strom a trofejní cesta se
+  vysvětlí tam, kde je hráč poprvé potká. Do první etapy je 12 klepnutí
+  místo 16–18.
+- **Tutoriál** už nespoléhá na tlačítko ⟳ bez popisku a neschovává za kartu
+  hrdiny to, co po hráči zrovna chce.
+- **Nápověda odpovídá hře**: metody mají náboje (ne dobíjení), sedí poloha
+  tlačítek, kapacita, kalibrace i podmínky.
+- **Encyklopedie**: pět přístrojů mělo prázdný Popis (Olovnice, Planimetr,
+  Zenitál, Mapovací vůz, Stožárová TS) — doplněno; v tabulce Srovnání má teď
+  větu všech 31 řádků místo 24.
+
+### Pro toho, kdo bude ladit dál
+
+- Robot (`mereni/ab.py`, tři kola × patnáct území): **11–12 výher z 15**,
+  77–80 % etap bez ztráty.
+- Tvar obtížnosti uvnitř území (`scratchpad/patch/tvar.py`): ztráty rostou
+  od 3. etapy, v prvních deseti stojí hráče něco 18 % etap (dřív 0 %).
+- Síla přístrojů (`mereni/vlna.py pristroje`): rozptyl 2,7× mediánu (dřív 4,9×).
+- Metody (`mereni/metody.py`): šest metod nad +2,8 vlivu, žádná v mínusu.
+- Nová hra pořád startuje v testovacím režimu (`testAll:1`) — je to rozhodnutí
+  autora, nesahal jsem na to.
 
 ## Co je nového ve verzi 102
 
