@@ -2847,6 +2847,23 @@ html[data-theme="hc"] #profOv .box{background:#fff}
 #profTelo .pfB>i{display:block;height:100%;background:linear-gradient(90deg,var(--brass),var(--brassL))}
 #profTelo .pfB2>i{background:linear-gradient(90deg,var(--laser),#8ff0dd)}
 .pfMr{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--m2);margin-top:var(--m3)}
+/* ---- K1: okno konce kampane ---- */
+#finOv .box{max-width:520px}
+#finOdz{display:flex;flex-wrap:wrap;gap:var(--m2);justify-content:center;margin:var(--m3) 0 0}
+#finOv .finTit{display:flex;align-items:center;gap:var(--m2);justify-content:center;
+ margin:var(--m3) 0 0;padding:var(--m3);border:var(--w2) solid var(--brass);
+ border-radius:var(--r2);background:rgba(255,201,60,.10);text-align:center}
+#finOv .finTit b{display:block;font-family:var(--display);font-size:calc(19px*var(--fs,1));
+ color:var(--brass);letter-spacing:.4px}
+#finOv .finTit s{display:block;text-decoration:none;font-size:calc(11.5px*var(--fs,1));
+ color:var(--t3);margin-top:2px}
+#finOdm{margin-top:var(--m3)}
+#finOdm .finR{display:flex;gap:var(--m2);align-items:flex-start;
+ padding:var(--m2) 0;border-top:1px solid var(--stroke)}
+#finOdm .finR:first-child{border-top:0}
+#finOdm .finR i{flex:0 0 auto;width:8px;height:8px;margin-top:6px;border-radius:50%;
+ background:var(--brass)}
+#finOdm .finR span{font-size:calc(12.5px*var(--fs,1));color:var(--t2);line-height:1.5}
 .pfMr>div{background:var(--s2);border:var(--w2) solid var(--stroke);border-radius:var(--r2);
   padding:var(--m2) var(--m1);text-align:center}
 .pfMr b{display:block;font-family:var(--display);font-size:calc(17px*var(--fs,1));color:var(--t1)}
@@ -4463,6 +4480,27 @@ html[data-theme="hc"] #pgTeren .tVer{color:#06131c;opacity:1}
 
 /* Vstupni animace .page>* by se pri prepnuti zalozky prehrala znovu
    (skryty prvek animaci nespusti), proto ji tady vypneme a dame vlastni. */
+/* M7: Kariera byla 3 351 px dlouha stranka (4 obrazovky rolovani bez
+   navigace) - trofejni cesta, sezonni cesta a uspechy pod sebou. Ted ji deli
+   TYZ prvek jako Laborku: .filtRow se zalozkami a jedna viditelna sekce. */
+#kaTabs{margin:0 0 var(--m4)}
+#kaTabs button{flex:1 1 0;min-width:0}
+.page>.kaSec{display:none;animation:none}
+.page>.kaSec.on{display:block;animation:lbIn .24s cubic-bezier(.2,.9,.3,1) both}
+@media (prefers-reduced-motion:reduce){.page>.kaSec.on{animation:none}}
+#kaSouhrn{display:flex;flex-wrap:wrap;gap:var(--m2);margin:0 0 var(--m3)}
+.kaTituly{display:flex;flex-wrap:wrap;gap:var(--m2);margin:0 0 var(--m2)}
+/* M10: "80 %" byl <button disabled> 76x44 px se stejnym ramem jako aktivni
+   VZIT vedle - vypadal jako rozbite tlacitko. Kdyz neni co vzit, tlacitko
+   se nevykresli a procento je text u pruhu postupu. */
+.achPct{font-size:calc(11.5px*var(--fs,1));font-weight:800;color:var(--t3);
+ font-variant-numeric:tabular-nums;margin-left:auto;flex:0 0 auto}
+.achOdm{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0;
+ overflow:hidden}
+.achOdm .aoI{display:inline-flex;align-items:center;gap:3px;flex:0 0 auto;
+ font-size:calc(11px*var(--fs,1));font-weight:700;color:var(--t2);white-space:nowrap}
+.achOdm .aoI svg{width:13px;height:13px;fill:none;stroke:currentColor;
+ stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
 .page>.lbSec{display:none;animation:none}
 .page>.lbSec.on{display:block;animation:lbIn .24s cubic-bezier(.2,.9,.3,1) both}
 @keyframes lbIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -10447,13 +10485,14 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
     <div class="filtRow lbTabs" id="lbTabs">
      <button data-lb="odm" class="on">Odměny</button>
      <button data-lb="vyl">Vylepšení</button>
-     <button data-lb="zaz">Záznamy</button>
+     <button data-lb="zaz">Učebna</button>
     </div>
 
     <div class="lbSec on" data-lb="odm">
      <div class="secTitle" style="--ak:var(--brass)">Bedny <span id="slotHint"></span></div>
      <div id="slotRow"></div>
      <button class="big gold" id="bFree"><svg class="i" viewBox="0 0 24 24"><path d="M3 8.5 12 4l9 4.5v8L12 21l-9-4.5z"/><path d="M12 13v8M3 8.5 12 13l9-4.5"/><path d="M12 4v9"/></svg><span>Bezplatná bedna</span></button>
+     <p class="pgNote">Poprvé za den je v ní navíc denní dárek: 60 výzkumu a 3 karty.</p>
 
      <div class="secTitle" style="--ak:var(--sky)">Denní úkoly <span id="dqHint"></span></div>
      <div id="dqList"></div>
@@ -10471,25 +10510,30 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
      <div id="labPeek"></div>
     </div>
 
+    <!-- v103 (K9): Statistiky a Denik mereni se odsud PRESTEHOVALY do okna
+         Profil - v Laborce pod zalozkou "Zaznamy" je nikdo nehledal, zatimco
+         v profilu zustavalo pod dlazdicemi 180 px prazdna. Zalozka drzi jen
+         to, co ucí: zkousku a encyklopedii - proto se jmenuje Ucebna. -->
     <div class="lbSec" data-lb="zaz">
      <div class="secTitle" style="--ak:var(--brass)">Naučit se víc</div>
      <button class="lbRead" id="bQuiz"><span class="lbrT">Zkouška z geodézie</span></button>
      <button class="lbRead" id="bCdx"><span class="lbrIc"><svg class="i" viewBox="0 0 24 24"><path d="M4 5.5A2 2 0 0 1 6 3.5h13v15H6a2 2 0 0 0-2 2z"/><path d="M8 8h7M8 12h7"/></svg></span><span class="lbrT">Encyklopedie geodézie</span></button>
-
-     <div class="secTitle" style="--ak:var(--sky)">Přehled</div>
-     <details class="foldSec zazFold"><summary>Statistiky</summary>
-       <div id="statGrid"></div>
-     </details>
-
-     <details class="foldSec zazFold"><summary>Deník měření</summary>
-       <div id="runLog"></div>
-     </details>
+     <p class="pgNote">Statistiky a Deník měření najdeš v Profilu — klepni na
+      své jméno v levém horním rohu.</p>
     </div>
    </section>
 
    <!-- ---- 4. CESTA ---- -->
    <section class="page">
     <div class="pgHead"><h2>Kariéra</h2><span class="trophyChip"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3M10 14h4M9 20h6M12 14v6"/></svg><b class="mono" id="roadLvl">0</b></span></div>
+    <div id="kaSouhrn"></div>
+    <div class="filtRow kaTabs" id="kaTabs">
+      <button data-ka="tro" class="on">Trofejní cesta</button>
+      <button data-ka="sez">Sezóna</button>
+      <button data-ka="usp">Úspěchy</button>
+    </div>
+
+    <div class="kaSec on" data-ka="tro">
     <div class="hlavni kaHero" style="--ak:var(--laser)">
       <div class="kaHeroTop">
         <div class="nadpis">Trofejní cesta</div>
@@ -10501,15 +10545,19 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
       <p class="kaTip">Klepni na kterýkoli uzel — ukáže se odměna i kolik pohárů do ní chybí.</p>
     </div>
 
-    <div class="secTitle" style="--ak:var(--violet)">Sezónní cesta <span id="seasonHint"></span><span id="seasonTimer" class="timerChip"></span></div>
-    <div id="seasonBox"></div>
-    <button class="kaZoom kaZoomSe" id="seZoom" type="button" aria-label="Zvětšit sezónní cestu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4h-5.5v5.5M14.5 4h5.5v5.5M9.5 20h-5.5v-5.5M14.5 20h5.5v-5.5"/></svg><span>Zvětšit</span></button>
-
     <div class="sbal kaSbal" id="starSbal" data-zavreno>
       <button class="hlava" id="starHlava" type="button">Odměny za hvězdy<span class="pruz"></span><span id="starHint"></span><i class="kaSip" aria-hidden="true"></i></button>
       <div class="telo"><div id="starRow"></div></div>
     </div>
+    </div>
 
+    <div class="kaSec" data-ka="sez">
+    <div class="secTitle" style="--ak:var(--violet)">Sezónní cesta <span id="seasonHint"></span><span id="seasonTimer" class="timerChip"></span></div>
+    <div id="seasonBox"></div>
+    <button class="kaZoom kaZoomSe" id="seZoom" type="button" aria-label="Zvětšit sezónní cestu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4h-5.5v5.5M14.5 4h5.5v5.5M9.5 20h-5.5v-5.5M14.5 20h5.5v-5.5"/></svg><span>Zvětšit</span></button>
+    </div>
+
+    <div class="kaSec" data-ka="usp">
     <div class="secTitle">Úspěchy <span id="achHint"></span></div>
     <div class="filtRow" id="achFilter">
       <button data-f="open" class="on">Nesplněné</button>
@@ -10520,6 +10568,7 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
     <div class="sbal kaSbal" id="achDone" data-zavreno>
       <button class="hlava" id="achDoneHlava" type="button">Hotové úspěchy<span class="pruz"></span><span id="achDoneN"></span><i class="kaSip" aria-hidden="true"></i></button>
       <div class="telo"><div id="achDoneList"></div></div>
+    </div>
     </div>
 
    </section>
@@ -10723,10 +10772,24 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
   <div id="draftList"></div>
 </div></div>
 
+<!-- ============ KONEC KAMPANE (K1) ============ -->
+<div class="ov" data-okno="oslava" id="finOv" style="z-index:28"><div class="box">
+  <h2>Síť celé republiky vyrovnána</h2>
+  <p class="lead" id="finLead"></p>
+  <div class="finTit"><div><b id="finTitul">Vrchní zeměměřič</b>
+    <s>nová hodnost v profilu</s></div></div>
+  <div class="pfMr" id="finStat"></div>
+  <div class="secTitle" style="--ak:var(--brass)">Odměna za dohranou kampaň</div>
+  <div id="finOdm"></div>
+  <button class="big key" id="finHard">MISTROVSKÁ MĚŘENÍ</button>
+  <button class="big" id="finEndless">NEKONEČNÉ MĚŘENÍ</button>
+  <button class="big ghost" id="finBack">ZPĚT</button>
+</div></div>
+
 <!-- ============ NOVÝ STUPEŇ ============ -->
 <div class="ov" data-okno="oslava" id="levelup" style="z-index:25"><div class="box">
   <h2 id="luTitle">Nový stupeň</h2>
-  <p class="lead">Postupová cesta odemkla:</p>
+  <p class="lead">Trofejní cesta odemkla:</p>
   <div id="luList"></div>
   <button class="big key" id="luOk">POKRAČOVAT</button>
 </div></div>
@@ -10767,13 +10830,10 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
   <button class="big" id="bkClose">ZAVŘÍT</button>
 </div></div>
 
-<!-- ============ DENNÍ PŘIHLÁŠENÍ ============ -->
-<div class="ov" data-okno="oslava" id="login" style="z-index:27"><div class="box">
-  <h2>Denní odměna</h2>
-  <p class="lead" id="lgLead"></p>
-  <div id="lgList" class="lgGrid"></div>
-  <button class="big key" id="lgOk">VZÍT SI ODMĚNU</button>
-</div></div>
+<!-- v103 (K5): okno DENNI PRIHLASENI je pryc. Bylo to jedenacte misto,
+     kam hrac musel denne klepnout, a naskocilo mu pres celou obrazovku hned
+     po startu. Odmena se pripisuje dal (checkLogin), jen se o ni hrac dozvi
+     z karty "Dnesni prehled" na strance Teren a z hlasky. -->
 
 <!-- ============ PAUZA ============ -->
 <div class="ov" data-okno="provoz" id="pause" style="z-index:26"><div class="box">
@@ -11573,7 +11633,7 @@ const T={
  // --- novi hrdinove ve v96 ---
  scanvan:{n:['Mobilní mapovací vůz','Mapovací vůz s IMU','Autonomní mapovací vůz','Mapovací kolona'],
    c:'#5fd6a6',cost:26,kind:'walker',
-   hero:1,sz:2,tr:700,hn:'Mapér',
+   hero:1,sz:2,tr:660,hn:'Mapér',
    up:[68,170,380,850],
    dmg:[1.6,3.4,7.2,15],rng:[2.0,2.4,2.8,3.2],rate:[1.2,1.3,1.45,1.6],rad:[1.0,1.15,1.3,1.5],
    d:'Zabírá čtyři pole a nedá se sloučit — roste jen vylepšením. Objíždí trasu a snímkuje ji za jízdy; kde zrovna je, tam je nejsilnější obrana.'},
@@ -11585,7 +11645,7 @@ const T={
    d:'Zabírá čtyři pole a nedá se sloučit — roste jen vylepšením. Míří vždy na nejsilnější cíl a ukusuje mu i část celkové odolnosti. Postavený proti bossům.'},
  mensula:{n:['Měřický stůl','Stolová souprava','Kartografický stůl','Digitální mensula'],
    c:'#b98f3f',cost:15,kind:'econ',
-   hero:1,sz:2,tr:1150,hn:'Kreslič',
+   hero:1,sz:2,tr:1250,hn:'Kreslič',
    up:[70,175,395,880],
    dmg:[2.4,5.2,11.2,23.6],rng:[2.6,3.0,3.4,3.9],rate:[1.0,1.1,1.2,1.35],gold:[3,5,8,12],
    d:'Zabírá čtyři pole a nedá se sloučit — roste jen vylepšením. Zakresluje, co zaměří, a za každý zásah přisype do rozpočtu.'},
@@ -11600,7 +11660,7 @@ const T={
    d:'Střílí daleko a s velkým rozptylem, ale na blízko je slepý.'},
  rotlaser:{n:['Rotační laser','Samonivelační laser','Laserová rovina','Skenovací pás'],
    c:'#59c9e8',cost:22,kind:'sweep',
-   hero:1,sz:2,tr:400,hn:'Rovinář',
+   hero:1,sz:2,tr:450,hn:'Rovinář',
    up:[65,165,370,820],
    dmg:[3.8,8.4,18,38.2],rng:[2.9,3.4,3.9,4.5],rate:[3.4,3.4,3.4,3.4],spin:[1.8,2.2,2.6,3.1],
    d:'Zabírá čtyři pole a nedá se sloučit — roste jen vylepšením. Otáčí se dokola a poškozuje vše, čím paprsek projde.'},
@@ -11888,20 +11948,64 @@ function condEff(key){
 const CARDNEED=[3,5,8,12,17,24,32,42];
 const CARDRES=[18,30,48,70,100,140,190,250];
 
+/* ---- TROFEJNI CESTA: JEDINY zebricek postupu ----
+   Do v102 bezely nad TYMZ cislem poharu dva zebricky: RANKS (8 hodnosti)
+   a AREN (12 oblasti), kazdy s jinymi prahy. Profil pak kreslil DVA pruhy
+   pro jedno cislo a hrac nemel jak poznat, ktery z nich je ten pravy.
+   Hodnost je proto ted POLE uzlu (`hodnost`) a RANKS uz neexistuje.
+
+   Nazvy oblasti se pletly s nazvy uzemi (Katastralni urad x Katastralni
+   uzemi, Dulni mericstvi x Dulni dilo, Tunelovy pruzkum x Tunelova roura).
+   Ted plati: "oblast" = stupen trofejni cesty (obor), "uzemi" = mapa.
+
+   Prahy: dokonaly pruchod kampani (15 uzemi po trech hvezdach) da 1650
+   poharu, tedy prave 9. oblast z 12. Uzly 10-12 uz jsou za MISTROVSKA
+   mereni (priznak `poKamp` je oznaci stitkem), ne za omilani kampane -
+   opakovana vyhra od v103 plne pohary nedava (viz trophyGain).
+
+   Hrdinu odemykaji pohary, ale cesta o nich mlcela a pri prekroceni prahu
+   neprislo nic. Ted stoji jako odmena uzlu (`hrdina`) a `T[k].tr` sedi na
+   TYCHZ cislech: rotlaser 450, scanvan 660, mensula 1250, masttheo 1900. */
 const AREN=[
- {tr:0,   n:'Cvičný polygon',   d:'Školní měření za rohem.',            r:{}},
- {tr:60,  n:'Katastrální úřad', d:'Hranice pozemků a věcná břemena.',   r:{tower:'lidar',abil:'orient'}},
- {tr:150, n:'Stavební parcela', d:'Vytyčení základů a výkopů.',         r:{abil:'freeze',res:60}},
- {tr:280, n:'Silniční stavba',  d:'Příčné profily a kubatury.',         r:{tower:'gnss',acc:1}},
- {tr:450, n:'Důlní měřictví',   d:'Šachty, chodby a důlní mapa.',       r:{tower:'machine',abil:'rush'}},
- {tr:660, n:'Tunelový průzkum', d:'Ražba, konvergence, deformace.',     r:{abil:'zpetne',res:200}},
- {tr:920, n:'Přehradní profil', d:'Monitoring hráze a podloží.',        r:{tower:'gpr',abil:'stake'}},
- {tr:1250,n:'Státní bodové pole',d:'Nejvyšší třída přesnosti.',         r:{tower:'multi',cards:12,res:150}},
- {tr:1650,n:'Inženýrská geodézie',d:'Mosty, jeřábové dráhy, montáže.',   r:{abil:'check',res:220}},
- {tr:2100,n:'Deformační měření', d:'Sledování posunů v čase.',           r:{abil:'stop',cards:16,res:280}},
- {tr:2600,n:'Kosmická geodézie', d:'Družice, VLBI, referenční rámce.',   r:{tower:'insar',res:350}},
- {tr:3200,n:'Zeměměřický úřad',  d:'Vrchol oboru. Dál už jen rekordy.',  r:{tower:'basecal',abil:'tacheo',res:500}}
+ {tr:0,   n:'Cvičný polygon',    hodnost:'Figurant',         d:'Školní měření za rohem.',           r:{}},
+ {tr:60,  n:'Katastr',           hodnost:'Figurant',         d:'Hranice pozemků a věcná břemena.',  r:{tower:'lidar',abil:'orient'}},
+ {tr:150, n:'Vytyčování',        hodnost:'Měřický pomocník', d:'Vytyčení základů a výkopů.',        r:{abil:'freeze',res:60}},
+ {tr:280, n:'Kubatury',          hodnost:'Měřický pomocník', d:'Příčné profily a objemy zemin.',    r:{tower:'gnss',acc:1}},
+ {tr:450, n:'Doly',              hodnost:'Technik',          d:'Šachty, chodby a důlní mapa.',      r:{tower:'machine',abil:'rush',hrdina:'rotlaser'}},
+ {tr:660, n:'Ražba',             hodnost:'Technik',          d:'Tunely, konvergence, deformace.',   r:{abil:'zpetne',res:200,hrdina:'scanvan'}},
+ {tr:920, n:'Vodní stavby',      hodnost:'Geodet',           d:'Monitoring hráze a podloží.',       r:{tower:'gpr',abil:'stake'}},
+ {tr:1250,n:'Bodové pole',       hodnost:'Geodet',           d:'Nejvyšší třída přesnosti.',         r:{tower:'multi',cards:12,res:150,hrdina:'mensula'}},
+ {tr:1600,n:'Inženýrská geodézie',hodnost:'Vedoucí čety',    d:'Mosty, jeřábové dráhy, montáže.',   r:{abil:'check',res:220}},
+ {tr:1900,n:'Deformace',         hodnost:'Inženýr geodet',   d:'Sledování posunů v čase.',          poKamp:1, r:{abil:'stop',cards:16,res:280,hrdina:'masttheo'}},
+ {tr:2400,n:'Kosmická geodézie', hodnost:'Úředně oprávněný', d:'Družice, VLBI, referenční rámce.',  poKamp:1, r:{tower:'insar',res:350}},
+ {tr:3000,n:'Zeměměřický úřad',  hodnost:'Úředně oprávněný', d:'Vrchol oboru. Dál už jen rekordy.', poKamp:1, r:{tower:'basecal',abil:'tacheo',res:500}}
 ];
+// Kolik mistrovskych mereni jeste zbyva - stitek uzlu za koncem kampane.
+function mistrZbyva(){
+ let n=0;
+ for(let i=0;i<MAPS.length;i++) if(!(SAVE.hard&&SAVE.hard[i]))n++;
+ return n;
+}
+// Dohrana kampan = vyhra na VSECH uzemich.
+function kampanDohrana(){
+ const w=SAVE.won||[];
+ if(w.length<MAPS.length)return false;
+ for(let i=0;i<MAPS.length;i++) if(!w[i])return false;
+ return true;
+}
+// Prvni uzemi, na kterem jeste neni mistrovske mereni. -1 = vsechna hotova.
+function prvniMistr(){
+ for(let i=0;i<MAPS.length;i++)
+   if((SAVE.won||[])[i]&&!(SAVE.hard&&SAVE.hard[i]))return i;
+ return -1;
+}
+// Dalsi uzemi kampane (odemcene a jeste nedohrane). -1 = neni.
+function dalsiUzemi(){
+ const w=SAVE.won||[];
+ for(let i=0;i<Math.min(MAPS.length,SAVE.unlocked||1);i++) if(!w[i])return i;
+ for(let i=0;i<MAPS.length;i++) if(!w[i])return i;
+ return -1;
+}
 const xpNeed=l=>6+l*4;
 
 const TIPS=[
@@ -12680,22 +12784,36 @@ function hasPerk(t,id){
  return (SAVE.perk&&SAVE.perk[k]||[]).indexOf(id)>=0;
 }
 
-const RANKS=[
- {tr:0,   n:'Figurant'},        {tr:150, n:'Měřický pomocník'},
- {tr:400, n:'Technik'},         {tr:750, n:'Geodet'},
- {tr:1150,n:'Vedoucí čety'},    {tr:1650,n:'Inženýr geodet'},
- {tr:2200,n:'Úředně oprávněný'},{tr:2900,n:'Vrchní zeměměřič'}
-];
-function rankOf(){ let r=RANKS[0]; RANKS.forEach(x=>{if(SAVE.tr>=x.tr)r=x;}); return r; }
-function nextRank(){ return RANKS.find(x=>x.tr>SAVE.tr)||null; }
+/* Hodnost uz nema vlastni zebricek - cte se z uzlu trofejni cesty.
+   Nejvyssi hodnost "Vrchni zememeric" se NEDA nasbirat pohary: uděluje ji
+   dohrani cele kampane (SAVE.finale), at ma konec hry vlastni titul. */
+const TITUL_FINALE='Vrchní zeměměřič';
+function arenaIndex(){ return AREN.reduce((acc,x,i)=>SAVE.tr>=x.tr?i:acc,0); }
+function rankOf(){
+ if(SAVE.finale)return {n:TITUL_FINALE,tr:AREN[AREN.length-1].tr};
+ const a=AREN[arenaIndex()];
+ return {n:a.hodnost,tr:a.tr};
+}
+function nextRank(){
+ if(SAVE.finale)return null;
+ const now=rankOf().n;
+ const x=AREN.find(a=>a.tr>SAVE.tr&&a.hodnost!==now);
+ return x?{n:x.hodnost,tr:x.tr}:null;
+}
 
 const SEASON_LVLS=20, SEASON_XP=220;
 function seasonId(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1); }
-function seasonName(){
- const m=['Lednová','Únorová','Březnová','Dubnová','Květnová','Červnová','Červencová',
-  'Srpnová','Zářijová','Říjnová','Listopadová','Prosincová'][new Date().getMonth()];
- return m+' kampaň';
+/* v103 (K7): sezona se jmenovala "Zarijova kampan", pritom "Kampan" je
+   nazev hlavniho HERNIHO REZIMU - na jedne obrazovce tak stalo tlacitko
+   REZIM KAMPAN a o kus niz nadpis Zarijova kampan. */
+function seasonMesic(){
+ return ['leden','únor','březen','duben','květen','červen','červenec',
+  'srpen','září','říjen','listopad','prosinec'][new Date().getMonth()];
 }
+function seasonName(){ return 'Sezóna · '+seasonMesic(); }
+// Titul za dohranou odbornou stopu. Klic je mesic sezony, aby sly sbirat
+// tituly za vic sezon.
+function seasonTitul(){ return 'Sezónní mistr · '+seasonMesic(); }
 function ensureSeason(){
  SAVE.season=SAVE.season||{};
  if(SAVE.season.id!==seasonId())
@@ -12717,13 +12835,17 @@ const SEASON_FREE=[
  {res:60},{cards:3},{res:90},{crate:'common'},{cards:4},
  {res:120},{crate:'rare'},{cards:5},{res:150},{crate:'rare'},
  {cards:6},{res:180},{crate:'epic'},{cards:7},{res:220},
- {crate:'epic'},{cards:9},{res:280},{crate:'legend'},{cards:12,res:350}
+ // v103 (K7): 20. uroven zakladni stopy da navic 3 mezniky.
+ {crate:'epic'},{cards:9},{res:280},{crate:'legend'},{cards:12,res:350,mez:3}
 ];
 const SEASON_PRO=[
  {cards:4},{res:120},{crate:'rare'},{cards:6},{res:160},
  {crate:'rare'},{cards:8},{res:200},{crate:'epic'},{cards:10},
  {res:260},{crate:'epic'},{cards:12},{res:320},{crate:'legend'},
- {cards:14},{res:400},{crate:'legend'},{cards:18},{crate:'legend',res:500}
+ // v103 (K7): odborna stopa za 1 200 vyzkumu nesla vyhradne karty, vyzkum
+ // a bedny - tedy vic tehoz, co hrac dostava i tak, a nebyl duvod ji chtit
+ // dohrat. Dvacata uroven ted da TITUL do profilu, ktery se jinde neziska.
+ {cards:14},{res:400},{crate:'legend'},{cards:18},{crate:'legend',res:500,titul:1}
 ];
 const PRO_COST=1200;
 function seasonReady(){
@@ -12746,10 +12868,16 @@ function claimSeason(i,pro){
  if(rw.res)SAVE.res+=rw.res;
  if(rw.cards)got=grantCards(rw.cards);
  if(rw.crate)addCrate(rw.crate);
+ if(rw.mez)mezDej(rw.mez,'sezónní cesta','sez'+s2.id+(pro?'p':'f')+i);
+ if(rw.titul){
+   SAVE.tituly=SAVE.tituly||{};
+   SAVE.tituly[s2.id]=seasonTitul();
+   try{ toast2('Nový titul do profilu: '+seasonTitul()); }catch(e){}
+ }
  list.push(i);save();snd('coin');
  renderSeason();renderTitle();
  // Uzivatel chtel videt JAKE karty prisly, stejne jako u bedny.
- try{ karOdhal((i+1)+'. úroveň kampaně',
+ try{ karOdhal((i+1)+'. úroveň sezóny',
    (pro?'Odborná':'Základní')+' stopa · '+seasonName(),
    {res:rw.res||0,cards:got,crate:rw.crate||null}); }
  catch(e){ toast2('Odměna '+(i+1)+'. úrovně vyzvednuta.'); }
@@ -12767,7 +12895,11 @@ const STARREW=[
  {n:18,r:{cards:8,res:220,tower:'prism'}},
  {n:24,r:{crate:'epic',res:300,tower:'thermal'}},
  {n:30,r:{cards:14,res:400,tower:'sonar'}},
- {n:33,r:{crate:'legend',res:600,cards:16}}
+ {n:33,r:{crate:'legend',res:600,cards:16}},
+ // v102 rada koncila na 33 hvezdach z 45: hrac videl "36 / 45 hvezd" a nemel
+ // uz co vyzvednout - dvanact hvezd ze ctyr uzemi bylo bez odmeny.
+ {n:39,r:{crate:'legend',res:700,cards:18}},
+ {n:45,r:{crate:'legend',res:900,cards:24}}
 ];
 function starsTotal(){ return (SAVE.stars||[]).reduce((a,b)=>a+b,0); }
 // ---- VZHLEDY (skiny) ----
@@ -12907,16 +13039,22 @@ function mezVezmi(kolik){
 function starRewReady(){ return STARREW.filter(x=>starsTotal()>=x.n&&!(SAVE.starRew||{})[x.n]).length; }
 
 const ACH=[
- {id:'first', n:'První měření',        d:'Dokonči libovolné území',      g:1,  f:()=>SAVE.stats.wins,  r:{res:60,cards:2}},
- {id:'w3',    n:'Zkušený geodet',      d:'Dokonči 3 území',              g:3,  f:()=>SAVE.stats.wins,  r:{res:120,cards:4}},
- {id:'w8',    n:'Vedoucí měřické čety',d:'Dokonči 8 území',              g:8,  f:()=>SAVE.stats.wins,  r:{tower:'quadrant',res:200}},
+ // v103: tri uspechy slibovaly "Dokonci N uzemi", ale citaly `stats.wins`,
+ // tedy vyhrana MERENI - dvojite dohrani teze mapy je posouvalo dal.
+ // Ted pocitaji uzemi, presne jak stoji v popisku. Nazev `w8` nesl nazev
+ // hodnosti ("Vedouci mericke cety"), takze si ho hrac pletl s kariérou.
+ {id:'first', n:'První měření',        d:'Dokonči libovolné území',      g:1,  f:()=>(SAVE.won||[]).filter(Boolean).length,  r:{res:60,cards:2}},
+ {id:'w3',    n:'Zkušený geodet',      d:'Dokonči 3 území',              g:3,  f:()=>(SAVE.won||[]).filter(Boolean).length,  r:{res:120,cards:4}},
+ {id:'w8',    n:'Osm území',           d:'Dokonči 8 území',              g:8,  f:()=>(SAVE.won||[]).filter(Boolean).length,  r:{tower:'quadrant',res:200}},
  {id:'waves50',n:'Padesát etap',       d:'Zvládni 50 etap dohromady',    g:50, f:()=>SAVE.stats.waves, r:{res:100,cards:3}},
  {id:'waves200',n:'Dvě stě etap',      d:'Zvládni 200 etap dohromady',   g:200,f:()=>SAVE.stats.waves, r:{crate:'rare',res:180}},
  {id:'kill1k',n:'Tisíc chyb',          d:'Znič 1000 rušivých vlivů',     g:1000,f:()=>SAVE.stats.kills,r:{res:150,cards:4}},
  {id:'kill5k',n:'Čistá síť',           d:'Znič 5000 rušivých vlivů',     g:5000,f:()=>SAVE.stats.kills,r:{tower:'meteo',res:250}},
  {id:'merge50',n:'Slučovač',           d:'Sluč 50× přístroje',           g:50, f:()=>SAVE.stats.merges,r:{res:120,cards:3}},
- {id:'tr300', n:'Stavební parcela',    d:'Nasbírej 300 pohárů',          g:300,f:()=>SAVE.tr,          r:{res:150,cards:4}},
- {id:'tr900', n:'Přehradní profil',    d:'Nasbírej 900 pohárů',          g:900,f:()=>SAVE.tr,          r:{crate:'legend'}},
+ // Nazvy nesly jmena OBLASTI trofejni cesty, jenze na uplne jinych prazich
+ // ("Stavebni parcela" byl uspech za 300 poharu i oblast za 150).
+ {id:'tr300', n:'Tři sta pohárů',      d:'Nasbírej 300 pohárů',          g:300,f:()=>SAVE.tr,          r:{res:150,cards:4}},
+ {id:'tr900', n:'Devět set pohárů',    d:'Nasbírej 900 pohárů',          g:900,f:()=>SAVE.tr,          r:{crate:'legend'}},
  {id:'own10', n:'Sběratel',            d:'Vlastni 10 různých přístrojů', g:10, f:()=>ORD.filter(ownsType).length, r:{tower:'backpack',res:200}},
  // Cil je getter, ne cislo: pocita jen pristroje, ke kterym vede cesta, a sam
  // se posune, az nejaky pribude. Funkci `ziskatelneTypy` tu jeste nejde zavolat
@@ -12984,35 +13122,20 @@ function checkLogin(){
  save();
  return {day,rw,got};
 }
+/* v103 (K5): prihlasovaci odmena uz neotevira vlastni okno. Zapise se do
+   SAVE.login.dnes a vypise ji karta "Dnesni prehled" na strance Teren.
+   Hrac o nic neprijde - odmenu uz mu pripsal checkLogin(). */
 function showLogin(info){
- const L=$('lgList');L.innerHTML='';
- window.__lgInfo=info;
- for(let i=0;i<7;i++){
-   const r=LOGIN[i];
-   const d=document.createElement('div');
-   d.className='lgDay'+(i<info.day-1?' past':i===info.day-1?' now':'')+(i===6?' fin':'');
-   const hd=document.createElement('div');hd.className='lgN';
-   hd.innerHTML='<b>'+(i+1)+'.</b> den'+(i===6?' <em>finále</em>':'');
-   if(i<info.day-1)hd.innerHTML+='<i class="lgHot">'+karSvg(KAR_SVG.ok)+'</i>';
-   if(i===info.day-1)hd.innerHTML+='<i class="lgDnes">dnes</i>';
-   d.appendChild(hd);
-   const rw=document.createElement('div');rw.className='lgR';
-   karOdmList(r).forEach(o=>{
-     const t=document.createElement('div');t.className='lgI';
-     t.appendChild(karIko(o,i===info.day-1?36:30));
-     const sp=document.createElement('span');sp.textContent=o.nad;t.appendChild(sp);
-     rw.appendChild(t);
-   });
-   d.appendChild(rw);
-   L.appendChild(d);
- }
- $('lgLead').innerHTML='Přihlášení <b>'+info.day+'. den</b> v řadě.'+
-   ' Dnešní odměna: <b>'+info.rw.res+' výzkumu</b> a '+
-   info.rw.cards+cardWord(info.rw.cards)+
-   (info.rw.crate?' a bedna do skladu':'')+'.'+
-   // At hrace nezaskoci, ze osmy den je zase "1. den".
-   (info.day===7?' Tímhle týden končí — zítra začíná nový od prvního dne.':'');
- $('login').classList.add('on');snd('coin');
+ SAVE.login=SAVE.login||{};
+ SAVE.login.dnes={d:today(),day:info.day,res:info.rw.res,cards:info.rw.cards,
+   crate:info.rw.crate||null};
+ save();
+ try{
+   toast2('Přihlášení '+info.day+'. den v řadě: +'+info.rw.res+' výzkumu, '+
+     info.rw.cards+cardWord(info.rw.cards)+(info.rw.crate?' a bedna do skladu':'')+'.');
+   snd('coin');
+ }catch(e){}
+ try{ renderDaily(); }catch(e){}
 }
 
 const QUESTS=[
@@ -13020,7 +13143,10 @@ const QUESTS=[
  {id:'kills', n:'Znič {g} rušivých vlivů',    goals:[150,260,400],res:[45,70,100],cards:2},
  {id:'merge', n:'Sluč {g}× přístroje',        goals:[10,16,24], res:[40,65,95], cards:2},
  {id:'abil',  n:'Použij {g}× měřickou metodu',goals:[5,9,14],   res:[35,55,80], cards:2},
- {id:'win',   n:'Dokonči {g}× celé území',    goals:[1,2,3],    res:[60,100,150],cards:3},
+ // v103 (K5): 'win' s cilem 1 byl doslovny dvojnik Zakazky dne. Zustava
+ // v seznamu kvuli rozehranym dnum a `questProgress('win')`, ale losuje se
+ // az od DVOU dokoncenych uzemi - to uz Zakazka dne neni.
+ {id:'win',   n:'Dokonči {g}× celé území',    goals:[2,2,3],    res:[100,100,150],cards:3},
  {id:'stars', n:'Získej {g}× tři hvězdy',     goals:[1,2,3],    res:[80,130,190],cards:4},
  {id:'cond',  n:'Přežij {g} etap v nepříznivých podmínkách',goals:[3,5,8],res:[50,80,115],cards:2},
  {id:'build', n:'Postav {g} stanovisek',      goals:[20,32,45], res:[40,60,90], cards:2},
@@ -13215,7 +13341,7 @@ let SAVE={v:5,res:0,unlocked:1,best:new Array(MAPS.length).fill(0),stars:new Arr
  tut:0,run:null,opts:{snd:1,vib:1,spd:1,mus:1,auto:0,board:1,vol:2,fs:0,theme:'day'},
  xp:0,step:0,types:BASE_TYPES.slice(),abils:BASE_ABILS.slice(),
  killed:{},presets:[[],[]],pslot:0,perk:{},ach:{},stats:{runs:0,waves:0,kills:0,merges:0,wins:0,best:0},cards:{tape:4,theo:4,nivel:3,edm:3},lvl:{},acc:{},spec:{},slots:[],deck:['tape','theo','nivel','edm'],abilDeck:['adjust','repair'],abilLvl:{},tr:0,arena:0,testAll:1,testStash:0,
- mez:0,mezLog:[],mezDay:{d:'',res:0},skin:{},skinOn:'base',skinT:{},skinOwn:{},hrdOn:'photo',
+ mez:0,mezMigr:1,mezLog:[],mezDay:{d:'',res:0},skin:{},skinOn:'base',skinT:{},skinOwn:{},hrdOn:'photo',
  meta:vychoziMeta()};
 let __seqWarn=0;
 const SKEY='geo:save:v2';
@@ -13311,7 +13437,18 @@ function normalize(s){
      Object.keys(SAVE.skinT).forEach(k=>{
        const id=SAVE.skinT[k];
        if(!id||id==='base'||!SKINY[k]||!skinDef(k,id)||!maSkin(k,id))delete SAVE.skinT[k]; });
-     if(!SAVE.mezMigr){SAVE.mezMigr=1;SAVE.mez+=25;}
+     // v102 dostal 25 mezniku kazdy, kdo hru poprve ulozil - i uplne novy
+     // hrac, ktery jeste nic neodehral. Okno Meny pritom o teze mene tvrdi,
+     // ze je "jen za odvedeny vykon v terenu". Vyrovnani je urcene STAREMU
+     // postupu, takze se ted vaze na to, ze uz nejaky beh probehl; nova
+     // ulozeni maji `mezMigr` rovnou ve vychozim SAVE.
+     // POZOR: cte se ULOZENY stav `s`, ne slouceny SAVE. Vychozi SAVE uz
+     // `mezMigr:1` nese, takze `!SAVE.mezMigr` by po Object.assign nebylo
+     // nikdy pravda a vyrovnani by nedostal ani stary postup.
+     if(!s.mezMigr){
+       SAVE.mezMigr=1;
+       if(s.stats&&((s.stats.runs|0)||(s.stats.waves|0)))SAVE.mez=(SAVE.mez||0)+25;
+     }
      // Dron, rotační laser a měřický stůl se staly hrdiny — ze skladu a ze
      // sbírky zmizely. Nasbírané karty a úrovně se proto jednorázově
      // přepočtou na výzkum, ať hráč o nic nepřijde.
@@ -17174,6 +17311,9 @@ function finish(win){
    if(!win)stars=0;
  }
  if(win&&!S.endless){
+   // Stav PRED zapisem - trophyGain z nej pozna prvni dokonceni.
+   S.__troHvezdy=SAVE.stars[S.map]||0;
+   S.__troPrvni=(!SAVE.won[S.map])||(!!S.hard&&!(SAVE.hard&&SAVE.hard[S.map]));
    SAVE.stars[S.map]=Math.max(SAVE.stars[S.map]||0,stars);
    // tři hvězdy na území: 3 mezníky, jednou za území
    if((SAVE.stars[S.map]||0)>=3)mezDej(3,'tři hvězdy','hv'+S.map);
@@ -17410,6 +17550,13 @@ function finish(win){
    ', přesnost '+Math.round(S.acc)+' %, hvězd '+stars+'/3, zničeno '+S.kills+' vlivů.';
  $('result').classList.toggle('prohra',!win);
  $('result').classList.add('on');
+ // K1: prvni dohrani cele kampane ma vlastni okno. Kontroluje se i po
+ // vyhre ve vyzve - ta take zapisuje do SAVE.won, takze bez toho by se
+ // finale nemuselo spustit nikdy.
+ if(win&&!SAVE.finale&&kampanDohrana()){
+   const __dal=udelFinale();
+   setTimeout(()=>{ try{ showFinale(__dal); }catch(e){} },1500);
+ }
  // Obsah je vyssi nez okno (1003 proti 844 px na iPhonu), takze MERIT ZNOVU
  // bylo urizle a ZPET DO MENU 75 px pod okrajem - a nic to nenaznacovalo.
  try{
@@ -17478,6 +17625,59 @@ function confetti(){
  };
  requestAnimationFrame(frame);
 }
+/* ---- K1: dohrana kampan ma vlastni konec ----
+   Do v102 se po vyhre na poslednim uzemi ukazala TATAZ vysledkova
+   obrazovka jako po kterekoli jine etape, tlacitko DALSI UZEMI zmizelo
+   a HRAT nabizelo znovu to posledni uzemi. Jedine uznani byl radek
+   uspechu "Cela sit" mezi 27 dalsimi.
+   Odmena musi byt necim, co se jinak nekoupi: legendarni vzhledy stoji
+   750 mezniku za kus a je jich pet - dohrana kampan je odemyka vsechny. */
+function legendarniVzhledy(){
+ return Object.keys(SKINY).filter(k=>(SKINY[k]||[]).some(x=>x[0]==='legenda'));
+}
+function udelFinale(){
+ if(SAVE.finale)return null;
+ SAVE.finale=1; SAVE.finaleD=today();
+ const dal=[];
+ const vz=legendarniVzhledy();
+ SAVE.skinOwn=SAVE.skinOwn||{};
+ let novych=0;
+ vz.forEach(k=>{ const kl=k+':legenda';
+   if(!SAVE.skinOwn[kl]){ SAVE.skinOwn[kl]=1; novych++; } });
+ dal.push('Hodnost <b>'+TITUL_FINALE+'</b> — nejvyšší v profilu, pohárů se netýká.');
+ if(novych)dal.push('<b>Legendární vzhledy</b> pro '+pocet(novych,'přístroj','přístroje','přístrojů')+
+   ' — jinak po 750 mezníkách za kus. Nasadíš je v Obchodě → Za mezníky.');
+ SAVE.res+=1000; dal.push('<b>1000 výzkumu</b> do laborky.');
+ mezDej(25,'dohraná kampaň','finale'); dal.push('<b>25 mezníků</b> za dohranou síť.');
+ addCrate('legend'); dal.push('<b>'+CRATES.legend.n+'</b> do skladu.');
+ // Zaznam v Deniku mereni, at je konec videt i zpetne.
+ SAVE.runs=SAVE.runs||[];
+ SAVE.runs.unshift({fin:1,m:'Síť dokončena',w:MAPS.length,tot:MAPS.length,
+   ok:true,st:3,acc:100,k:0,mode:'kampaň',d:Date.now()});
+ SAVE.runs=SAVE.runs.slice(0,13);
+ // Dalsi cil: mistrovska mereni. HRAT uz nesmi nabizet posledni uzemi.
+ const mm=prvniMistr();
+ if(mm>=0){ SAVE.mode='hard'; SAVE.selMap=mm; }
+ save();
+ return dal;
+}
+function showFinale(dal){
+ const hv=(SAVE.stars||[]).reduce((a,b)=>a+b,0), st=SAVE.stats||{};
+ $('finLead').textContent='Všech '+MAPS.length+' území je vyrovnaných. '+
+   'Kampaň má konec — a ty jsi u něj.';
+ $('finTitul').textContent=TITUL_FINALE;
+ $('finStat').innerHTML=[
+   ['Hvězdy',hv+'/'+(MAPS.length*3)],['Etapy',st.waves||0],
+   ['Zničené vlivy',st.kills||0],['Vyhraná měření',st.wins||0],
+   ['Poháry',SAVE.tr||0],['Území',MAPS.length+'/'+MAPS.length]
+ ].map(p=>'<div><b>'+p[1]+'</b><span>'+p[0]+'</span></div>').join('');
+ $('finOdm').innerHTML=(dal||[]).map(x=>'<div class="finR"><i></i><span>'+x+'</span></div>').join('');
+ const zb=mistrZbyva();
+ $('finHard').innerHTML='MISTROVSKÁ MĚŘENÍ'+(zb?' <s style="text-decoration:none;opacity:.8">· zbývá '+zb+'</s>':'');
+ $('finOv').classList.add('on');
+ try{ snd('win'); confetti(); }catch(e){}
+}
+function zavriFinale(){ $('finOv').classList.remove('on'); }
 function showLevelUp(list){
  const L=$('luList');L.innerHTML='';
  const posl=list[list.length-1]||{};
@@ -17569,9 +17769,23 @@ function loadRun(){
  return true;
 }
 
+/* Pohary za mereni.
+   Do v102 dostal hrac PLNOU sazbu i za desate zopakovani uz dohraneho
+   uzemi (173 poharu za posledni uzemi), takze sla trofejni cesta vytocit
+   omilanim jedine mapy - a okno Meny pritom tvrdi, ze pohary "ukazuji,
+   jak daleko jsi dosel". Ted plati plnou sazbu PRVNI dokonceni uzemi a
+   PRVNI mistrovske mereni (x1,6); opakovani da jen rozdil za NOVE hvezdy
+   a pevnou petku, at neni uplne k nicemu.
+   Priznaky si finish() ulozi JESTE PRED tim, nez si SAVE.won/stars/hard
+   prepise - odsud uz by se prvni dokonceni nepoznalo. */
 function trophyGain(win,stars){
  if(S.endless)return Math.round(S.wave*3);
- if(win)return Math.round((26+stars*7+S.map*9)*(S.hard?1.6:1));
+ if(win){
+   const plne=Math.round((26+stars*7+S.map*9)*(S.hard?1.6:1));
+   if(S.__troPrvni)return plne;
+   const nove=Math.max(0,stars-(S.__troHvezdy||0));
+   return Math.round(nove*7*(S.hard?1.6:1))+5;
+ }
  // prohra: menší ztráta, nikdy pod spodní hranici dosažené oblasti
  const ai=AREN.reduce((acc,x,i)=>SAVE.tr>=x.tr?i:acc,0);
  const floor=AREN[ai].tr;
@@ -17837,6 +18051,14 @@ function applyReward(r){
  if(r.cards){
    const g=grantCards(r.cards);
    out.push(r.cards+' karet: '+Object.keys(g).map(k=>SHORT[k]+' ×'+g[k]).join(', '));
+ }
+ if(r.hrdina&&T[r.hrdina]){
+   // Hrdina se odemyka pouhym prekrocenim prahu poharu - uzel ho tedy
+   // neudeluje, jen ho OHLASI. Bez tohohle radku se hrac o novem hrdinovi
+   // dozvedel jedine tak, ze nahodou otevrel Vybaveni.
+   out.push('nový hrdina: '+(T[r.hrdina].hn||T[r.hrdina].n[0]));
+   try{ setTimeout(()=>toast2('Nový hrdina: '+(T[r.hrdina].hn||T[r.hrdina].n[0])+
+     ' · vyber si ho ve Vybavení.'),1200); }catch(e){}
  }
  if(r.acc)out.push('otevřel se obchod s příslušenstvím');
  if(r.crate){addCrate(r.crate);out.push(CRATES[r.crate].n+' do skladu');}
@@ -19373,27 +19595,50 @@ const MODES=[
   ic:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   dd:'Každý den jiné území a jiná dvojice pravidel. Obtížnost si volíš sám, '+
      'odměnou je bedna podle zvoleného stupně.'},
- {id:'sprint',n:'Rychlé měření', d:'Osm etap na čas', c:'brass', odm:'vzácná bedna · 1× denně',
-  ic:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M9.5 2h5"/></svg>',
-  dd:'Osm zrychlených etap, dvojnásobná dotace za etapu a měří se čas. '+
-     'Za první dokončení dne vzácná bedna.'},
- {id:'boss',  n:'Samí bossové', d:'Deset etap plných bossů', c:'tape', odm:'legendární bedna · 1× denně',
+ // v103 (K5): Rychle mereni a Bossova smrst byly dva samostatne rezimy,
+ // kazdy s vlastni denni bednou - dve denni mista navic za totez ("zahraj
+ // si zvlastni beh"). Ted je to JEDEN rezim, ktery se ob den strida.
+ {id:'spec', n:'Zvláštní měření', d:'Střídá se každý den', c:'tape', odm:'bedna · 1× denně',
   ic:'<svg viewBox="0 0 24 24"><path d="M4 8.5 12 4l8 4.5v6L12 19l-8-4.5z"/><path d="M9 11.5h6M9 14.5h6"/></svg>',
-  dd:'Deset etap, v každé jde jen boss nebo pancéřovaný vliv. Otevře se po '+
-     'dokončení prvního území, za první dokončení dne je legendární bedna.'}
+  dd:'Jeden den bossová smršť (deset etap plných bossů, legendární bedna), '+
+     'druhý den rychlé měření (osm etap na čas, vzácná bedna). Otevře se po '+
+     'dokončení prvního území.'}
 ];
+/* Ktere zvlastni mereni je dnes. Pocita se z data, ne z nahody, aby to
+   bylo pro vsechny stejne a hrac vedel, co ho zitra ceka. */
+function denniZvlast(){
+ const d=new Date();
+ const den=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);
+ return (den%2===0)?'boss':'sprint';
+}
+function zvlastPopis(){
+ return denniZvlast()==='boss'
+   ? {n:'Bossová smršť',s:'Deset etap plných bossů · legendární bedna'}
+   : {n:'Rychlé měření', s:'Osm etap na čas · vzácná bedna'};
+}
 // Rezim, ktery jeste nejde spustit, a duvod proc. Drive se hrac dozvedel
 // az po klepnuti, ze na nej nema.
 function rezimZamek(m){
  if(m.id==='hard'&&!(SAVE.won||[]).some(Boolean))return 'dohraj první území';
- if(m.id==='boss'&&!(SAVE.won||[]).some(Boolean))return 'dohraj první území';
+ if(m.id==='spec'&&!(SAVE.won||[]).some(Boolean))return 'dohraj první území';
  return null;
 }
-function curMode(){ return MODES.find(m=>m.id===(SAVE.mode||'camp'))||MODES[0]; }
+function curMode(){
+ // Stara ulozeni mohou drzet zruseny rezim 'sprint' nebo 'boss'.
+ if(SAVE.mode==='sprint'||SAVE.mode==='boss')SAVE.mode='spec';
+ return MODES.find(m=>m.id===(SAVE.mode||'camp'))||MODES[0];
+}
 function selMap(){
  let i=SAVE.selMap;
  if(i===undefined||i>=SAVE.unlocked)i=SAVE.unlocked-1;
- return Math.max(0,Math.min(MAPS.length-1,i));
+ i=Math.max(0,Math.min(MAPS.length-1,i));
+ // V mistrovskem rezimu nema smysl nabizet uzemi, ktere uz mistrovske ma -
+ // po dohrani kampane by tlacitko HRAT jinak porad ukazovalo na posledni
+ // uz splneny cil.
+ if((SAVE.mode||'camp')==='hard'&&SAVE.hard&&SAVE.hard[i]){
+   const m=prvniMistr(); if(m>=0)i=m;
+ }
+ return i;
 }
 function shopSeed(){ const t=today(); let h=5381;
  for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0; return Math.abs(h); }
@@ -19457,7 +19702,9 @@ function shopOffers(){
       sub:'+18 % síly metody'+(((abilLv(a.id)+1)%2===0)?' a náboj navíc':'')});
   }
  }
- out.push({id:'r1',type:'res',res:0,price:0,title:'Zdarma každý den',sub:'Malá dávka karet a výzkumu',free:true});
+ // v103 (K5): polozka "Zdarma kazdy den" (60 vyzkumu + 3 karty) byla
+ // deveste denni misto k poklepani. Splynula s Bezplatnou bednou v Laborce -
+ // ta ted krome bedny pridava tutez davku, jednou za den.
  return out;
 }
 function shopBought(id){ ensureShop(); return SAVE.shop.b.indexOf(id)>=0; }
@@ -19730,9 +19977,13 @@ const MENY={
   ik:'<svg class="ikS" viewBox="0 0 24 24"><use href="#ikPohar"/></svg>',
   co:'Ukazatel postupu, ne měna — poháry se neutrácejí. Ukazují, jak daleko '
     +'jsi došel, a za prohru jich pár ubyde.',
-  odkud:['za dokončené měření','za mistrovská a nekonečná měření'],
-  nac:'Posouvají tě po trofejní cestě a otevírají její další stupně '
-    +'i celé části hry.',
+  odkud:['<b>plnou sazbu</b> za PRVNÍ dokončení území — víc hvězd, víc pohárů',
+    '<b>plnou sazbu ×1,6</b> za PRVNÍ mistrovské měření na území',
+    'za opakovanou výhru už jen rozdíl za nové hvězdy a pevných 5',
+    'za nekonečné měření podle dosažené etapy'],
+  nac:'Posouvají tě po trofejní cestě a otevírají její další stupně, '
+    +'hrdiny i celé části hry. Dokonalá kampaň dá 1 650 pohárů, tedy '
+    +'9. stupeň z 12 — výš vede jen mistrovské měření.',
   hod:function(){ return SAVE.tr||0; }},
  mez:{n:'Mezníky',jed:'mezníků',ak:'var(--laser)',
   ik:'<svg class="ikS" viewBox="0 0 24 24"><use href="#ikMeznik"/></svg>',
@@ -19741,9 +19992,46 @@ const MENY={
   odkud:['<b>3</b> za tři hvězdy na území — jednou za každé území',
     '<b>2</b> za splněný denní úkol',
     '<b>3</b> za zkoušku z geodézie na plný počet',
-    '<b>1</b> jako nález ve výkopu — zhruba za každé sedmnácté dokončené měření'],
-  nac:'Vzhledy přístrojů a jednou denně dávka 200 výzkumu.',
-  hod:function(){ return SAVE.mez||0; }}
+    '<b>1</b> jako nález ve výkopu — zhruba za každé sedmnácté dokončené měření',
+    '<b>+1 za dvě úrovně</b> vylepšení „Styk s katastrem“ po každém dokončeném území'],
+  // v102 tu stalo jen "vzhledy a jednou denne 200 vyzkumu", pritom obchod
+  // za mezniky prodava ctyri veci.
+  nac:'V Obchodě → Za mezníky: vzhledy přístrojů, jednou denně dávka výzkumu, '
+    +'úroveň měřické metody a bedna navíc.',
+  hod:function(){ return SAVE.mez||0; }},
+ // v103: okno vysvetlovalo tri citace z dvaceti ctyr. Hvezdy, sezonni body
+ // a karty jsou dalsi tri, na ktere se hrac diva nejcasteji.
+ hvezdy:{n:'Hvězdy',jed:'hvězd',ak:'var(--brass)',
+  ik:'<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.9 6.3.7-4.7 4.3 1.3 6.2L12 17'
+    +'l-5.6 3.1 1.3-6.2L3 9.6l6.3-.7z"/></svg>',
+  co:'Známka za odvedenou práci na území. Každé území má tři cíle a za každý '
+    +'splněný je jedna hvězda — dohromady jich je '+(typeof MAPS!=='undefined'?MAPS.length*3:45)+'.',
+  odkud:['za splněné cíle území — cíle vidíš v jeho detailu i na výsledkové obrazovce',
+    'počítá se vždy TVŮJ nejlepší výsledek, horší běh ti hvězdu nesebere'],
+  nac:'Odměny za hvězdy v Kariéře (výzkum, karty a bedny) a <b>3 mezníky</b> '
+    +'za každé území se třemi hvězdami.',
+  hod:function(){ return (SAVE.stars||[]).reduce(function(a,b){return a+b;},0); }},
+ sezona:{n:'Sezónní body',jed:'bodů',ak:'var(--violet)',
+  ik:'<svg viewBox="0 0 24 24"><path d="M12 3.4 19 7v10l-7 3.6L5 17V7z"/>'
+    +'<path d="M9.4 12.2l1.9 1.9 3.5-3.5"/></svg>',
+  co:'Postup v sezónní cestě. Sezóna trvá jeden kalendářní měsíc, pak se '
+    +'body i odměny vynulují a začíná nová.',
+  odkud:['za každou odehranou etapu a za dokončené měření',
+    '<b>60</b> za každý vyzvednutý denní úkol'],
+  nac:'Otevírají úrovně sezónní cesty. Základní stopu má každý, odborná se '
+    +'kupuje jednou za sezónu a platí i zpětně.',
+  hod:function(){ try{ return ensureSeason().xp||0; }catch(e){ return 0; } }},
+ karty:{n:'Karty přístrojů',jed:'karet',ak:'var(--sky)',
+  ik:'<svg viewBox="0 0 24 24"><rect x="3.2" y="6.4" width="10.6" height="14" rx="2.2"/>'
+    +'<path d="M7.6 4.2h9.2a2.2 2.2 0 0 1 2.2 2.2v11.4"/></svg>',
+  co:'Karty patří vždy jednomu přístroji. Nejsou to peníze — nedají se '
+    +'přesypat jinam, hromadí se do jeho další úrovně.',
+  odkud:['z beden a z denní nabídky obchodu','z trofejní a sezónní cesty',
+    'za denní úkoly, úspěchy a odměny za hvězdy'],
+  nac:'Úroveň přístroje v Laborce a ve Sbírce — každá úroveň zvyšuje '
+    +'poškození i dosah. Platí se karty <i>a</i> výzkumem.',
+  hod:function(){ try{ return Object.keys(SAVE.cards||{})
+    .reduce(function(a,k){return a+(SAVE.cards[k]||0);},0); }catch(e){ return 0; } }}
 };
 function otevriMenu(id){
  const m=MENY[id]; if(!m)return;
@@ -19775,6 +20063,22 @@ function zavriMenu(){ const ov=document.getElementById('menaOv');
  if(t1)t1.addEventListener('click',function(){ otevriMenu('mez'); });
  const t2=document.getElementById('mezOdkudTip');
  if(t2)t2.addEventListener('click',function(){ otevriMenu('mez'); });
+ // v103: hvezdy, sezona a karty maji vlastni vysvetleni. Otevira je klepnuti
+ // primo na to cislo, u ktereho se hrac ptá "co to je".
+ const sh=document.getElementById('starHint');
+ if(sh){ sh.classList.add('menaKlik'); sh.setAttribute('role','button');
+   sh.setAttribute('tabindex','0'); sh.setAttribute('title','Hvězdy – co to je');
+   sh.addEventListener('click',function(e){ e.stopPropagation(); otevriMenu('hvezdy'); });
+   sh.addEventListener('keydown',function(e){
+     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); otevriMenu('hvezdy'); } }); }
+ const chn=document.getElementById('collHint');
+ if(chn){ chn.classList.add('menaKlik'); chn.setAttribute('role','button');
+   chn.setAttribute('tabindex','0'); chn.setAttribute('title','Karty přístrojů – co to je');
+   chn.addEventListener('click',function(){ otevriMenu('karty'); }); }
+ const sbx=document.getElementById('seasonBox');
+ if(sbx)sbx.addEventListener('click',function(e){
+   const hd=e.target.closest?e.target.closest('.seHd'):null;
+   if(hd){ e.stopPropagation(); otevriMenu('sezona'); } });
  const z=document.getElementById('menaZavri');
  if(z)z.addEventListener('click',zavriMenu);
  const ov=document.getElementById('menaOv');
@@ -19976,7 +20280,12 @@ function renderShop(){
  const offers=shopOffers();
  const f=offers.find(o=>o.free), rest=offers.filter(o=>!o.free);
  $('shopHint').textContent=rest.filter(o=>!shopBought(o.id)).length+' z '+rest.length+' k mání';
- // denní dárek
+ // v103 (K5): denni darek zdarma se presunul k Bezplatne bedne v Laborce,
+ // aby "neco zdarma jednou denne" nebylo na dvou strankach. Kdyz tu zadna
+ // bezplatna polozka neni, cely blok se schova.
+ if(!f){ free.innerHTML=''; free.classList.add('hide'); }
+ else {
+ free.classList.remove('hide');
  free.innerHTML='';
  const fd=document.createElement('div');
  fd.className='shopFree hlavni'+(shopBought(f.id)?' got':'');
@@ -19986,6 +20295,7 @@ function renderShop(){
    '<div class="sfB">'+(shopBought(f.id)?'VYZVEDNUTO':'VZÍT')+'</div>';
  fd.onclick=()=>{ if(!shopBought(f.id))buyOffer(f); };
  free.appendChild(fd);
+ }
  // nabídka
  grid.innerHTML='';
  rest.forEach(o=>{
@@ -20071,8 +20381,7 @@ function renderPlay(){
    hard:MAPS[mi].n+' · +3 etapy',
    endless:MAPS[mi].n+' · bez konce',
    chal:(function(){const ch=challengeDef();return MAPS[ch.map].n+' · '+ch.mods.map(x=>x.n).join(' + ');})(),
-   sprint:'Osm etap na čas',
-   boss:'Deset etap plných bossů'
+   spec:(function(){const z=zvlastPopis();return 'Dnes: '+z.n;})()
  }[m.id];
  $('playSub').textContent=sub;
  $('playLabel').textContent='HRÁT';
@@ -20106,15 +20415,17 @@ function startSelected(){
    newRun(ch.map,false,Object.assign({},ch,{tier:tr.id,hpMul:tr.hp,rew:tr.rew}));
    toast('Výzva '+tr.n.toLowerCase()+' · obtížnost změníš v nabídce režimů u tlačítka HRÁT.');
  }
- else if(m.id==='sprint'){
-   const i2=Math.min(MAPS.length-1,Math.max(0,SAVE.unlocked-1));
-   newRun(i2,false,{map:i2,waves:8,mods:[CHMODS[0],CHMODS[6]],sprint:true});
-   S.speed=Math.max(2,SAVE.opts.spd||2);S.sprintT=0;
- }
  else {
-   if(!SAVE.won.some(x=>x))return toast2('Samí bossové se otevřou po dokončení prvního území.');
+   if(!SAVE.won.some(x=>x))return toast2('Zvláštní měření se otevře po dokončení prvního území.');
    const i2=Math.min(MAPS.length-1,Math.max(0,SAVE.unlocked-1));
-   newRun(i2,false,{map:i2,waves:10,mods:[{n:'Samí bossové',d:'V každé etapě přicházejí bossové.'}],rush5:true});
+   if(denniZvlast()==='sprint'){
+     newRun(i2,false,{map:i2,waves:8,mods:[CHMODS[0],CHMODS[6]],sprint:true});
+     S.speed=Math.max(2,SAVE.opts.spd||2);S.sprintT=0;
+     toast('Osm etap. Zrychlené etapy, dvojnásobný rozpočet — jde o čas.');
+   } else {
+     newRun(i2,false,{map:i2,waves:10,mods:[{n:'Bossová smršť',d:'V každé etapě přicházejí bossové.'}],rush5:true});
+     toast('Deset etap plných bossů. Hodně štěstí.');
+   }
  }
  show('game');resize();ui();window.scrollTo(0,0);
 }
@@ -20141,7 +20452,9 @@ function openModePick(){
      '<div class="pi"><div class="pn2">'+m.n+
        (zam?'<span class="prar" style="background:var(--ink3)">'+zam+'</span>':'')+'</div>'+
      '<div class="pd2">'+m.d+'</div>'+
-     (m.dd?'<div class="pd3">'+m.dd+'</div>':'')+
+     (m.dd?'<div class="pd3">'+m.dd+
+       (m.id==='spec'?'<br><b>Dnes: '+zvlastPopis().n+' — '+zvlastPopis().s+'</b>':'')+
+       '</div>':'')+
      (m.odm?'<div class="rezOdm"><i></i>'+m.odm+'</div>':'')+'</div>';
    d.onclick=()=>{
      if(zam)return toast2('Tenhle režim se otevře, až '+zam+'.');
@@ -20412,40 +20725,54 @@ function renderProfile(){
    '</div>';
 }
 // Cely profil v okne: kdo jsem, kolik mam, kam se posouvam.
+/* Profil.
+   v103 (K2): jeden pruh misto dvou. Hodnost i oblast bezely nad TYMZ
+   cislem poharu s jinymi prahy, takze profil kreslil dva ruzne dlouhe
+   pruhy pro jedinou hodnotu. Hodnost je ted vlastnost uzlu cesty.
+   v103 (K9): pod dlazdicemi zbyvalo 180 px prazdna, zatimco Statistiky
+   a Denik mereni lezely v Laborce pod zalozkou, kde je nikdo nehledal.
+   Ted jsou tady. */
 function renderProfOkno(){
  const el=$('profTelo'); if(!el)return;
- const r=rankOf(), nx=nextRank();
- const pct=nx?Math.min(100,Math.max(4,(SAVE.tr-r.tr)/Math.max(1,nx.tr-r.tr)*100)):100;
- const ar=AREN[Math.min(AREN.length-1,SAVE.arena||0)];
- const arN=AREN[(SAVE.arena||0)+1]||null;
+ const ai=arenaIndex();
+ const ar=AREN[ai], arN=AREN[ai+1]||null;
  const arPct=arN?Math.min(100,Math.max(4,(SAVE.tr-ar.tr)/Math.max(1,arN.tr-ar.tr)*100)):100;
- const st=SAVE.stats||{};
- const hvezd=(SAVE.stars||[]).reduce(function(a,b){return a+b;},0);
+ const r=rankOf();
  el.innerHTML=
   '<div class="pfKarta">'+
    '<div class="pfIc"><svg viewBox="0 0 24 24">'+
      '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M10 14h4M9 20h6M12 14v6"/></svg></div>'+
    '<div class="pfT">'+
      '<div class="pfJm">'+(SAVE.name||'Geodet')+'</div>'+
-     '<div class="pfN">'+r.n+'</div>'+
-     '<span class="pfRank">'+SAVE.tr+' pohárů</span>'+
+     '<div class="pfN">'+r.n+(SAVE.finale?' · kampaň dohrána':'')+'</div>'+
+     '<span class="pfRank">'+SAVE.tr+' '+kaPoh(SAVE.tr)+'</span>'+
    '</div>'+
    '<button type="button" class="pfPrejm" id="pfPrejm">Přejmenovat</button>'+
   '</div>'+
-  '<div class="pfRad"><span class="pfK">Hodnost</span><span class="pfV">'+
-    (nx?('do <b>'+nx.n+'</b> zbývá '+(nx.tr-SAVE.tr)+' '+kaPoh(nx.tr-SAVE.tr))
-       :'nejvyšší hodnost')+
-   '</span></div><div class="pfB"><i style="width:'+pct+'%"></i></div>'+
-  '<div class="pfRad"><span class="pfK">Oblast</span><span class="pfV">'+
-    ar.n+(arN?(' · do „'+arN.n+'“ zbývá '+Math.max(0,arN.tr-SAVE.tr)+
-      ' '+kaPoh(Math.max(0,arN.tr-SAVE.tr))):' · nejvyšší')+
-   '</span></div><div class="pfB pfB2"><i style="width:'+arPct+'%"></i></div>'+
+  '<div class="pfRad"><span class="pfK">Stupeň kariéry '+(ai+1)+'/'+AREN.length+
+    ' · '+ar.n+'</span><span class="pfV">'+
+    (arN?('do „'+arN.n+'“ zbývá '+Math.max(0,arN.tr-SAVE.tr)+
+      ' '+kaPoh(Math.max(0,arN.tr-SAVE.tr))):'nejvyšší stupeň')+
+   '</span></div><div class="pfB"><i style="width:'+arPct+'%"></i></div>'+
   '<div class="pfMr">'+
-   [['Výzkum',SAVE.res],['Poháry',SAVE.tr],['Mezníky',SAVE.mez||0],
-    ['Území',(SAVE.won||[]).filter(Boolean).length+'/'+MAPS.length],
-    ['Hvězdy',hvezd+'/'+(MAPS.length*3)],['Odehráno etap',st.waves||0]]
+   [['Výzkum',SAVE.res],['Poháry',SAVE.tr],['Mezníky',SAVE.mez||0]]
    .map(function(p){return '<div><b>'+p[1]+'</b><span>'+p[0]+'</span></div>';}).join('')+
-  '</div>';
+  '</div>'+
+  (function(){
+    const t=[];
+    if(SAVE.finale)t.push(TITUL_FINALE);
+    Object.keys(SAVE.tituly||{}).forEach(function(k){ t.push(SAVE.tituly[k]); });
+    if(!t.length)return '';
+    return '<div class="secTitle" style="--ak:var(--brass)">Tituly</div>'+
+      '<div class="kaTituly">'+t.map(function(x){
+        return '<span class="odznak odznak--zlaty">'+x+'</span>'; }).join('')+'</div>';
+  })()+
+  '<div class="secTitle" style="--ak:var(--sky)">Statistiky</div>'+
+  '<div id="statGrid"></div>'+
+  '<div class="secTitle" style="--ak:var(--brass)">Deník měření</div>'+
+  '<div id="runLog"></div>';
+ try{ renderStats(); }catch(e){}
+ try{ renderRunLog(); }catch(e){}
  const pb=$('pfPrejm');
  if(pb)pb.onclick=function(){
    const v=prompt('Jak ti mám říkat?',SAVE.name||'');
@@ -20458,20 +20785,38 @@ function otevriProfil(){
 function msToMidnight(){
  const n=new Date(), m=new Date(n); m.setHours(24,0,0,0); return m-n;
 }
+/* v103 (K5): karta uz neni dalsi misto, kam se klepe pro odmenu - je to
+   PREHLED dne. Zakazka dne se presunula mezi denni ukoly (Laborka), sem
+   se naopak vlila prihlasovaci odmena, ktera drive vyskakovala vlastnim
+   oknem. Klepnuti vede do Laborky, kde se odmeny opravdu berou. */
 function renderDaily(){
  const el=$('dailyBox'); if(!el)return;
  SAVE.dayJob=SAVE.dayJob||{};
  if(SAVE.dayJob.d!==today())SAVE.dayJob={d:today(),done:0};
- const done=!!SAVE.dayJob.done;
+ try{ ensureDaily(); }catch(e){}
+ const job=!!SAVE.dayJob.done;
+ const q=(SAVE.daily&&SAVE.daily.q)||[];
+ const hot=q.filter(x=>x.claimed).length;
+ const kviz=SAVE.daily&&SAVE.daily.quiz===today();
+ const vyz=!!(SAVE.chal&&SAVE.chal.day===today()&&SAVE.chal.done);
+ const lg=(SAVE.login&&SAVE.login.dnes&&SAVE.login.dnes.d===today())?SAVE.login.dnes:null;
+ const zbyva=(job?0:1)+(hot<q.length?1:0)+(kviz?0:1)+(vyz?0:1);
+ const radky=[];
+ radky.push((job?'✓':'•')+' Zakázka dne'+(job?' hotová':' — první dokončené měření'));
+ radky.push((hot>=q.length&&q.length?'✓':'•')+' Denní úkoly '+hot+'/'+q.length);
+ radky.push((vyz?'✓':'•')+' Denní výzva'+(vyz?' hotová':''));
+ radky.push((kviz?'✓':'•')+' Zkouška'+(kviz?' hotová':''));
  el.innerHTML='<div class="djIc"><svg viewBox="0 0 24 24">'+
    '<path d="M6.6 3.6h10.8v5.2a5.4 5.4 0 0 1-10.8 0z" fill="currentColor"/>'+
    '<path d="M9 20.2h6M12 14.4v5.8" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>'+
    '</svg></div>'+
-   '<div class="djT"><b>Zakázka dne</b><s>'+(done?
-     'Splněno. Vrať se zítra.':
-     'První dokončené měření dnes: dvojnásobný výzkum a bedna o třídu lepší.')+'</s></div>'+
-   '<div class="djB">'+(done?'HOTOVO':'AKTIVNÍ')+'</div>';
- el.classList.toggle('done',done);
+   '<div class="djT"><b>Dnešní přehled</b><s>'+
+     (lg?'Přihlášení '+lg.day+'. den v řadě: +'+lg.res+' výzkumu, '+
+        lg.cards+cardWord(lg.cards)+(lg.crate?' a bedna do skladu':'')+'. ':'')+
+     radky.join(' · ')+'</s></div>'+
+   '<div class="djB">'+(zbyva?zbyva+'×':'HOTOVO')+'</div>';
+ el.classList.toggle('done',!zbyva);
+ el.onclick=()=>{ try{snd('ui');}catch(e){} goPage(3); };
 }
 function renderCountdowns(){
  const t=fmtTime(msToMidnight());
@@ -20508,34 +20853,81 @@ function todoPrepni(){
  bar.setAttribute('aria-expanded',on?'true':'false');
  try{ snd('ui'); }catch(e){}
 }
+/* Panel "Co ted".
+   Do v102 tu byla sama administrativa (bedny, hvezdy, uspechy, vylepseni,
+   zkouska, vyzva) - novacek videl "Muzes vylepsit 4 pristroje" a o prvnim
+   uzemi ani slovo. Polozky pritom UZ MELY pole `p` (priorita), jenze se
+   nikdy neseradily: bralo se prvnich tri v poradi zapisu.
+   Ted: prvni polozka vzdycky posila HRAT, seznam se radi podle priority
+   a vsechna administrativa se slucuje do JEDNE radky, aby na zkousku
+   i vyzvu zbylo misto. */
 function renderTodo(){
  const el=$('todoBox'); if(!el)return;
  const items=[];
+
+ // --- 1. HRAT: co je dalsi krok v kampani ---
+ const vyhral=(SAVE.won||[]).some(Boolean);
+ if(!vyhral){
+   items.push({t:'Vydej se na první území',
+     d:MAPS[0].n+' — '+MAPS[0].waves+' etap. Tady hra začíná.',
+     p:9,go:()=>{goPage(2);setTimeout(()=>openLevel(0),120);}});
+ } else if(!kampanDohrana()){
+   const i=dalsiUzemi();
+   if(i>=0){
+     const ft=MAPS[i].unlock, jm=(ft&&T[ft])?T[ft].n[0]:null;
+     items.push({t:'Další území: '+MAPS[i].n,
+       d:MAPS[i].waves+' etap'+(jm?' · za první dohrání '+jm:'')+'.',
+       p:9,go:()=>{goPage(2);setTimeout(()=>openLevel(i),120);}});
+   }
+ } else {
+   const zb=mistrZbyva(), mm=prvniMistr();
+   if(mm>=0){
+     items.push({t:'Kampaň dohrána — zbývá '+pocet(zb,'mistrovské měření','mistrovská měření','mistrovských měření'),
+       d:'Další na řadě: '+MAPS[mm].n+' · +3 etapy a tvrdší vlivy.',
+       p:9,go:()=>{SAVE.mode='hard';SAVE.selMap=mm;save();goPage(2);renderPlay();}});
+   } else {
+     items.push({t:'Síť je hotová celá',
+       d:'Kampaň i mistrovská měření máš. Zbývá nekonečné měření a hvězdy.',
+       p:9,go:()=>{SAVE.mode='endless';save();goPage(2);renderPlay();}});
+   }
+ }
+
+ // --- 2. administrativa v JEDNE radce ---
  const rdy=(SAVE.slots||[]).filter(x=>slotState(x)==='ready').length;
- if(rdy)items.push({t:pocet(rdy,'bedna k otevření','bedny k otevření','beden k otevření'),
-   d:'Ve skladu na tebe čeká vybavení.',p:2,go:()=>goPage(3)});
- const idle=(SAVE.slots||[]).some(x=>slotState(x)==='idle')&&
-   !(SAVE.slots||[]).some(x=>slotState(x)==='unlocking');
- if(idle)items.push({t:'Spusť odemykání bedny',d:'Žádná bedna se právě neodemyká.',p:2,go:()=>goPage(3)});
  const q=(SAVE.daily&&SAVE.daily.q||[]).filter(x=>x.prog>=x.goal&&!x.claimed).length;
- if(q)items.push({t:pocet(q,'splněný denní úkol','splněné denní úkoly','splněných denních úkolů'),
-   d:'Vyzvedni si výzkum a karty.',p:2,go:()=>goPage(3)});
- if(starRewReady())items.push({t:pocet(starRewReady(),'odměna za hvězdy','odměny za hvězdy','odměn za hvězdy'),
-   d:'Máš '+pocet(starsTotal(),'hvězdu','hvězdy','hvězd')+' — vyzvedni si, co ti náleží.',p:3,go:()=>goPage(4)});
- if(achCount())items.push({t:pocet(achCount(),'úspěch k vyzvednutí','úspěchy k vyzvednutí','úspěchů k vyzvednutí'),
-   d:'Odměny čekají na trofejní cestě.',p:3,go:()=>goPage(4)});
- const up=ORD.filter(k=>{const c=cardCost(k);return hasType(k)&&c&&(SAVE.cards[k]||0)>=c.cards&&SAVE.res>=c.res;});
- if(up.length)items.push({t:'Můžeš vylepšit '+pocet(up.length,'přístroj','přístroje','přístrojů'),
-   d:up.slice(0,3).map(k=>SHORT[k]).join(', ')+' — máš dost karet i výzkumu.',p:0,go:()=>{goPage(1);}});
+ const hv=starRewReady(), us=achCount();
+ const casti=[];
+ if(rdy)casti.push(pocet(rdy,'bedna','bedny','beden'));
+ if(q)casti.push(pocet(q,'denní úkol','denní úkoly','denních úkolů'));
+ if(hv)casti.push(pocet(hv,'odměna za hvězdy','odměny za hvězdy','odměn za hvězdy'));
+ if(us)casti.push(pocet(us,'úspěch','úspěchy','úspěchů'));
+ if(casti.length){
+   // Kam poslat: kde je toho k vyzvednuti nejvic.
+   const doLab=(rdy+q)>=(hv+us);
+   items.push({t:'Vyzvedni odměny',d:casti.join(', ')+' — '+
+     (doLab?'čeká to v Laborce.':'čeká to v Kariéře.'),
+     p:5,go:()=>goPage(doLab?3:4)});
+ }
+
+ // --- 3. denni veci ---
  if(SAVE.daily&&SAVE.daily.quiz!==today())
-   items.push({t:'Zkouška z geodézie',d:'Pět otázek, dnešní odměna čeká.',p:2,go:()=>{goPage(3);openQuiz();}});
+   items.push({t:'Zkouška z geodézie',d:'Pět otázek, dnešní odměna čeká.',p:4,go:()=>{goPage(3);openQuiz();}});
  const ch=(SAVE.chal&&SAVE.chal.day===today()&&SAVE.chal.done);
  // Bedna se ridi ZVOLENYM stupnem (lehka rare, stredni epic, tezka legend),
  // brifink ale sliboval epickou vzdycky - i tomu, kdo ma vybranou lehkou.
- if(!ch)items.push({t:'Denní výzva čeká',
+ // Vyzvu nabizet az po prvnim dohranem uzemi - driv je to jen sum.
+ if(!ch&&vyhral)items.push({t:'Denní výzva čeká',
    d:'Za dokončení je '+CRATES[CHTIERS[chalTier()].rew].n.toLowerCase()+
-     ' · stupeň '+CHTIERS[chalTier()].n.toLowerCase()+'.',p:1,go:()=>goPage(2)});
+     ' · stupeň '+CHTIERS[chalTier()].n.toLowerCase()+'.',p:3,go:()=>goPage(2)});
+ const idle=(SAVE.slots||[]).some(x=>slotState(x)==='idle')&&
+   !(SAVE.slots||[]).some(x=>slotState(x)==='unlocking');
+ if(idle)items.push({t:'Spusť odemykání bedny',d:'Žádná bedna se právě neodemyká.',p:2,go:()=>goPage(3)});
+ const up=ORD.filter(k=>{const c=cardCost(k);return hasType(k)&&c&&(SAVE.cards[k]||0)>=c.cards&&SAVE.res>=c.res;});
+ if(up.length)items.push({t:'Můžeš vylepšit '+pocet(up.length,'přístroj','přístroje','přístrojů'),
+   d:up.slice(0,3).map(k=>SHORT[k]).join(', ')+' — máš dost karet i výzkumu.',p:1,go:()=>{goPage(1);}});
+
  if(!items.length){el.innerHTML='';return;}
+ items.sort((a,b)=>b.p-a.p);
  el.innerHTML='<div class="todoH">Co teď</div>';
  items.slice(0,3).forEach(it=>{
    const d=document.createElement('div');d.className='todoI';
@@ -20544,46 +20936,10 @@ function renderTodo(){
    el.appendChild(d);
  });
 }
-function renderBossRush(){
- const el=$('bossCard'); if(!el)return;
- const best=(SAVE.bossRush&&SAVE.bossRush.best)||0;
- const open=SAVE.won&&SAVE.won.some(x=>x);
- el.innerHTML='<div class="spT"><div><div class="spN">Samí bossové</div>'+
-   '<div class="spD">Deset etap, v každé přicházejí jen bossové a pancéřované vlivy. '+
-   'Za první dokončení dne je legendární bedna.</div></div></div>'+
-   (best?'<div class="spB">Nejdál: etapa '+best+'</div>':'')+
-   (open?'':'<div class="spB" style="color:var(--dim)">Odemkne se po dokončení prvního území.</div>');
- if(!open)return;
- const btn=document.createElement('button');
- btn.className='big';btn.textContent='PUSTIT SE DO SMRŠTĚ';
- btn.onclick=()=>{
-   snd('ui');
-   const mi=Math.min(MAPS.length-1,Math.max(0,SAVE.unlocked-1));
-   newRun(mi,false,{map:mi,waves:10,mods:[{n:'Samí bossové',d:'V každé etapě přicházejí bossové.'}],rush5:true});
-   show('game');resize();ui();window.scrollTo(0,0);
-   toast('Deset etap plných bossů. Hodně štěstí.');
- };
- el.appendChild(btn);
-}
-function renderSprint(){
- const el=$('sprintCard'); if(!el)return;
- const best=(SAVE.sprint&&SAVE.sprint.best)||0;
- el.innerHTML='<div class="spT"><div><div class="spN">Osm etap na čas</div>'+
-   '<div class="spD">Zrychlené etapy, dvojnásobný rozpočet a hned od začátku tvrdší vlivy. '+
-   'Za první dokončení dne vzácná bedna.</div></div></div>'+
-   (best?'<div class="spB">Nejlepší čas: '+best.toFixed(1)+' s</div>':'');
- const btn=document.createElement('button');
- btn.className='big';btn.textContent='SPUSTIT RYCHLÉ MĚŘENÍ';
- btn.onclick=()=>{
-   snd('ui');
-   const mi=Math.min(MAPS.length-1,Math.max(0,SAVE.unlocked-1));
-   const ch={map:mi,waves:8,mods:[CHMODS[0],CHMODS[6]],sprint:true};
-   newRun(mi,false,ch);S.speed=Math.max(2,SAVE.opts.spd||2);S.sprintT=0;
-   show('game');resize();ui();window.scrollTo(0,0);
-   toast('Osm etap. Zrychlené etapy, dvojnásobný rozpočet — jde o čas.');
- };
- el.appendChild(btn);
-}
+/* v103 (K5): renderBossRush() a renderSprint() kreslily karty #bossCard
+   a #sprintCard, ktere v HTML nejsou od v102 - obe funkce tedy jen spadly
+   na prvni radce a nic nedelaly. Oba rezimy navic splynuly do jednoho
+   "Zvlastni mereni" (viz MODES), takze uz nemaji co kreslit. */
 const CHTIERS=[
  {id:0,n:'Lehká',  hp:1,    rew:'rare',  d:'základní obtížnost'},
  {id:1,n:'Střední',hp:1.35, rew:'epic',  d:'+35 % odolnosti'},
@@ -20637,6 +20993,11 @@ function renderRunLog(){
    const dt=new Date(r.d);
    const day=dt.getDate()+'.'+(dt.getMonth()+1)+'.';
    const stars=r.ok?('★'.repeat(r.st||0)+'☆'.repeat(3-(r.st||0))):'';
+   // K1: dohrani kampane ma v deniku vlastni, pevny radek.
+   if(r.fin)return '<div class="rlRow ok"><span class="rlD">'+day+'</span>'+
+     '<div class="rlT"><b>Síť dokončena</b> <i>kampaň</i>'+
+     '<s>všech '+MAPS.length+' území vyrovnaných · hodnost '+TITUL_FINALE+'</s></div>'+
+     '<span class="rlS">✦</span></div>';
    return '<div class="rlRow'+(r.ok?' ok':'')+'">'+
      '<span class="rlD">'+day+'</span>'+
      '<div class="rlT"><b>'+r.m+'</b>'+(r.mode?' <i>'+r.mode+'</i>':'')+
@@ -20644,45 +21005,78 @@ function renderRunLog(){
      '<span class="rlS">'+(r.ok?stars:'—')+'</span></div>';
  }).join('');
 }
+/* v103 (K3): "Dokoncena uzemi" se pocitala z `stats.wins`, tedy z poctu
+   VYHRANYCH MERENI - kdo dvakrat dohral totez uzemi, mel tam dvojku.
+   Ted je uzemi z `SAVE.won` a `stats.wins` ma vlastni, pravdivy nazev.
+   Tyz citac mel drive tri jmena (Odehrano etap / Zvladnute etapy / etap) -
+   vsude se ted rika "Etapy". */
 function renderStats(){
  const g=$('statGrid'); if(!g)return;
  const st=SAVE.stats||{};
- const items=[['Odehraná měření',st.runs||0,'sky'],['Dokončená území',st.wins||0,'moss'],
-   ['Zvládnuté etapy',st.waves||0,'brass'],['Zničené vlivy',st.kills||0,'tape'],
-   ['Sloučení přístrojů',st.merges||0,'violet'],['Nejdelší měření',(st.best||0)+' etap','laser']];
+ const uz=(SAVE.won||[]).filter(Boolean).length;
+ const hv=(SAVE.stars||[]).reduce((a,b)=>a+b,0);
+ const mi=Object.keys(SAVE.hard||{}).filter(k=>SAVE.hard[k]).length;
+ const items=[['Dokončená území',uz+'/'+MAPS.length,'moss'],
+   ['Hvězdy',hv+'/'+(MAPS.length*3),'brass'],
+   ['Mistrovská měření',mi+'/'+MAPS.length,'tape'],
+   ['Vyhraná měření',st.wins||0,'moss'],['Odehraná měření',st.runs||0,'sky'],
+   ['Etapy',st.waves||0,'brass'],['Nejdelší měření',(st.best||0)+' etap','laser'],
+   ['Zničené vlivy',st.kills||0,'tape'],
+   ['Sloučení přístrojů',st.merges||0,'violet']];
  g.innerHTML=items.map(x=>'<div class="stCell" style="--sc:var(--'+x[2]+')">'+
    '<b>'+x[1]+'</b><span>'+x[0]+'</span></div>').join('');
 }
 function renderQuests(){
  ensureDaily();
  const L=$('dqList'); if(!L)return;
- const left=SAVE.daily.q.filter(q=>!q.claimed).length;
+ SAVE.dayJob=SAVE.dayJob||{};
+ if(SAVE.dayJob.d!==today())SAVE.dayJob={d:today(),done:0};
+ const jobDone=!!SAVE.dayJob.done;
+ const left=SAVE.daily.q.filter(q=>!q.claimed).length+(jobDone?0:1);
  $('dqHint').textContent=left?(left+' aktivní'):'hotovo, zítra nové';
  L.innerHTML='';
+ // v103 (K5): Zakazka dne mela vlastni kartu na strance Teren a vedle toho
+ // se mezi denni ukoly losoval ukol "Dokonci 1x cele uzemi" - dve mista pro
+ // jednu a tutez vec. Ted stoji Zakazka jako PRVNI denni ukol. Odmenu si
+ // nebere tlacitkem: pripise se sama pri prvnim dokoncenem mereni dne.
+ {
+  const d=document.createElement('div');
+  d.className='dq'+(jobDone?' done':'');
+  d.innerHTML='<div class="dqic"><svg class=\'i\' viewBox=\'0 0 24 24\'>'+
+    '<path d=\'M6.6 3.6h10.8v5.2a5.4 5.4 0 0 1-10.8 0z\'/>'+
+    '<path d=\'M9 20.2h6M12 14.4v5.8\'/></svg></div>'+
+    '<div class="dqi"><div class="dqn">Zakázka dne · dokonči 1 měření</div>'+
+    '<div class="dqb"><i style="width:'+(jobDone?100:0)+'%"></i></div></div>'+
+    '<div class="dqp"><span class="dqCnt">'+(jobDone?1:0)+' / 1</span>'+
+    '<span class="mince">2× výzkum</span>'+
+    '<span class="odznak odznak--tyrkys">lepší bedna</span></div>';
+  L.appendChild(d);
+ }
  SAVE.daily.q.forEach((q,i)=>{
    const ready=q.prog>=q.goal&&!q.claimed;
    const d=document.createElement('div');d.className='dq'+(q.claimed?' done':ready?' ready':'');
    d.innerHTML='<div class="dqic"><svg class=\'i\' viewBox=\'0 0 24 24\'><circle cx=\'12\' cy=\'12\' r=\'8\'/><circle cx=\'12\' cy=\'12\' r=\'3.2\'/></svg></div>'+
      '<div class="dqi"><div class="dqn">'+questName(q)+'</div>'+
      '<div class="dqb"><i style="width:'+Math.min(100,q.prog/q.goal*100)+'%"></i></div></div>'+
-     '<div class="dqp"><span class="dqCnt">'+Math.min(q.prog,q.goal)+' / '+q.goal+'</span>'+
+     '<div class="dqp"><span class="dqCnt">'+Math.min(q.prog,q.goal)+' / '+q.goal+
+     (q.claimed||ready?'':' · '+Math.floor(Math.min(1,q.prog/q.goal)*100)+' %')+'</span>'+
      '<span class="mince">'+q.res+' výzkumu</span>'+
      '<span class="odznak odznak--tyrkys">'+q.cards+cardWord(q.cards)+'</span></div>';
-   const btn=document.createElement('button');
-   // Nesplneny ukol mel na tlacitku pomlcku, ktera nerika nic. Procento
-   // je stejne kratke a ukazuje, jak daleko hrac je.
-   btn.textContent=q.claimed?'✓':(ready?'VZÍT'
-     :(Math.floor(Math.min(1,q.prog/q.goal)*100)+' %'));
-   btn.disabled=!ready;
-   btn.onclick=()=>{
-     if(!ready)return;
-     SAVE.res+=q.res; const got=grantCards(q.cards); addSeasonXp(60);
-     mezDej(2,'denní úkol');
-     q.claimed=true;save();snd('coin');
-     toast2('Odměna: +'+q.res+' výzkumu, '+Object.keys(got).map(k=>SHORT[k]+' ×'+got[k]).join(', '));
-     renderQuests();renderTitle();
-   };
-   d.appendChild(btn);
+   // M10: totez co u uspechu - kdyz neni co vzit, zadne tlacitko.
+   if(q.claimed||ready){
+     const btn=document.createElement('button');
+     btn.textContent=q.claimed?'✓':'VZÍT';
+     btn.disabled=!ready;
+     btn.onclick=()=>{
+       if(!ready)return;
+       SAVE.res+=q.res; const got=grantCards(q.cards); addSeasonXp(60);
+       mezDej(2,'denní úkol');
+       q.claimed=true;save();snd('coin');
+       toast2('Odměna: +'+q.res+' výzkumu, '+Object.keys(got).map(k=>SHORT[k]+' ×'+got[k]).join(', '));
+       renderQuests();renderTitle();
+     };
+     d.appendChild(btn);
+   }
    L.appendChild(d);
  });
  const qb=$('bQuiz');
@@ -22256,8 +22650,6 @@ function renderTitle(){
  renderStarRew();
  renderTodo();
  todoLista();
- renderBossRush();
- renderSprint();
  renderAch();
  renderChallenge();
  attachHints();
@@ -22414,7 +22806,7 @@ function renderSeason(){
  el.appendChild(hd);
  const bar=document.createElement('div');bar.className='seBar2';
  bar.innerHTML='<i style="width:'+(lv>=SEASON_LVLS?100:Math.max(4,inLvl/SEASON_XP*100))+'%"></i>'+
-   '<span>'+(lv>=SEASON_LVLS?'kampaň dokončena':
+   '<span>'+(lv>=SEASON_LVLS?'sezóna dokončena':
      inLvl+' / '+SEASON_XP+' bodů do '+(lv+1)+'. úrovně')+'</span>';
  el.appendChild(bar);
  const hl=document.createElement('div');hl.className='sePasHl';
@@ -22426,7 +22818,9 @@ function renderSeason(){
  const od=vse?0:Math.max(0,lv-1);
  const doK=vse?SEASON_LVLS:Math.min(SEASON_LVLS,od+6);
  const tr=document.createElement('div');tr.className='sePas';
- for(let i=od;i<doK;i++){
+ // v103 (K7): pas sel na strance 1 -> 20, zatimco v okne 20 -> 1. Ted je
+ // smer stejny vsude: vyssi uroven nahore, cesta se leze vzhuru.
+ for(let i=doK-1;i>=od;i--){
    const open=lv>i;
    const row=document.createElement('div');
    row.className='sePasR'+(open?' open':'')+(lv===i?' ted':'');
@@ -22458,7 +22852,7 @@ function renderSeason(){
  if(SEASON_LVLS>doK-od||od>0){
    const b=document.createElement('button');b.type='button';b.className='pasVic sePasVic';
    b.textContent=vse?'Zobrazit jen okolí mé úrovně':
-     'Zobrazit celou kampaň · '+SEASON_LVLS+' úrovní';
+     'Zobrazit celou sezónu · '+SEASON_LVLS+' úrovní';
    b.onclick=e=>{e.stopPropagation();window.__sePasVse=!vse;
      try{snd('ui');}catch(x){}renderSeason();};
    el.appendChild(b);
@@ -22475,6 +22869,14 @@ function renderSeason(){
      renderSeason();renderTitle();
    };
    el.appendChild(b);
+   // v103 (K7): pod tlacitkem nebylo napsane, CO je v odborne stope navic -
+   // hrac mel zaplatit 1 200 vyzkumu naslepo.
+   const p2=document.createElement('p');p2.className='pgNote';
+   p2.innerHTML='Druhá řada odměn na všech 20 úrovních: zhruba dvojnásobek '+
+     'karet a výzkumu proti základní stopě, čtyři legendární bedny a na '+
+     '20. úrovni <b>titul do profilu</b>, který jinde nezískáš. Platí zpětně '+
+     'i na úrovně, které už máš.';
+   el.appendChild(p2);
  }
 }
 // Sezonni cesta pres celou obrazovku. Kresli TYTEZ radky jako pas na
@@ -22607,21 +23009,26 @@ function renderAch(){
      '<div class="achT"><div class="achN">'+a.n+'</div>'+
      '<div class="achD">'+a.d+'</div>'+
      '<div class="achB postup"><i style="width:'+Math.round(pr/a.g*100)+'%"></i></div>'+
-     '<div class="achR"><span class="achP">'+pr+' / '+a.g+'</span>'+kaRwChips(a.r,1)+'</div></div>';
-   const btn=document.createElement('button');
-   btn.textContent=done?'✓':(rd?'VZÍT'
-     :(Math.floor(Math.min(1,pr/a.g)*100)+' %'));btn.disabled=!rd;
-   btn.onclick=()=>{
-     if(!rd)return;
-     if(a.r.res)SAVE.res+=a.r.res;
-     let got={};
-     if(a.r.cards)got=grantCards(a.r.cards);
-     if(a.r.crate)addCrate(a.r.crate);
-     SAVE.ach[a.id]=1;save();snd('coin');
-     toast2('Úspěch splněn: '+a.n+(a.r.crate?' · bedna do skladu':''));
-     renderAch();renderTitle();
-   };
-   d.appendChild(btn);
+     '<div class="achR"><span class="achP">'+pr+' / '+a.g+'</span>'+kaRwMini(a.r)+
+     (done||rd?'':'<span class="achPct">'+Math.floor(Math.min(1,pr/a.g)*100)+' %</span>')+
+     '</div></div>';
+   // M10: tlacitko jen kdyz je co delat. "80 %" jako <button disabled>
+   // vypadalo jako rozbite tlacitko vedle aktivniho VZIT.
+   if(done||rd){
+     const btn=document.createElement('button');
+     btn.textContent=done?'✓':'VZÍT';btn.disabled=!rd;
+     btn.onclick=()=>{
+       if(!rd)return;
+       if(a.r.res)SAVE.res+=a.r.res;
+       let got={};
+       if(a.r.cards)got=grantCards(a.r.cards);
+       if(a.r.crate)addCrate(a.r.crate);
+       SAVE.ach[a.id]=1;save();snd('coin');
+       toast2('Úspěch splněn: '+a.n+(a.r.crate?' · bedna do skladu':''));
+       renderAch();renderTitle();
+     };
+     d.appendChild(btn);
+   }
    (done&&DL&&af!=='all'?DL:L).appendChild(d);
  });
  if(sorted.length>vidno.length||(vse&&sorted.length>LIM&&af!=='ready')){
@@ -22655,6 +23062,8 @@ function karOdmList(r){
  const out=[]; if(!r)return out;
  if(r.tower)out.push({t:'tower',k:r.tower,ak:'var(--brass)',nad:'nový přístroj',
    pod:(typeof T!=='undefined'&&T[r.tower])?T[r.tower].n[0]:r.tower});
+ if(r.hrdina)out.push({t:'tower',k:r.hrdina,ak:'var(--tape)',nad:'nový hrdina',
+   pod:(typeof T!=='undefined'&&T[r.hrdina])?(T[r.hrdina].hn||T[r.hrdina].n[0]):r.hrdina});
  if(r.abil){const x=(typeof ABIL!=='undefined')?ABIL.find(y=>y.id===r.abil):null;
    out.push({t:'abil',ak:'var(--laser)',nad:'nová metoda',pod:x?x.n:r.abil});}
  if(r.crate)out.push({t:'crate',k:r.crate,ak:'var(--violet)',nad:'bedna',
@@ -22662,6 +23071,10 @@ function karOdmList(r){
  if(r.cards)out.push({t:'cards',n:r.cards,ak:'var(--sky)',
    nad:r.cards+cardWord(r.cards),pod:'do sbírky'});
  if(r.res)out.push({t:'res',n:r.res,ak:'var(--brass)',nad:r.res+' výzkumu',pod:'do laborky'});
+ if(r.mez)out.push({t:'res',n:r.mez,ak:'var(--laser)',
+   nad:r.mez+' '+(r.mez===1?'mezník':(r.mez<5?'mezníky':'mezníků')),pod:'nejvzácnější měna'});
+ if(r.titul)out.push({t:'abil',ak:'var(--brass)',nad:'titul do profilu',
+   pod:(typeof seasonTitul==='function')?seasonTitul():'sezónní titul'});
  if(r.acc)out.push({t:'acc',ak:'var(--brass)',nad:'příslušenství',pod:'obchod se otevře'});
  return out;
 }
@@ -22852,6 +23265,8 @@ function renderRoadTrack(){
    h.innerHTML='<span class="pasNm">'+ar.n+'</span>'+
      '<span class="pasTr">'+karSvg(KAR_SVG.pohar)+ar.tr+'</span>';
    tx.appendChild(h);
+   if(ar.poKamp){const st=document.createElement('div');st.className='kaRadek';
+     st.innerHTML=kaStitek(i);tx.appendChild(st);}
    const rw=document.createElement('div');rw.className='pasOd';
    const seznam=karOdmList(ar.r);
    if(!seznam.length){
@@ -22877,6 +23292,15 @@ function renderRoad(){
  if(a>SAVE.arena)SAVE.arena=a;
  const cur=AREN[a], nxt=AREN[a+1];
  $('roadLvl').textContent=SAVE.tr;
+ // M7: souhrn do hlavicky stranky - pohary, hodnost, sezonni uroven.
+ {const sh=$('kaSouhrn');
+  if(sh){
+    let lv=0; try{ lv=seasonLvl(); }catch(e){}
+    sh.innerHTML='<span class="mince mince--tyrkys">'+SAVE.tr+' '+kaPoh(SAVE.tr)+'</span>'+
+      '<span class="odznak odznak--zlaty">'+rankOf().n+'</span>'+
+      '<span class="odznak">stupeň '+(a+1)+' / '+AREN.length+'</span>'+
+      '<span class="odznak odznak--fialovy">sezóna '+lv+' / '+SEASON_LVLS+'</span>';
+  }}
  if(nxt){
    const span=nxt.tr-cur.tr, got=SAVE.tr-cur.tr;
    $('xpfill').style.width=Math.max(3,Math.min(100,got/span*100))+'%';
@@ -22907,6 +23331,8 @@ function renderRoad(){
    tx.appendChild(h);
    const p=document.createElement('div');p.className='ad';p.textContent=ar.d;
    tx.appendChild(p);
+   if(ar.poKamp){const st=document.createElement('div');st.className='kaRadek';
+     st.innerHTML=kaStitek(i);tx.appendChild(st);}
    const rw=document.createElement('div');rw.className='karArOd';
    const seznam=karOdmList(ar.r);
    if(!seznam.length){
@@ -22924,6 +23350,17 @@ function renderRoad(){
 // Uzel trofejni i sezonni cesty se da otevrit. Do te doby to byl prouzek,
 // ve kterem hrac nevidel, co ho ceka.
 function kaPoh(n){ return n===1?'pohár':(n>=2&&n<=4?'poháry':'pohárů'); }
+/* K3: ctvrtina cesty lezi ZA koncem kampane. Dokonaly pruchod vsemi 15
+   uzemimi po trech hvezdach da 1650 poharu (9. oblast z 12); vys uz se
+   hrac dostane jen mistrovskymi merenimi. Drive to nikde nestalo a slo to
+   vytocit opakovanim jedine mapy. */
+function kaStitek(i){
+ const ar=AREN[i];
+ if(!ar||!ar.poKamp)return '';
+ const zb=(typeof mistrZbyva==='function')?mistrZbyva():0;
+ return '<span class="odznak odznak--tichy">Po kampani: za mistrovská měření'+
+   (zb?' · zbývá '+zb:'')+'</span>';
+}
 function kaBod(n){ return n===1?'bod':(n>=2&&n<=4?'body':'bodů'); }
 
 /* --- v99: cesty se otviraji tam, kde hrac NENI ---------------------------
@@ -23007,10 +23444,28 @@ function kaRwChips(r,maly){
    (T[r.tower]?T[r.tower].n[0]:r.tower)+'</span>');
  if(r.abil){ const x=(typeof ABIL!=='undefined')?ABIL.find(y=>y.id===r.abil):null;
    out.push('<span class="odznak odznak--tyrkys'+o+'">metoda · '+(x?x.n:r.abil)+'</span>'); }
+ if(r.hrdina)out.push('<span class="odznak odznak--zlaty'+o+'">hrdina · '+
+   ((T[r.hrdina]&&(T[r.hrdina].hn||T[r.hrdina].n[0]))||r.hrdina)+'</span>');
  if(r.acc)out.push('<span class="odznak odznak--zlaty'+o+'">obchod s příslušenstvím</span>');
  return out.length?out.join(''):'<span class="odznak odznak--tichy'+o+'">bez odměny</span>';
 }
 
+/* M10: odmeny na JEDEN radek - ikona + cislo.
+   Chipy `kaRwChips` se zalamovaly ruzne podle delky nazvu, takze karty
+   uspechu mely ruznou vysku (namereno 153 / 186 / 169 px). */
+function kaRwMini(r){
+ if(!r)return '';
+ const it=[], I=d=>'<svg viewBox="0 0 24 24">'+d+'</svg>';
+ if(r.res)it.push('<span class="aoI">'+I(KAR_SVG.res)+r.res+'</span>');
+ if(r.cards)it.push('<span class="aoI">'+I(KAR_SVG.cards)+r.cards+'</span>');
+ if(r.crate)it.push('<span class="aoI">'+I(KAR_SVG.acc)+
+   (CRATES[r.crate]?CRATES[r.crate].n.replace(/\s*bedna$/i,''):r.crate)+'</span>');
+ if(r.tower)it.push('<span class="aoI">'+I(KAR_SVG.tower)+'přístroj</span>');
+ if(r.hrdina)it.push('<span class="aoI">'+I(KAR_SVG.tower)+'hrdina</span>');
+ if(r.abil)it.push('<span class="aoI">'+I(KAR_SVG.abil)+'metoda</span>');
+ if(r.acc)it.push('<span class="aoI">'+I(KAR_SVG.acc)+'obchod</span>');
+ return it.length?'<span class="achOdm">'+it.join('')+'</span>':'';
+}
 let kaAkce=null;
 function kaShow(o){
  const g=$('kaGo');
@@ -23051,7 +23506,10 @@ function kaUzel(i){
          :'<span class="odznak odznak--tyrkys">Chybí '+chybi+' '+kaPoh(chybi)+'</span>')+
     '<span class="mince mince--tyrkys">'+ar.tr+' '+kaPoh(ar.tr)+'</span></div>'+
     '<div class="postup" style="--ak:var(--laser)"><i style="width:'+pct+'%"></i></div>'+
-    '<div class="kaPod">Máš '+SAVE.tr+' '+kaPoh(SAVE.tr)+'. Poháry přibývají za dokončená měření.</div>',
+    (ar.poKamp?'<div class="kaRadek">'+kaStitek(i)+'</div>':'')+
+    '<div class="kaPod">Máš '+SAVE.tr+' '+kaPoh(SAVE.tr)+
+      '. Plné poháry jsou za <b>první</b> dokončení území a za <b>první</b> '+
+      'mistrovské měření; opakování dá už jen rozdíl za nové hvězdy.</div>',
   rw:karOdmDlazdice(ar.r), mapa:i
  });
 }
@@ -24370,7 +24828,6 @@ document.querySelectorAll('.kaSbal>.hlava').forEach(h=>{
   h.setAttribute('aria-expanded','false');
   h.onclick=()=>kaSbalit(h);
 });
-$('lgOk').onclick=()=>{$('login').classList.remove('on');renderTitle();const inf=window.__lgInfo;if(inf)try{karOdhal('Denní odměna vyzvednuta','Přihlášení '+inf.day+'. den v řadě',{res:(inf.rw&&inf.rw.res)||0,cards:inf.got||{},crate:(inf.rw&&inf.rw.crate)||null});}catch(e){}};
 $('hintOk').onclick=()=>{$('hintBox').classList.remove('on');};
 // Krizky v lepivych hlavickach delaji totez co ZPET dole - jedno misto, jedno chovani.
 document.querySelectorAll('.xBtn[data-back]').forEach(b=>{
@@ -24428,9 +24885,19 @@ $('ptX').onclick=()=>{snd('ui');$('pickTower').classList.remove('on');};
 $('bFree').onclick=()=>{
  ensureDaily();
  if(Date.now()<(SAVE.daily.free||0))return;
- SAVE.daily.free=Date.now()+FREE_MS;save();
+ SAVE.daily.free=Date.now()+FREE_MS;
  const cr=rollCrate(Math.random()<.18?'rare':'common');
- showCrate([cr]);renderQuests();
+ // Denni darek z obchodu ("Zdarma kazdy den") se vlil sem - jednou za den
+ // pribyde k bedne i jeho obsah, at hrac o nic neprijde a nemusi kvuli tomu
+ // chodit na jinou stranku.
+ if(SAVE.daily.darek!==today()){
+   SAVE.daily.darek=today();
+   cr.res=(cr.res||0)+60;SAVE.res+=60;
+   const g=grantCards(3);
+   Object.keys(g).forEach(k=>{ cr.cards=cr.cards||{}; cr.cards[k]=(cr.cards[k]||0)+g[k]; });
+ }
+ save();
+ showCrate([cr]);renderQuests();renderTitle();
 };
 $('tiClose').onclick=()=>{stopDemo();$('tinfo').classList.remove('on');};
 $('tiX').onclick=()=>{snd('ui');stopDemo();$('tinfo').classList.remove('on');};
@@ -24459,6 +24926,21 @@ $('deckClear').onclick=()=>{SAVE.deck=[];save();snd('ui');renderDeck();
 
 
 $('luOk').onclick=()=>{$('levelup').classList.remove('on');};
+$('finBack').onclick=()=>{snd('ui');zavriFinale();};
+$('finHard').onclick=()=>{
+ snd('ui');zavriFinale();
+ const mm=prvniMistr();
+ SAVE.mode='hard'; if(mm>=0)SAVE.selMap=mm; save();
+ $('result').classList.remove('on');$('levelup').classList.remove('on');
+ S=null;setDock(false);renderTitle();show('title');goPage(2,false);
+ if(mm<0)toast2('Mistrovská měření máš všechna. Zkus nekonečné měření nebo vyšší hvězdy.');
+};
+$('finEndless').onclick=()=>{
+ snd('ui');zavriFinale();
+ SAVE.mode='endless';save();
+ $('result').classList.remove('on');$('levelup').classList.remove('on');
+ S=null;setDock(false);renderTitle();show('title');goPage(2,false);
+};
 $('odOk').onclick=()=>{$('odOv').classList.remove('on');};
 $('crOk').onclick=()=>{$('crates').classList.remove('on');window.__crates=null;renderTitle();};
 $('tkClose').onclick=()=>{ if(TK&&TK.motion)window.removeEventListener('deviceorientation',TK.motion);
@@ -24608,6 +25090,19 @@ window.__G={get S(){return S},canBuild,openNewSpot,isOpen,TER,openLevel,PERKS,GE
 <script>
 /* 50 - zalozky Laborky. Ciste zobrazovaci vrstva, do herni logiky nesaha. */
 (function(){
+ // M7: zalozky Kariery. Stejny prvek i stejne chovani jako v Laborce.
+ (function(){
+  var kr=document.getElementById('kaTabs'); if(!kr)return;
+  var ks=[].slice.call(document.querySelectorAll('.kaSec'));
+  var kt=[].slice.call(kr.children);
+  kt.forEach(function(b){ b.addEventListener('click',function(){
+    kt.forEach(function(x){x.classList.toggle('on',x===b);});
+    ks.forEach(function(x){x.classList.toggle('on',x.dataset.ka===b.dataset.ka);});
+    window.__kaTab=b.dataset.ka;
+    try{if(typeof snd==='function')snd('ui');}catch(e){}
+    try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
+  }); });
+ })();
  var row=document.getElementById('lbTabs'); if(!row)return;
  var secs=[].slice.call(document.querySelectorAll('.lbSec'));
  var tlac=[].slice.call(row.children);
