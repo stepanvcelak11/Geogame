@@ -10703,8 +10703,16 @@ const CIL3=[
  'merge',   // Zatopova oblast - misto neni, tak slucuj
  'merge',   // Rozcesti siti - dve vetve chteji silnejsi pristroje, ne vic jich
  'rich',    // Mostni konstrukce - na moste si nech rezervu
- 'fast'     // Vysokohorska sit - v horach se pocita cas
+ 'fast',    // Vysokohorska sit - v horach se pocita cas
+ // --- tri uzemi z v102 ---
+ 'merge',   // Dalnicni teleso - dva pasy chteji silnejsi stanoviska, ne vic jich
+ 'lean',    // Pristavni bazen - sucha mista jsou jen mola po obvodu
+ 'rich'     // Tunelova roura - nech si rezervu na vyklenky
 ];
+// Kazde uzemi MUSI mit svuj treti cil. Do v102 mela tabulka dvanact polozek
+// na patnact uzemi, takze tri nova spadla na zalozni 'clean' ("ani jeden
+// prunik") - nejtvrdsi cil ve hre - a to prave na nejtezsich mapach.
+// Kontrola je az za definici MAPS (nize), tabulka MAPS jeste neexistuje.
 function mapGoals(mi){ return ['win','acc',CIL3[mi]||'clean']; }
 function goalDone(id){
  if(!S)return false;
@@ -10862,7 +10870,7 @@ const MAPS=[
  {n:'Katastrální území',kraj:'pole',
    node:[0.08, 0.86], boss:{"n": "Neuzavřený polygon", "d": "Úhlový uzávěr se nezavírá.", "r":["nekrot"]}, mix:{err:1.3,refr:.8,blun:1.2},
    brief:"Katastrální mapování. Rovinaté pozemky, dlouhé přímé záměry a spousta času na rozmyšlenou.",
-  unlock:'plumb',d:'Rovina, dlouhá trasa. Klidný start.',waves:14,hp:0.78,
+  unlock:'plumb',d:'Rovina, dlouhá trasa. Klidný start.',waves:14,hp:0.66,
   ter:[['wood',4,0],['wood',5,0],['wood',4,1],['hill',7,1],['hill',8,1],
        ['wood',3,11],['wood',4,11],['wood',3,12],['hill',0,6],['hill',0,7]],
   p:[[1,0],[1,1],[1,2],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[7,4],[7,5],[7,6],
@@ -10870,7 +10878,7 @@ const MAPS=[
 {n:'Údolní přehrada',kraj:'prehrada',
    node:[0.18, 0.68], boss:{"n": "Sesuv hrázního tělesa", "d": "Přehradní profil se hýbe.", "r":["hoji"]}, mix:{subs:1.5,drift:1.4,refr:.75},
    brief:"Vodní dílo. Na hladinu se běžný stativ nepostaví — potřebuješ echolot na člunu nebo dron.",
-  unlock:'sonar',d:'Vodní nádrž uprostřed. Na hladinu jen sonar, dron nebo batoh.',waves:16,hp:0.66,
+  unlock:'sonar',d:'Vodní nádrž uprostřed. Na hladinu jen sonar, dron nebo batoh.',waves:16,hp:0.72,
   ter:[['water',3,2],['water',4,2],['water',5,2],['water',3,3],['water',4,3],['water',5,3],
        ['water',2,2],['water',2,3],['water',4,5],['water',5,5],['water',3,5],
        ['rock',8,0],['rock',8,1],['rock',0,12],
@@ -10881,7 +10889,7 @@ const MAPS=[
  {n:'Rašeliniště',kraj:'raseliniste',
    node:[0.11, 0.44], boss:{"n": "Bezedná sonda", "d": "Rašeliniště polyká body.", "r":["zrychl"]}, mix:{subs:1.7,noise:1.25,multi:.7},
    brief:"Rašeliniště. Podmáčený terén, kde se stativ boří. Suchá místa jsou vzácná a je o ně boj.",
-  unlock:'penta',d:'Mokřad protkaný vodou. Suchá místa jsou vzácná.',waves:17,hp:0.70,
+  unlock:'penta',d:'Mokřad protkaný vodou. Suchá místa jsou vzácná.',waves:17,hp:0.78,
   p:[[0,3],[1,3],[2,3],[3,3],[3,4],[3,5],[3,6],[4,6],[5,6],[6,6],[6,7],[6,8],[6,9],
      [5,9],[4,9],[3,9],[2,9],[2,10],[2,11],[3,11],[4,11],[5,11],[6,11],[7,11],[8,11]],
   ter:[['water',0,5],['water',1,5],['water',0,6],['water',1,6],['water',2,6],
@@ -10892,7 +10900,7 @@ const MAPS=[
  {n:'Lomová stěna',kraj:'lom',
    node:[0.25, 0.26], boss:{"n": "Odlomený blok", "d": "Lomová stěna se hroutí.", "r":["rozptyl"]}, mix:{blun:1.6,noise:1.3,refr:.75},
    brief:"Činný lom. Skalní stěny nejde obejít, ale z hran je vidět do celé jámy.",
-  unlock:'compass',d:'Těžební jáma. Skály blokují, ale z hran je vidět daleko.',waves:18,hp:0.74,
+  unlock:'compass',d:'Těžební jáma. Skály blokují, ale z hran je vidět daleko.',waves:18,hp:0.84,
   p:[[4,0],[4,1],[3,1],[2,1],[1,1],[1,2],[1,3],[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],
      [7,5],[7,6],[7,7],[6,7],[5,7],[4,7],[3,7],[2,7],[1,7],[1,8],[1,9],[1,10],
      [2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[7,11],[7,12]],
@@ -10903,7 +10911,7 @@ const MAPS=[
  {n:'Městská zástavba',kraj:'mesto',
    node:[0.38, 0.4], boss:{"n": "Chyba orientace", "d": "Ve městě se ztratil sever.", "r":["rusi"]}, mix:{multi:1.8,jam:1.4,subs:.7,refr:.8},
    brief:"Zaměření uliční sítě. Dlouhá trasa mezi budovami, málo volných rohů pro stanoviska.",
-  unlock:'prism',d:'Hustá síť ulic. Dlouhá trasa, ale málo místa.',waves:19,hp:0.79,
+  unlock:'prism',d:'Hustá síť ulic. Dlouhá trasa, ale málo místa.',waves:19,hp:0.91,
   p:[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[8,2],[8,3],
      [7,3],[6,3],[5,3],[4,3],[3,3],[2,3],[1,3],[0,3],[0,4],[0,5],
      [1,5],[2,5],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[8,6],[8,7],
@@ -10918,7 +10926,7 @@ const MAPS=[
    brief:"Důlní měřictví. Bez signálu družic se orientuješ jen podle optiky a gyroskopu.",
   unlock:'planim',   // kubaturni planimetr: v dole se pocitaji objemy vyrubu
   pal:'night',d:'Podzemní chodby. Bez signálu družic — GNSS tu nefunguje.',
-  waves:20,hp:0.85,ban:['gnss'],
+  waves:20,hp:0.98,ban:['gnss'],
   p:[[0,6],[1,6],[1,5],[1,4],[2,4],[3,4],[4,4],[4,3],[4,2],[5,2],[6,2],[7,2],[7,3],[7,4],[7,5],
      [6,5],[5,5],[5,6],[5,7],[6,7],[7,7],[7,8],[7,9],[6,9],[5,9],[4,9],[3,9],[3,10],[3,11],
      [4,11],[5,11],[6,11],[7,11],[8,11]],
@@ -10932,7 +10940,7 @@ const MAPS=[
    brief:"Provozní letiště. Rovina bez překážek — je odsud vidět daleko.",
   unlock:'zenit',   // zenitovy teleskop: otevrena rovina a cista obloha
   d:'Provozní letiště. Rovina, dlouhé záměry.',
-  waves:21,hp:1.00,ban:[],
+  waves:21,hp:1.06,ban:[],
   p:[[0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[8,3],[8,4],
      [7,4],[6,4],[5,4],[4,4],[3,4],[2,4],[1,4],[0,4],[0,5],[0,6],[0,7],
      [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[8,8],[8,9],
@@ -10945,7 +10953,7 @@ const MAPS=[
    node:[0.53, 0.56], boss:{"n": "Posun násypu", "d": "Koridor ujíždí.", "r":["hoji","zrychl"]}, mix:{jump:1.6,drift:1.4,err:.8,multi:1.15},
    brief:"Trať v provozu. Náspy dávají rozhled, ale postavit se dá jen po stranách koridoru.",
   unlock:'gravi',d:'Dlouhá přímá trať mezi náspy. Málo místa po stranách, zato daleko vidíš.',
-  waves:21,hp:1.18,
+  waves:21,hp:1.15,
   p:[[0,6],[1,6],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[8,7],[8,8],
      [7,8],[6,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8],[0,9],[0,10],
      [1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[8,11],[8,12]],
@@ -10958,7 +10966,7 @@ const MAPS=[
    node:[0.64, 0.74], boss:{"n": "Povodňová vlna", "d": "Zátopa přišla naráz.", "r":["roj","kryje"]}, mix:{drift:1.5,noise:1.4,heal:1.35,subs:.7},
    brief:"Povodňová oblast. Většina území je pod vodou, suchá místa spočítáš na prstech.",
   unlock:'backpack',d:'Voda všude, kam se podíváš. Bez plovoucích přístrojů to nepůjde.',
-  waves:22,hp:1.27,
+  waves:22,hp:1.25,
   p:[[4,0],[4,1],[4,2],[3,2],[2,2],[1,2],[1,3],[1,4],[1,5],[2,5],[3,5],[4,5],[5,5],
      [6,5],[7,5],[7,6],[7,7],[7,8],[6,8],[5,8],[4,8],[3,8],[2,8],[1,8],[1,9],[1,10],
      [2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[8,11],[8,12]],
@@ -10972,7 +10980,7 @@ const MAPS=[
    node:[0.72, 0.44], boss:{"n": "Rozpojená síť", "d": "Rozcestí ztratilo spojení.", "r":["obetrasy"]}, mix:{jam:1.5,multi:1.3,err:.85},
    brief:"Dvě nezávislé sítě, které se před koncem spojí. Musíš pokrýt obě větve.",
   unlock:'thermal',d:'Dvě trasy, které se před koncem spojí. Musíš pokrýt obě větve, nebo bránit až u ústí.',
-  waves:22,hp:1.66,twin:true,
+  waves:22,hp:1.34,twin:true,
   p:[[0,2],[1,2],[2,2],[3,2],[4,2],[4,3],[4,4],[3,4],[2,4],[1,4],[1,5],[1,6],
      [2,6],[3,6],[4,6],[5,6],[6,6],[6,7],[6,8],[5,8],[4,8],[3,8],[2,8],[1,8],[1,9],[1,10],[1,11],[1,12]],
   p2:[[8,1],[7,1],[6,1],[6,2],[6,3],[7,3],[8,3],[8,4],[8,5],[8,6],[8,7],[8,8],
@@ -10983,7 +10991,7 @@ const MAPS=[
    node:[0.85, 0.66], boss:{"n": "Dilatace mostu", "d": "Konstrukce dýchá.", "r":["vzdor"]}, mix:{drift:1.7,cover:1.35,subs:1.2,noise:.65},
    brief:"Most přes údolí. Pod nosnou konstrukcí je voda, stavět jde jen na úzkých lávkách.",
   unlock:'meteo',d:'Měření na mostě přes údolí. Stavět jde jen na úzkých lávkách po stranách.',
-  waves:23,hp:1.78,
+  waves:23,hp:1.42,
   p:[[0,6],[1,6],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[8,7],[8,8],
      [7,8],[6,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8],[0,9],[0,10],[0,11],[0,12]],
   ter:[['rock',0,0],['rock',1,0],['rock',2,0],['rock',3,0],['rock',4,0],['rock',5,0],
@@ -10998,7 +11006,7 @@ const MAPS=[
  {n:'Vysokohorská síť',kraj:'hory',
    node:[0.92, 0.36], boss:{"n": "Lavina", "d": "Sněhová masa se dala do pohybu.", "r":["zrychl","roj","vzdor"]}, mix:{cover:1.5,refr:1.35,multi:1.3,err:.8},
    brief:"Vysokohorské body. Skály, hřebeny a nejtvrdší podmínky, jaké síť zná.",
-  pal:'night',unlock:'quadrant',d:'Skály a hřebeny. Stavět jde jen tam, kde je pevná zem.',waves:24,hp:1.92,
+  pal:'night',unlock:'quadrant',d:'Skály a hřebeny. Stavět jde jen tam, kde je pevná zem.',waves:24,hp:1.50,
   ter:[['rock',0,0],['rock',1,0],['rock',0,1],['rock',8,0],['rock',7,0],['rock',8,1],
        ['rock',0,12],['rock',8,12],['rock',2,6],['rock',6,2],['rock',2,9],
        ['hill',3,3],['hill',4,3],['hill',5,3],['hill',6,6],['hill',5,6],
@@ -11011,10 +11019,10 @@ const MAPS=[
  // rozdava zbytek (zBedny() cte prave MAPS[].unlock).
  {n:'Dálniční těleso',kraj:'dalnice',
    node:[0.30,0.16], boss:{n:'Ujetá niveleta',d:'Těleso se za noc posunulo o kus dolů.',r:['vzdor','zrychl']},
-   mix:{drift:1.5,jump:1.4,err:.8},
+   mix:{jump:1.7,blun:1.3,drift:.7},
    brief:"Pokládka vozovky. Dva jízdní pásy naráz a stroje, které čekají na vytyčení.",
-  unlock:'kolik',d:'Dva pásy, které se u konce spojí. Náspy po stranách dávají rozhled.',
-  waves:20,hp:1.35,twin:true,
+  unlock:'kolik',d:'Dva jízdní pásy a stroje, které čekají na vytyčení. Náspy dávají rozhled.',
+  waves:20,hp:1.58,twin:true,
   // Teren musi lezet U TRASY: odkryta je jen jeji okoli (S.open), takze
   // policka dal od ni hrac nikdy neuvidi - zmereno, z osmi kopcu byly
   // videt vsechny az po tehle uprave.
@@ -11030,29 +11038,32 @@ const MAPS=[
      [6,10],[5,10],[4,10],[4,11],[4,12]]},
  {n:'Přístavní bazén',kraj:'pristav',
    node:[0.70,0.11], boss:{n:'Uplavaná bóje',d:'Vytyčovací bóje se utrhla z řetězu.',r:['rozptyl','hoji']},
-   mix:{drift:1.6,noise:1.3,subs:.7},
-   brief:"Přístavní bazén. Půlka území je pod hladinou — na vodu se běžný stativ nepostaví.",
-  unlock:'dopp',d:'Vodní bazén přes celou horní půlku. Na hladinu jen sonar, dron nebo batoh.',
-  waves:21,hp:1.58,
+   mix:{heal:1.6,multi:1.3,noise:.7},
+   brief:"Přístavní bazén. Trasa obíhá vodní plochu — kdo chce stanoviska uvnitř smyčky, musí na hladinu.",
+  unlock:'dopp',d:'Bazén uvnitř smyčky, mola po obvodu. Na hladinu jen sonar, dron, batoh nebo meteostanice.',
+  waves:21,hp:1.66,
   // Bazen lezi UVNITR smycky trasy - tam kolem nej hrac chodi celou etapu
   // a musi se rozhodnout, jestli si na hladinu vezme sonar, dron nebo batoh.
   // Voda mimo odkrytou plochu by byla jen obrazek (zmereno: 0 z 20 videt).
+  // Vsechna pole lezi nejvyse jedno pole od trasy (Cebysev), jinak je hrac
+  // nema jak pouzit - odkryta je jen okoli trasy. Zmereno: 9 z 22 poli bylo
+  // mimo, vcetne obou lesu a vsech tri vyvysenin.
   ter:[['water',3,5],['water',4,5],['water',3,6],['water',4,6],['water',3,7],['water',4,7],
-       ['water',0,4],['water',1,4],['water',0,5],['water',1,5],
-       ['water',6,6],['water',6,7],['water',7,6],['water',6,8],
-       ['water',3,2],['water',4,2],
+       ['water',1,4],['water',0,5],['water',1,5],['water',1,7],
+       ['water',6,6],['water',6,7],['water',6,5],['water',6,8],
+       ['water',3,3],['water',4,3],
        ['rock',8,11],
-       ['wood',0,9],['wood',0,10],['hill',7,4],['hill',3,12],['hill',5,12]],
+       ['wood',1,9],['wood',1,10],['hill',6,4],['hill',3,11],['hill',5,11]],
   p:[[0,6],[1,6],[2,6],[2,5],[2,4],[3,4],[4,4],[5,4],[5,5],[5,6],[5,7],[5,8],
      [4,8],[3,8],[2,8],[2,9],[2,10],[3,10],[4,10],[5,10],[6,10],[7,10],
      [7,9],[7,8],[8,8]]},
  {n:'Tunelová roura',kraj:'tunel',
    node:[0.52,0.06], boss:{n:'Konvergence ostění',d:'Profil se svírá rychleji, než se stačí měřit.',r:['pancir','nekrot','vzdor']},
-   mix:{jam:1.8,cover:1.5,refr:.5},
+   mix:{cover:1.7,subs:1.3,jam:1.15,refr:.5},
    brief:"Ražba tunelu. Nad hlavou stovky metrů horniny — družice odsud nikdo neuvidí.",
-  pal:'night',unlock:'ctrl',ban:['gnss','zenit','photo'],
+  pal:'night',unlock:'ctrl',ban:['gnss','zenit'],
   d:'Úzká roura v hornině. Stavět jde jen ve výklencích a na družice zapomeň.',
-  waves:21,hp:1.60,
+  waves:21,hp:1.74,
   // Hornina musi sahat AZ K TRASE, jinak je roura jen jmeno: odkryta je
   // pouze okoli trasy, takze skala ve sloupcich 0-1 a 7-8 byla neviditelna
   // (zmereno: 0 z 48). Ted zbyvaji tri vyklenky - u 2., 6. a 10. rady.
@@ -11061,11 +11072,14 @@ const MAPS=[
        ['rock',3,9],['rock',4,9],['rock',5,9],
        ['rock',3,0],['rock',5,0],['rock',6,0],['rock',0,0],['rock',1,0],['rock',8,0],
        ['rock',1,2],['rock',7,4],['rock',1,8],['rock',7,10],
-       ['hill',6,2],['hill',0,6],['hill',8,6],['hill',6,12]],
+       ['hill',1,3],['hill',7,5],['hill',1,7],['hill',7,9]],
   p:[[4,0],[4,1],[4,2],[3,2],[2,2],[2,3],[2,4],[3,4],[4,4],[5,4],[6,4],
      [6,5],[6,6],[5,6],[4,6],[3,6],[2,6],[2,7],[2,8],[3,8],[4,8],[5,8],[6,8],
      [6,9],[6,10],[5,10],[4,10],[3,10],[2,10],[2,11],[2,12]]}
 ];
+
+// Pojistka proti tomu, aby dalsi uzemi zase spadlo na zalozni treti cil.
+if(CIL3.length!==MAPS.length)console.error('CIL3 ma '+CIL3.length+' polozek, uzemi je '+MAPS.length);
 
 /* ==================== RYSY FINÁLOVÝCH BOSSŮ ====================
    Do verze 91 se dvanáct finálových bossů lišilo JEN jménem a popiskem.
@@ -11174,19 +11188,31 @@ const T={
  // jako jediny cte RYCHLOST cile.
  kolik:{n:['Vytyčovací kolík','Měřický kolík','Stabilizovaná značka','Trigonometrický bod'],
    c:'#d9a441',cost:19,kind:'mine',
-   dmg:[2.2,4.6,9.6,20],rng:[2.2,2.5,2.8,3.2],rate:[.55,.6,.65,.72],
+   dmg:[4,8.3,17,36],rng:[2.2,2.5,2.8,3.2],rate:[.7,.78,.85,.95],
    zn:[2,3,4,6],bl:[.8,.95,1.1,1.3],
    d:'Osadí na trasu měřické značky. Značka čeká, dokud po ní někdo nešlápne — pak vybuchne. Nestřílí, takže neztrácí čas, ani když je trasa prázdná.'},
  ctrl:{n:['Polní zápisník','Terénní kontroler','Datalogger','Výpočetní jednotka'],
    c:'#5fb0ff',cost:24,kind:'stack',
-   dmg:[.6,1.3,2.7,5.6],rng:[2.6,3.0,3.4,3.9],rate:[1.6,1.75,1.9,2.1],
-   vrs:[6,8,10,14],vd:[.09,.11,.14,.18],
+   dmg:[1.5,3.2,6.6,13.5],rng:[2.6,3.0,3.4,3.9],rate:[1.6,1.75,1.9,2.1],
+   vrs:[4,5,6,8],vd:[.09,.11,.14,.18],
    d:'Zapisuje odchylky. Každý zásah přidá cíli jednu systematickou odchylku — čím víc jich má, tím rychleji ztrácí odolnost. Na stropu se pořad uzavře a odchylky se vybijí naráz.'},
  dopp:{n:['Dopplerův přijímač','Družicový Doppler','Stanice DORIS','Dopplerova observatoř'],
    c:'#ff8fb8',cost:21,kind:'dopp',
-   dmg:[1.0,2.1,4.4,9.2],rng:[3.0,3.4,3.8,4.4],rate:[1.1,1.2,1.3,1.45],
+   dmg:[1.6,3.4,7.0,14.7],rng:[3.0,3.4,3.8,4.4],rate:[1.1,1.2,1.3,1.45],
    vmul:[2.4,2.8,3.2,3.8],
    d:'Měří z Dopplerova posunu — čím rychleji cíl jde, tím přesněji ho zaměří. Proti zpomalenému nebo stojícímu cíli je skoro slepý.'},
+ // --- pristroj pridany ve v103 na napad hrace ------------------------
+ // Zadani znelo: "kladivo s hrebiky spawnuje hrebiky, ktery davaji damage
+ // a po chvili utoku zmizi". Zadny jiny pristroj ve hre nestavi DOCASNE
+ // vlastni stanoviste: kolik klade znacky, ktere jen cekaji na slapnuti,
+ // hrdinove chodi po trase. Hreb je male stanoviste na par vterin - kdo ho
+ // zatluce na spravne misto, ma tam na chvili druhou vez. Kladivo samo
+ // nestrili, takze na prazdne trase neztraci cas (stejne jako kolik).
+ kladivo:{n:['Měřické kladivo','Zatloukací souprava','Hydraulický beran','Automat na hřeby'],
+   c:'#c2703a',cost:21,kind:'nails',
+   dmg:[.55,1.15,2.4,5.1],rng:[2.3,2.6,2.9,3.3],rate:[.42,.46,.5,.56],
+   hr:[2,3,4,4],hziv:[5,6,6,7],hrad:[.75,.85,.95,1.1],hrate:[1.4,1.5,1.6,1.8],
+   d:'Zatlouká do trasy měřické hřeby. Každý hřeb chvíli sám tluče do všeho ve svém okolí, pak se otluče a vypadne. Sází je dopředu, i když je trasa prázdná.'},
  theo:{n:['Teodolit','Totální stanice','Robotická TS','Monitorovací TS'],c:'#2fe3c8',cost:18,kind:'single',
    dmg:[1.5,3.6,8.4,19.6],rng:[2.8,3.3,3.8,4.3],rate:[1.0,1.05,1.15,1.25],
    d:'Odměří jeden cíl s vysokou přesností. Ignoruje pancíř.'},
@@ -11211,7 +11237,7 @@ const T={
    // (577 -> 402) a hra si to NEODNESE: 10,0 vyher z 12 pred i po.
    // Poskozeni ZAMERNE zustava. Zkouseno na polovinu: stalo to celou vyhru
    // a zpetnou vazbu hraci to nezlepsilo (castecna ztrata 11,3 -> 10,9 %).
-   dmg:[.4,.9,1.8,3.8],rng:[2.1,2.3,2.6,3.0],rate:[1.2,1.35,1.5,1.7],slow:[.60,.52,.45,.38],sdur:[1.3,1.7,2.2,2.6],
+   dmg:[.32,.72,1.45,3.05],rng:[2.1,2.3,2.6,3.0],rate:[1.2,1.35,1.5,1.7],slow:[.72,.66,.60,.54],sdur:[1.0,1.3,1.6,1.9],
    d:'Zbrzdí vše v dosahu. Malé poškození, ale drží tempo vlny.'},
  photo:{n:['Fotogrammetrický dron','Dron s RTK','Roj dronů','Letecké mapování'],c:'#ee6c2b',cost:24,kind:'drone',
    hero:1,sz:2,tr:0,hn:'Pilot roje',
@@ -11221,7 +11247,7 @@ const T={
    d:'Zabírá čtyři pole a nedá se sloučit — roste jen vylepšením. Létá nad trasou a snímkuje; označené cíle dostávají od všech výrazně víc.'},
  machine:{n:['Naváděcí totální stanice','Robotická stanice pro stroje','Systém 3D navádění','Autonomní strojní síť'],
    c:'#f2c14e',cost:24,kind:'lock',
-   dmg:[.9,1.9,3.8,7.4],rng:[2.6,3.0,3.4,3.9],rate:[2.0,2.2,2.4,2.7],ramp:[.10,.13,.16,.20],
+   dmg:[1.2,2.5,5.0,9.7],rng:[2.6,3.0,3.4,3.9],rate:[2.0,2.2,2.4,2.7],ramp:[.10,.13,.16,.20],
    d:'Sleduje jeden cíl a s každou ranou do něj bije tvrději. Ztráta cíle rozběh vynuluje.'},
  gpr:{n:['Georadar','Vícekanálový GPR','Radarový profil','Podpovrchová síť'],
    c:'#8e7bd6',cost:21,kind:'zone',
@@ -11229,11 +11255,11 @@ const T={
    d:'Prosvítí úsek trasy. Vše, co projde skenovanou zónou, průběžně dostává zásah.'},
  multi:{n:['Multistanice','Monitorovací multistanice','Skenovací multistanice','Deformační observatoř'],
    c:'#4aa3df',cost:28,kind:'exec',
-   dmg:[2.6,5.6,12,24.8],rng:[3.0,3.4,3.8,4.3],rate:[.55,.6,.65,.7],pct:[.035,.05,.065,.085],
+   dmg:[2.2,4.8,10.2,21],rng:[3.0,3.4,3.8,4.3],rate:[.47,.51,.55,.6],pct:[.035,.05,.065,.085],
    d:'Zaměří vždy nejsilnější cíl a ubere mu i část jeho celkové odolnosti. Proti bossům.'},
  tape:{n:['Měřické pásmo','Ocelové pásmo','Invarové pásmo','Ruční laserový dálkoměr'],
    c:'#c98b5e',cost:9,kind:'single',
-   dmg:[.5,1,2.1,4.4],rng:[1.8,2.0,2.2,2.4],rate:[2.6,2.9,3.2,3.6],
+   dmg:[.7,1.4,2.9,6.2],rng:[1.8,2.0,2.2,2.4],rate:[2.6,2.9,3.2,3.6],
    d:'Nejlevnější obrana. Krátký dosah, ale bije rychle. Ideální na roje — proti pancíři si ale neškrtne.'},
  // --- novi hrdinove ve v96 ---
  scanvan:{n:['Mobilní mapovací vůz','Mapovací vůz s IMU','Autonomní mapovací vůz','Mapovací kolona'],
@@ -11256,7 +11282,7 @@ const T={
    d:'Zabírá čtyři pole a nedá se sloučit — roste jen vylepšením. Zakresluje, co zaměří, a za každý zásah přisype do rozpočtu.'},
  compass:{n:['Buzola','Důlní závěsný kompas','Gyroteodolit','Inerciální jednotka'],
    c:'#6fbf9a',cost:18,kind:'push',
-   dmg:[2.4,5.2,10.8,22.2],rng:[2.0,2.2,2.5,2.9],rate:[1.0,1.05,1.1,1.2],push:[.5,.7,.95,1.3],
+   dmg:[1.9,4.2,8.6,17.8],rng:[2.0,2.2,2.5,2.9],rate:[1.0,1.05,1.1,1.2],push:[.5,.7,.95,1.3],
    d:'Přeorientuje cíl a odsune ho zpátky po trase. Kupuje ti čas.'},
  quadrant:{n:['Kvadrant','Astroláb','Sextant','Astronomická stanice'],
    c:'#d2637a',cost:25,kind:'mortar',
@@ -11279,7 +11305,7 @@ const T={
    d:'Neútočí. Vše v dosahu je označené a dostává od ostatních výrazně víc.'},
  backpack:{n:['Skenovací batoh','Mobilní sestava','Autonomní vozík','Robotický mapér'],
    c:'#9ac93f',cost:24,kind:'walker',
-   dmg:[1.7,3.5,7.4,15.4],rng:[1.7,2.1,2.5,2.9],rate:[1.0,1.1,1.2,1.3],rad:[.8,.95,1.1,1.3],
+   dmg:[2.2,4.5,9.5,19.8],rng:[1.7,2.1,2.5,2.9],rate:[1.0,1.1,1.2,1.3],rad:[.8,.95,1.1,1.3],
    d:'Chodí po trase a snímkuje ji za pochodu. Bije pomaleji než dron, zato zabírá jediné pole a postavíš jich, kolik chceš.'},
  meteo:{n:['Meteostanice','Automatická meteostanice','Refrakční model','Atmosférická korekce'],
    c:'#7fb3c9',cost:20,kind:'weather',
@@ -11291,7 +11317,7 @@ const T={
    d:'Neútočí. Sousedním stanoviskům přidá dosah a hlavně rychlost měření.'},
  insar:{n:['Radarový snímek','Interferometrie','Diferenční InSAR','Družicový monitoring'],
    c:'#ff6fb1',cost:32,kind:'global',
-   dmg:[2.6,5.5,11.5,24],rng:[99,99,99,99],rate:[.34,.38,.42,.48],
+   dmg:[2.2,4.7,9.8,20.4],rng:[99,99,99,99],rate:[.29,.32,.36,.41],
    d:'Nezaměřuje. V pravidelných pulzech zasáhne úplně všechno na mapě a prochází pancířem.'},
  basecal:{n:['Komparační základna','Kalibrovaná základna','Etalonová základna','Státní etalon'],
    c:'#ffd24a',cost:30,kind:'boostall',
@@ -11299,22 +11325,22 @@ const T={
    d:'Neútočí. Zpřesní úplně všechna stanoviska na mapě bez ohledu na vzdálenost.'},
  penta:{n:['Pentagonální hranol','Dvojitý pentagon','Pentagonová souprava','Ortogonální stanice'],
    c:'#ff8f2e',cost:23,kind:'ortho',
-   dmg:[1.8,3.8,7.9,16.3],rng:[3.0,3.4,3.8,4.3],rate:[.85,.9,1.0,1.1],
+   dmg:[2.3,4.9,10.2,21],rng:[3.0,3.4,3.8,4.3],rate:[.85,.9,1.0,1.1],
    sirka:[.40,.44,.48,.54],
    d:'Měří VÝHRADNĚ v pravém úhlu — po řadě nebo po sloupci, ve kterém stojí. Rána projde celou přímkou a zasáhne všechno na ní. Mimo osy je slepý.'},
  gravi:{n:['Gravimetr','Relativní gravimetr','Absolutní gravimetr','Supravodivý gravimetr'],
    c:'#7d6cff',cost:26,kind:'pull',
-   dmg:[.7,1.5,3.1,6.4],rng:[2.4,2.7,3.0,3.4],rate:[.45,.5,.55,.6],
-   vir:[.85,1.00,1.15,1.35],vdur:[2.0,2.3,2.6,3.0],vtah:[.50,.70,.90,1.20],
+   dmg:[.5,1.05,2.2,4.5],rng:[2.4,2.7,3.0,3.4],rate:[.45,.5,.55,.6],
+   vir:[.85,1.00,1.15,1.35],vdur:[1.6,1.9,2.2,2.5],vtah:[.35,.50,.65,.85],
    d:'Vytvoří v místě zásahu tíhovou anomálii. Vlivy v ní se táhnou zpátky po trase, zpomalí a průběžně dostávají zásah.'},
  // --- pridano ve v96 ---
  plumb:{n:['Laserová olovnice','Optický provažovač','Zenitový provažovač','Laserová svislice'],
    c:'#7ee08f',cost:11,kind:'single',
-   dmg:[.7,1.4,2.9,6],rng:[1.6,1.8,2.0,2.2],rate:[3.0,3.3,3.7,4.1],
+   dmg:[.9,1.8,3.7,7.7],rng:[1.6,1.8,2.0,2.2],rate:[3.0,3.3,3.7,4.1],
    d:'Svislice na roh parcely. Nejrychlejší přístroj ve hře, zato dohlédne sotva o dvě pole.'},
  planim:{n:['Digitální planimetr','Kubaturní planimetr','Objemový skener','Výkazová jednotka'],
    c:'#e08fd0',cost:19,kind:'econ',
-   dmg:[1.8,3.8,7.9,16.4],rng:[2.2,2.5,2.8,3.2],rate:[1.1,1.2,1.3,1.45],gold:[3,4,6,9],
+   dmg:[2.7,5.7,11.9,24.6],rng:[2.2,2.5,2.8,3.2],rate:[1.1,1.2,1.3,1.45],gold:[3,4,6,9],
    d:'Vyčísluje, co zaměří. Za každý zásah přisype do rozpočtu — a na rozdíl od mensuly nezabírá čtyři pole.'},
  zenit:{n:['Zenitový teleskop','Astronomický zenitál','Cirkumzenitál','Zenitová observatoř'],
    c:'#9ad0ff',cost:26,kind:'global',
@@ -11324,11 +11350,11 @@ const T={
    dmg:[0,0,0,0],rate:[1,1,1,1],rng:[1.5,1.9,2.4,2.8],bd:[.18,.30,.46,.68],br:[.10,.16,.22,.30],inc:[4,8,14,24],
    d:'Neútočí. Posiluje sousední stanoviska a přináší dotaci za etapu.'}
 };
-const ORD=['tape','plumb','theo','edm','nivel','lidar','compass','prism','gnss','thermal',
+const ORD=['tape','plumb','kladivo','theo','edm','nivel','lidar','compass','prism','gnss','thermal',
  'sonar','penta','planim','quadrant','backpack','machine','meteo','gpr','zenit','gravi',
  'multi','insar','basecal','kolik','ctrl','dopp'];
 const SHORT={theo:'Teodolit',edm:'Dálkoměr',lidar:'Skener',nivel:'Nivelák',photo:'Dron',
- kolik:'Kolík',ctrl:'Kontroler',dopp:'Doppler',
+ kolik:'Kolík',kladivo:'Kladivo',ctrl:'Kontroler',dopp:'Doppler',
  plumb:'Olovnice',planim:'Planimetr',zenit:'Zenitál',
  scanvan:'Mapovací vůz',masttheo:'Stožár',
  gnss:'GNSS',machine:'Naváděcí',gpr:'Georadar',multi:'Multist.',insar:'InSAR',basecal:'Etalon',tape:'Pásmo',mensula:'Mensula',
@@ -11341,37 +11367,37 @@ const SHORT={theo:'Teodolit',edm:'Dálkoměr',lidar:'Skener',nivel:'Nivelák',ph
 function waveLossMax(){ return Math.min(85,30+2.2*((S&&S.wave)||1)); }
 const E={
  err  :{n:'Chyba odečtu',hp:3.6,sp:1.15,ar:0,b:3,dm:3,c:'#9aa7ad',r:.30},
- refr :{n:'Refrakce',hp:2.4,sp:2.25,ar:0,b:3,dm:3,c:'#7fd4ff',r:.26},
+ refr :{n:'Refrakce',hp:2.4,sp:2.25,ar:0,b:3,dm:3,c:'#5aa9ff',r:.26},
  subs :{n:'Sedání bodu',hp:15,sp:.72,ar:3,b:6,dm:6,c:'#c08a5e',r:.38},
  multi:{n:'Multipath',hp:7.8,sp:1.35,ar:6,b:5,dm:5,c:'#b07bff',r:.32},
  noise:{n:'Šum měření',hp:1.5,sp:1.55,ar:0,b:1,dm:1,c:'#e8f1ec',r:.22},
- blun :{n:'Hrubá chyba',hp:9.5,sp:1.0,ar:1,b:7,dm:5,c:'#ffb347',r:.36,split:3,
+ blun :{n:'Hrubá chyba',hp:9.5,sp:1.0,ar:1,b:7,dm:5,c:'#ff8c2e',r:.36,split:3,
    note:'Po zničení se rozpadne na tři šumy.'},
  jam  :{n:'Rušička signálu',hp:11.5,sp:.95,ar:2,b:9,dm:6,c:'#ff8ad4',r:.34,jam:1.9,
    note:'Umlčí stanoviska ve svém okolí. Sundej ji z dálky.'},
  drift:{n:'Drift bodu',hp:13.5,sp:.85,ar:1,b:8,dm:5,c:'#5fd39b',r:.34,regen:.04,
    note:'Regeneruje, dokud není zpomalený.'},
- heal :{n:'Dorovnávaný posun',hp:12,sp:.9,ar:2,b:9,dm:5,c:'#63d29b',r:.34,heal:1,
+ heal :{n:'Dorovnávaný posun',hp:12,sp:.9,ar:2,b:9,dm:5,c:'#ffe066',r:.34,heal:1,
    note:'Léčí okolní rušivé vlivy. Zlikviduj ho dřív než ostatní.'},
- cover:{n:'Zákryt',hp:17,sp:.8,ar:4,b:10,dm:6,c:'#8a94a8',r:.38,shield:.25,
-   note:'Kryje okolí: sousedé dostávají o 25 % míň. Sundej ho první.'},
- jump :{n:'Překlep v zápisníku',hp:10.5,sp:1.05,ar:1,b:8,dm:5,c:'#e88ad0',r:.32,jump:1.6,
+ cover:{n:'Zákryt',hp:17,sp:.8,ar:4,b:10,dm:6,c:'#39c2c9',r:.38,shield:.55,
+   note:'Kryje okolí: sousedé dostávají o 55 % míň. Sundej ho první.'},
+ jump :{n:'Překlep v zápisníku',hp:10.5,sp:1.05,ar:1,b:8,dm:5,c:'#b6e335',r:.32,jump:1.6,
    note:'Každých pár sekund přeskočí kus trasy. Zpomalení ho nezastaví, potřebuješ rychlou ránu.'},
  boss :{n:'Systematická chyba',hp:62,sp:.55,ar:9,b:45,dm:25,c:'#ff4d7e',r:.52}
 };
 
 const CARDS=[
  // běžné
- {id:'all_dmg', n:'Zpřesněné konstanty',d:'+9 % poškození všech přístrojů',max:5,r:'c'},
- {id:'range',   n:'Rozhledny',          d:'+7 % dosah všech přístrojů',max:4,r:'c'},
- {id:'rate',    n:'Rychlé odečty',      d:'+8 % rychlost měření',max:4,r:'c'},
- {id:'income',  n:'Zakázka navíc',      d:'+8 rozpočtu za dokončenou etapu',max:5,r:'c'},
- {id:'cap',     n:'Terénní četa',       d:'+2 povolená stanoviska',max:4,r:'c'},
- {id:'cheap',   n:'Rámcová smlouva',    d:'Přístroje ve skladu o 15 % levnější',max:3,r:'c'},
- {id:'calib',   n:'Servisní technik',   d:'Kalibrace o 30 % levnější',max:3,r:'c'},
- {id:'entry_slow',n:'Rozbahněný přístup',d:'Rušivé vlivy jsou o 7 % pomalejší',max:4,r:'c'},
+ {id:'all_dmg', n:'Zpřesněné konstanty',d:'+6 % poškození všech přístrojů',max:4,r:'c'},
+ {id:'range',   n:'Rozhledny',          d:'+7 % dosah, ale −5 % rychlost měření',max:4,r:'c'},
+ {id:'rate',    n:'Rychlé odečty',      d:'+5 % rychlost měření',max:4,r:'c'},
+ {id:'income',  n:'Zakázka navíc',      d:'+8 rozpočtu za etapu, ale poloviční bonus za uzávěr',max:5,r:'c'},
+ {id:'cap',     n:'Terénní četa',       d:'+2 stanoviska, ale −6 % poškození',max:4,r:'c'},
+ {id:'cheap',   n:'Rámcová smlouva',    d:'Přístroje o 15 % levnější, ale o kartu užší nabídka',max:3,r:'c'},
+ {id:'calib',   n:'Servisní technik',   d:'Kalibrace o 30 % levnější, stavba o 6 % dražší',max:3,r:'c'},
+ {id:'entry_slow',n:'Rozbahněný přístup',d:'Vlivy o 7 % pomalejší, ale o 5 % odolnější',max:4,r:'c'},
  // vzácné
- {id:'crit',    n:'Opakované měření',   d:'+8 % šance na dvojnásobnou ránu',max:3,r:'r'},
+ {id:'crit',    n:'Opakované měření',   d:'+5 % šance na dvojnásobnou ránu',max:3,r:'r'},
  {id:'theo_dmg',n:'Nucené centrace',    d:'Teodolitová řada +22 % poškození',max:3,r:'r'},
  {id:'edm_chain',n:'Hranolová stěna',   d:'Dálkoměry se odrazí na +1 cíl',max:3,r:'r'},
  {id:'lidar_spl',n:'Širší zorné pole',  d:'Skenery +30 % plošného záběru',max:3,r:'r'},
@@ -11426,7 +11452,7 @@ const ABIL=[
  {id:'repair',n:'Nivelační pořad',d:'+6 % přesnosti',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M3 12h18M6 9v6M18 9v6M12 7v10"/></svg>',
   info:'Přeměří výšky značek a vrátí síti část ztracené přesnosti.'},
- {id:'freeze',n:'Polygonový pořad',d:'zbrzdí trasu',nab:3,
+ {id:'freeze',n:'Polygonový pořad',d:'zaměří čelo vlny',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M4 19l5-9 5 5 6-11"/><circle cx="4" cy="19" r="1.6"/><circle cx="20" cy="4" r="1.6"/></svg>',
   info:'Provede trasu pořadem a na 5 s srazí rychlost všeho na ní na čtvrtinu. Zbrzděný cíl drží záměru: dostává o 40 % víc a pancíř mu klesne o 4.'},
  {id:'rush',n:'Statické měření',d:'zrychlí měření',nab:3,
@@ -11435,7 +11461,7 @@ const ABIL=[
  {id:'check',n:'Kontrolní měření',d:'+70 % poškození',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 7"/><path d="M3 20h18"/></svg>',
   info:'Na 7 s zdvojnásobí soustředění celé sítě — všechny přístroje udělují o 70 % vyšší poškození.'},
- {id:'stop',n:'Uzávěr pořadu',d:'zastaví trasu',nab:3,
+ {id:'stop',n:'Uzávěr pořadu',d:'vrátí čelo vlny',nab:3,
   ic:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>',
   info:'Uzavře pořad: na 2,5 s se všechno na trase úplně zastaví, dostane slabý zásah a dokud stojí, měří se přesněji — o 40 % víc.'},
  // --- pridano ve v96 ---
@@ -11479,20 +11505,26 @@ const ELITE=[
 function eliteChance(w){ return w<7?0:Math.min(.26,.04+w*.012); }
 
 const BOSSNAMES=[
- {n:'Osnova chyb',      d:'Systematický posun celé sítě.'},
- {n:'Uzávěrová chyba',  d:'Pořad se nezavírá. Něco je špatně.'},
- {n:'Deformace hráze',  d:'Konstrukce se hýbe rychleji, než smí.'},
- {n:'Zborcený polygon', d:'Souřadnice se rozjely na obě strany.'},
- {n:'Ztracený bod',     d:'Základní bod zmizel a s ním i jistota.'}
+ {n:'Osnova chyb',      d:'Systematický posun celé sítě. Zpevňuje vlivy kolem sebe.',act:'armor'},
+ {n:'Uzávěrová chyba',  d:'Pořad se nezavírá. Dorovnává si vlastní odolnost.',act:'heal'},
+ {n:'Deformace hráze',  d:'Konstrukce se hýbe rychleji, než smí — a vlivy kolem ní taky.',act:'haste'},
+ {n:'Zborcený polygon', d:'Souřadnice se rozjely na obě strany. Rozpadá se na šumy.',act:'split'},
+ {n:'Ztracený bod',     d:'Základní bod zmizel a s ním i orientace okolních stanovisek.',act:'jam'}
 ];
 const BOSSACT=[
  {id:'split', n:'Rozptyl chyby',  d:'Boss uvolnil tři nové šumy.'},
  {id:'haste', n:'Urychlení',      d:'Vlivy kolem bosse zrychlily.'},
  {id:'jam',   n:'Rušení signálu', d:'Přístroje v okolí bosse na chvíli oněměly.'},
- {id:'heal',  n:'Vyrovnání chyby',d:'Boss si obnovil část odolnosti.'}
+ {id:'heal',  n:'Vyrovnání chyby',d:'Boss si obnovil část odolnosti.'},
+ {id:'armor', n:'Zesílení osnovy',d:'Vlivy kolem bosse dostaly pancíř navíc.'}
 ];
 function bossAct(e){
- const a=BOSSACT[(Math.random()*BOSSACT.length)|0];
+ // Prubezny boss mel do v102 jen JMENO: pet nazvu se stridalo podle vzorce a
+ // chovani byla pokazde nahodna akce ze ctyr, na jmenu nezavisla. Ted ma kazde
+ // jmeno svou akci - stejne jako u finalovych bossu uzemi, kde se text
+ // i chovani skladaji z jedne tabulky (RYS).
+ const id=(S&&S.bossInfo&&S.bossInfo.act)||null;
+ const a=(id&&BOSSACT.find(x=>x.id===id))||BOSSACT[(Math.random()*4)|0];
  const q=pathPos(e.p,e.pi);
  if(a.id==='split'){ const sc=waveScale();
    for(let i=0;i<3;i++)spawnAt('noise',Math.max(0,e.p-i*.25),sc*.8,false,e.pi); }
@@ -11921,6 +11953,8 @@ const QUIZ=[
      'Bez ověřovací doložky katastr podání nepřijme.'},
 ];
 const INFO={
+ kladivo:{p:'Měřické kladivo a hřeby jsou nejlevnější způsob stabilizace bodu. Hřeb s křížkem se zatluče do asfaltu nebo do pařezu, vydrží roky a dá se k němu vrátit; v měkkém terénu ho nahradí kolík nebo trubka.',
+   f:'Kdo hřeb zatluče nakřivo, měří pak k jinému bodu, než si zapsal — proto se hlava sráží do roviny a značí křížkem.'},
  kolik:{p:'Vytyčovací kolík je nejjednodušší způsob, jak přenést projekt do terénu. Stabilizovaná značka — trubka, kámen nebo hřeb — drží polohu bodu roky a je základem každého bodového pole.',
    f:'Trigonometrický bod se v Česku stabilizuje žulovým kamenem s křížem a dvěma podzemními značkami; hledá se podle místopisu i po desítkách let.'},
  ctrl:{p:'Terénní kontroler nese měřický software, ukládá zápisník a hlídá uzávěry. Rozdíl mezi náhodnou a systematickou chybou je v tom, že systematická se sčítá — a proto se musí odhalit výpočtem, ne opakováním měření.',
@@ -11990,7 +12024,7 @@ const TRAR={
  rotlaser:'e',photo:'e',quadrant:'e',backpack:'e',meteo:'e',penta:'r',gravi:'e',
  machine:'l',gpr:'l',multi:'l',insar:'l',basecal:'l',
  plumb:'c',planim:'r',zenit:'e',
- kolik:'r',ctrl:'e',dopp:'e'
+ kolik:'r',kladivo:'c',ctrl:'e',dopp:'e'
 };
 // Hrdina ma vzdy vlastni vzacnost, at uz ho TRAR vede jakkoli - je to
 // jedina vec sveho druhu, ne "epicky pristroj".
@@ -12139,6 +12173,16 @@ const GEN={
  g_first:{n:'První záměra',      d:'+40 % poškození cíli s plnou odolností.'},
  g_low:  {n:'Dorážka',           d:'+50 % poškození cíli pod 30 % odolnosti.'},
  g_boss: {n:'Rozbor systematiky',d:'+35 % poškození bossům.'}
+ ,
+ // Aurove uzly. Do v102 dostavalo pet druhu, ktere NEUTOCI (Termokamera,
+ // GNSS, Hranol, Meteostanice, Etalon), ve 3. a 4. patre uzly na vlastni
+ // poskozeni - to maji nulove. Z tricti obecnych uzlu techto peti druhu byly
+ // zive ctyri; Etalon nabizel "Zesilene mereni +25 % poskozeni" pri poskozeni 0.
+ g_aura_dmg: {n:'Zesílená síť',     d:'Stanoviska do 2,6 pole měří o 10 % tvrději.'},
+ g_aura_rate:{n:'Sladěné cykly',    d:'Stanoviska do 2,6 pole měří o 10 % rychleji.'},
+ g_aura_crit:{n:'Dvojí kontrola',   d:'Stanoviska do 2,6 pole mají +8 % na dvojnásobnou ránu.'},
+ g_aura_wide:{n:'Širší působnost',  d:'Dosah, kterým přístroj pomáhá okolí, o 30 % větší.'},
+ g_aura_inc: {n:'Fakturace dohledu',d:'+6 rozpočtu za etapu.'}
 };
 // Obecne uzly pro 2. vetev a pro 3. a 4. patro. Kazdy druh ma tri dvojice
 // a ani jedna nekoliduje s tim, co uz ten druh pouziva ve vlastnich perkach.
@@ -12156,16 +12200,17 @@ const TREE2={
  push:[['g_slow','g_first'],['g_gold','g_dmg'],['g_pierce','g_boss']],
  drone:[['g_mark','g_rate'],['g_low','g_rng'],['g_gold','g_dmg']],
  walker:[['g_dmg','g_slow'],['g_vet','g_rate'],['g_gold','g_boss']],
- mark:[['g_rng','g_vet'],['g_gold','g_slow'],['g_crit','g_pierce']],
- support:[['g_rng','g_gold'],['g_vet','g_crit'],['g_dmg','g_rate']],
- boost:[['g_rng','g_crit'],['g_vet','g_gold'],['g_dmg','g_slow']],
- weather:[['g_rng','g_gold'],['g_vet','g_dmg'],['g_crit','g_slow']],
+ mark:[['g_rng','g_aura_dmg'],['g_aura_rate','g_aura_wide'],['g_aura_crit','g_aura_inc']],
+ support:[['g_aura_inc','g_rng'],['g_aura_dmg','g_aura_rate'],['g_aura_wide','g_aura_crit']],
+ boost:[['g_aura_dmg','g_rng'],['g_aura_crit','g_aura_wide'],['g_aura_rate','g_aura_inc']],
+ weather:[['g_rng','g_aura_rate'],['g_aura_dmg','g_aura_inc'],['g_aura_wide','g_aura_crit']],
  econ:[['g_gold','g_crit'],['g_dmg','g_rate'],['g_vet','g_rng']],
  global:[['g_boss','g_mark'],['g_rate','g_low'],['g_slow','g_dmg']],
- boostall:[['g_gold','g_vet'],['g_crit','g_rng'],['g_rate','g_dmg']],
+ boostall:[['g_aura_dmg','g_aura_crit'],['g_aura_rate','g_aura_inc'],['g_rng','g_aura_wide']],
  ortho:[['g_pierce','g_rng'],['g_dmg','g_crit'],['g_gold','g_boss']],
  pull:[['g_slow','g_dmg'],['g_mark','g_rng'],['g_crit','g_boss']],
  mine:[['g_dmg','g_boss'],['g_rate','g_gold'],['g_low','g_crit']],
+ nails:[['g_dmg','g_rate'],['g_crit','g_gold'],['g_low','g_boss']],
  stack:[['g_rate','g_mark'],['g_dmg','g_vet'],['g_boss','g_pierce']],
  dopp:[['g_crit','g_rng'],['g_dmg','g_first'],['g_boss','g_rate']]
 };
@@ -12174,6 +12219,10 @@ const PERKS={
         {id:'minedmg',n:'Hlubší stabilizace',d:'+45 % síly výbuchu značky.'}],
        [{id:'minewide',n:'Široký záběr',d:'Poloměr značky o 55 % větší.'},
         {id:'mineslow',n:'Rozrytá zemina',d:'Výbuch všechny v okolí o 40 % zpomalí.'}]],
+ nails:[[{id:'nailmore',n:'Plná brašna',d:'Smíš mít o dva hřeby víc naráz.'},
+         {id:'naillong',n:'Kalená ocel',d:'Hřeb vydrží o 70 % déle.'}],
+        [{id:'nailwide',n:'Široká hlava',d:'Okruh hřebu o 50 % větší.'},
+         {id:'nailhard',n:'Hydraulický příklep',d:'+45 % síly úderu hřebu.'}]],
  stack:[[{id:'stackfast',n:'Rychlý zápis',d:'Každý zásah přidá dvě odchylky místo jedné.'},
          {id:'stackdeep',n:'Podrobný protokol',d:'Strop odchylek o 5 vyšší.'}],
         [{id:'stackburst',n:'Tvrdý uzávěr',d:'Vybití pořadu bije o 70 % silněji.'},
@@ -12474,6 +12523,7 @@ const SKINY={
  rotlaser:[['polar','Ledová rovina'],    ['karbon','Karbonový rotor'],  ['zlato','Zlatá rovina']],
  plumb:   [['teren','Vytyčovací zelená'],['polar','Polární svislice'],  ['mez','Kamenné závaží']],
  kolik:   [['teren','Vytyčovací oranž'], ['karbon','Karbonový kolík'],  ['mez','Kamenná značka']],
+ kladivo: [['teren','Zatloukací oranž'], ['karbon','Karbonová násada'], ['mez','Kamenná palice']],
  ctrl:    [['noc','Noční zápisník'],     ['karbon','Karbonové pouzdro'],['zlato','Zlatý protokol']],
  dopp:    [['polar','Polární parabola'], ['zavod','Signální talíř'],    ['zlato','Zlatý příjem']],
  planim:  [['mosaz','Mosazné rameno'],   ['karbon','Karbonový obkružník'],['zlato','Zlatý výkaz']],
@@ -12705,6 +12755,10 @@ function specHas(k,id){ return (SAVE.spec&&SAVE.spec[k]||[]).indexOf(id)>=0; }
    Do v101 jich bylo 12 na 9 pristroju: teodolit a GNSS mely po dvou, dron
    dokonce dve NEDOSAZITELNA (hrdina se do SAVE.types nikdy nedostane),
    a 15 pristroju nemelo zadne.
+   v103: sest kusu, ktere pridavaly jen poskozeni nebo sanci na dvojnasobek,
+   dostalo ucinek na VLASTNI mechaniku sveho pristroje (pruraz pasma, odhoz
+   buzoly, sirka pentagonu, chuze batohu, tah gravimetru, otacky laseru) -
+   z dvaadvaceti vrstev, ktere ve hre delaly totez, jich tim ubylo sest.
    Efekt musi mit ZIVE napojeni, jinak vznikne mrtve vylepseni:
      dmg 13244 · rng 13269 · crit 13295 · chain 15288 · spl 15312 a 15346
      · sdur 15461 · inc 15927 · fly 13446 · ramp 15387 · pct 15400
@@ -12714,8 +12768,8 @@ function specHas(k,id){ return (SAVE.spec&&SAVE.spec[k]||[]).indexOf(id)>=0; }
    takze u nich nema smysl ani dosah. */
 const ACC=[
  // --- bezne ---
- {id:'tapeSteel',t:'tape',   n:'Ocelové pásmo',        d:'+5 % poškození pásma za úroveň',
-  max:3,cost:l=>52+l*38,eff:{dmg:0.05}},
+ {id:'tapeSteel',t:'tape',   n:'Ocelové pásmo',        d:'Pásmo prorazí 2 body pancíře za úroveň',
+  max:3,cost:l=>52+l*38,eff:{prub:2}},
  {id:'plumbOpt',t:'plumb',   n:'Optický centrovač',    d:'+3 % šance na dvojnásobnou ránu za úroveň',
   max:3,cost:l=>52+l*38,eff:{crit:0.032}},
  {id:'atr',  t:'theo',       n:'Automatické cílení ATR', d:'+3 % šance na dvojnásobnou ránu za úroveň',
@@ -12729,8 +12783,8 @@ const ACC=[
  // --- vzacne ---
  {id:'motor',t:'lidar',      n:'Rotační hlava',        d:'+6 % plošného záběru skenerů za úroveň',
   max:3,cost:l=>68+l*50,eff:{spl:0.066}},
- {id:'compDamp',t:'compass', n:'Tlumená střelka',      d:'+5 % poškození buzoly za úroveň',
-  max:3,cost:l=>65+l*50,eff:{dmg:0.05}},
+ {id:'compDamp',t:'compass', n:'Tlumená střelka',      d:'+20 % délky odhozu za úroveň',
+  max:3,cost:l=>65+l*50,eff:{push:0.20}},
  {id:'radio',t:'gnss',       n:'Radiomodem',           d:'+2,2 dotace za etapu na stanici za úroveň',
   max:3,cost:l=>65+l*50,eff:{inc:2.2}},
  {id:'thermMk',t:'thermal',  n:'Chlazený detektor',    d:'+9 % síly označení za úroveň',
@@ -12739,25 +12793,25 @@ const ACC=[
   max:3,cost:l=>65+l*50,eff:{dmg:0.06}},
  {id:'prismNet',t:'prism',   n:'Reflexní fólie',       d:'+10 % dosahu, který hranol přidává sousedům, za úroveň',
   max:3,cost:l=>65+l*50,eff:{br:0.10}},
- {id:'pentaTwin',t:'penta',  n:'Dvojitý pentagon',     d:'+5 % poškození po ose za úroveň',
-  max:3,cost:l=>65+l*50,eff:{dmg:0.05}},
+ {id:'pentaTwin',t:'penta',  n:'Dvojitý pentagon',     d:'+9 % šířky pásu po ose za úroveň',
+  max:3,cost:l=>65+l*50,eff:{sirka:0.09}},
  {id:'planWheel',t:'planim', n:'Přesné kolečko',       d:'+5 % poškození planimetru za úroveň',
   max:3,cost:l=>65+l*50,eff:{dmg:0.05}},
  // --- epicke ---
  {id:'quadArc',t:'quadrant', n:'Jemný dělený oblouk',  d:'+7 % plošného záběru kvadrantu za úroveň',
   max:3,cost:l=>76+l*58,eff:{spl:0.07}},
- {id:'backLi',t:'backpack',  n:'Lehčí akumulátor',     d:'+5 % poškození batohu za úroveň',
-  max:3,cost:l=>76+l*58,eff:{dmg:0.05}},
+ {id:'backLi',t:'backpack',  n:'Lehčí akumulátor',     d:'+10 % rychlosti chůze za úroveň',
+  max:3,cost:l=>76+l*58,eff:{walk:0.10}},
  {id:'meteoSens',t:'meteo',  n:'Vyhřívané čidlo',      d:'+9 % potlačení nepříznivých podmínek za úroveň',
   max:3,cost:l=>76+l*58,eff:{supp:0.09}},
  {id:'zenCcd',t:'zenit',     n:'CCD na zenitu',        d:'+6 % poškození zenitového teleskopu za úroveň',
   max:3,cost:l=>76+l*58,eff:{dmg:0.06}},
- {id:'graviSpr',t:'gravi',   n:'Křemenná pružina',     d:'+6 % poškození gravimetru za úroveň',
-  max:3,cost:l=>76+l*58,eff:{dmg:0.06}},
+ {id:'graviSpr',t:'gravi',   n:'Křemenná pružina',     d:'+12 % síly tahu víru za úroveň',
+  max:3,cost:l=>76+l*58,eff:{vtah:0.12}},
  {id:'rtk',  t:'photo',      n:'RTK modul dronu',      d:'+6 % doletu a rychlosti dronů za úroveň',
   max:3,cost:l=>72+l*54,eff:{fly:0.066}},
- {id:'rotSpin',t:'rotlaser', n:'Rychlejší rotor',      d:'+5 % poškození rotačního laseru za úroveň',
-  max:3,cost:l=>76+l*58,eff:{dmg:0.05}},
+ {id:'rotSpin',t:'rotlaser', n:'Rychlejší rotor',      d:'+10 % rychlosti otáčení za úroveň',
+  max:3,cost:l=>76+l*58,eff:{spin:0.10}},
  // --- legendarni ---
  {id:'mprism',t:'machine',   n:'Prizma na stroji',     d:'+13 % rychlosti rozběhu naváděcí TS za úroveň',
   max:3,cost:l=>79+l*58,eff:{ramp:0.138}},
@@ -12781,6 +12835,10 @@ const ACC=[
   max:3,cost:l=>76+l*58,eff:{vrs:1}},
  {id:'doppOsc',t:'dopp',     n:'Krystalový oscilátor', d:'+8 % síly proti nejrychlejším cílům za úroveň',
   max:3,cost:l=>76+l*58,eff:{vmul:0.08}}
+ ,
+ // --- pristroj z v103 ---
+ {id:'nailInox',t:'kladivo', n:'Nerezové hřeby',       d:'+8 % života hřebu za úroveň',
+  max:3,cost:l=>65+l*50,eff:{hziv:0.08}}
 ];
 function accEff(type,key){
  let v=0;
@@ -12827,7 +12885,7 @@ function vychoziMeta(){
 }
 
 /* ==================== ULOŽENÍ ==================== */
-const BASE_TYPES=['theo','nivel','edm','tape'], BASE_ABILS=['adjust','repair'];
+const BASE_TYPES=['theo','nivel','edm','tape','kladivo'], BASE_ABILS=['adjust','repair'];
 // Zasoba pro testovani. Pripise se JEDNOU (SAVE.testStash), takze se
 // prepinanim rezimu neda tocit donekonecna.
 function testZasoba(){
@@ -12862,6 +12920,9 @@ function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
 // Normalizace je zamerne ODDELENA od JSON.parse: kdyz selze parse, nesmi
 // se prepsat puvodni retezec, kdezto vypadek normalizace uz je jen dopocet.
 function normalize(s){
+     // v103: kladivo je zakladni nastroj, dostane ho i ten, kdo uz hraje.
+     s=s||{};
+     if(Array.isArray(s.types)&&s.types.indexOf('kladivo')<0)s.types.push('kladivo');
      s=s||{};
      SAVE=Object.assign(SAVE,s);
      SAVE.meta=Object.assign(vychoziMeta(),s.meta||{});
@@ -13161,7 +13222,7 @@ function noise(c,t,dur,vol,freq){
 const SND_GAP={shoot:70,chain:70,boom:110,kill:60,coin:90,jam:400,s_penta:80,s_gravi:220,
  s_theo:80,s_tape:60,s_sonar:150,s_quad:180,s_rot:90,s_push:130,s_mach:70,s_walk:110};
 const TSND={theo:'s_theo',tape:'s_tape',sonar:'s_sonar',quadrant:'s_quad',rotlaser:'s_rot',
- kolik:'splash',ctrl:'shoot',dopp:'pulse',
+ kolik:'splash',kladivo:'s_tape',ctrl:'shoot',dopp:'pulse',
  compass:'s_push',machine:'s_mach',backpack:'s_walk',mensula:'s_tape',photo:'s_walk',
  penta:'s_penta',gravi:'s_gravi'};
 function snd(id){
@@ -13290,6 +13351,7 @@ const SYN=[
  {a:'tape',b:'mensula',  n:'Klasické mapování',   d:'+19 % rychlosti měření',       eff:{t:0.193}},
  {a:'nivel',b:'multi',   n:'Monitoring posunů',   d:'+13 % poškození a +15 % dosah',eff:{d:0.138,r:.15}},
  {a:'rotlaser',b:'theo', n:'Vytyčovací rovina',   d:'+11 % rychlosti obou',         eff:{t:0.11}}
+ ,{a:'kladivo',b:'compass',n:'Stabilizace bodu',  d:'+13 % poškození obou',         eff:{d:0.13}}
 ];
 const SYNR=2.6; // dosah spolupráce v polích
 const SLOW_MIN=.08;   // ani tri zpomaleni najednou nesmi znamenat zastavu
@@ -13358,6 +13420,15 @@ function newRun(mi,endless,chal,hard){
  // VYTYCENY PAS: vse, co se dotyka trasy (i rohem). Deterministicke -
  // stejna mapa vypada vzdy stejne a jde se ji naucit.
  S.open=new Set();S.occ=new Set();S.freeSpots=0;S.crew=0;S.mrg=0;S.crewM=0;
+ // Teren dal nez jedno pole od trasy zustane pod vytycenym pasem: hrac na nej
+ // nikdy nepostavi a jeho mechanika (voda, vyvysenina, les) je mu k nicemu.
+ // Stalo se to dvema uzemim z v102, tak at to pristi verze pozna hned.
+ if(location.hash==='#dev'){
+   Object.keys(ter).forEach(key=>{
+     const [c0,r0]=key.split(',').map(Number);
+     if(chebToPath(c0,r0)>1)console.warn('teren mimo pas: '+MAPS[mi].n+' '+ter[key]+' @'+key);
+   });
+ }
  // poradove cislo rozehrane hry - drzi podpis pozadi v resize() poctivy
  S.bgSeq=(window.__bgSeq=(window.__bgSeq||0)+1);
  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){
@@ -13516,8 +13587,10 @@ const CREW_MRG_MAX=3;
    dvema cestami: slucovanim dvou stejne oznacenych pristroju (zdarma, ale
    chce druhy pristroj ctvrte rady), nebo koupi. Koupe je zamerne draha -
    je to misto, kam pozdni rozpocet konecne tece. */
-const PLUS_MAX=3;
-const MISTR_CENA=[260,900,1900];
+// Do v102 byly stupne tri a robot je mel vykoupene kolem 16. etapy - od te
+// chvile se rozpocet jen hromadil (1 200-2 200 nevyuzitych kreditu).
+const PLUS_MAX=5;
+const MISTR_CENA=[260,900,1900,3400,5500];
 function mistrCost(t){
  if(!t||jeHrdina(t.k)||t.l<3)return null;
  const p=t.plus||0;
@@ -13568,7 +13641,8 @@ function priceOf(k){
  // `M('cheap')` je karta z mereni, `S.net.cheap` nova polozka site
  // (Ramcova smlouva), `meta.disc` trvale vylepseni z laborky.
  const f=Math.max(.42,1-.15*M('cheap')-.04*((S&&S.net&&S.net.cheap)||0)-.02*(SAVE.meta.disc||0));   // popisek slibuje 2 % za uroven
- return Math.max(4,Math.round(T[k].cost*1.25*f));
+ // Servisni technik zlevnuje kalibraci, ale stavba je o kus drazsi.
+ return Math.max(4,Math.round(T[k].cost*1.25*f*(1+.06*M('calib'))));
 }
 function pathOf(pi){ return PATHS[pi||0]||PATHS[0]; }
 function pathPos(p,pi){
@@ -13601,13 +13675,33 @@ function vetOf(t){
  for(let i=1;i<VETNEED.length;i++) if(x>=VETNEED[i])v=i;
  return v;
 }
+// Nasobek Dopplerova prijimace proti nejrychlejsim cilum. Panel stanoviska ho
+// pocital bez uzlu 'Delsi integrace', takze hrac videl x2,4 a hra delala x3,2 -
+// ted je vypocet na jednom miste (cte ho i encyklopedie).
+function doppVm(t){ return T.dopp.vmul[t.l]*(1+accEff('dopp','vmul'))*(hasPerk(t,'doppgain')?1.35:1); }
+// Kolik sousedu drzi dany aurovy uzel. Aura ma dosah 2,6 pole, s uzlem
+// 'Sirsi pusobnost' o 30 % vic. Pocita se z poctu, ne z nasobku - dve
+// termokamery vedle sebe tedy davaji dvojnasobek.
+const AURA_R=2.6;
+function auraBonus(t,perk){
+ if(!S||!S.towers||!t)return 0;
+ let n=0;
+ for(let i=0;i<S.towers.length;i++){
+   const g=S.towers[i];
+   if(g===t||!hasPerk(g,perk))continue;
+   const R=AURA_R*(hasPerk(g,'g_aura_wide')?1.3:1);
+   if(Math.hypot(ccx(t)-ccx(g),ccy(t)-ccy(g))<=R+.001)n++;
+ }
+ return n;
+}
 function dmgOf(t){
  const k=t.k;
- let m=(1+.18*t.cal)*(1+t.buffD)*(1+.08*S.net.prec)*(1+.025*(SAVE.meta.prec||0))*(1+.09*M('all_dmg'))
+ let m=(1+.18*t.cal)*(1+t.buffD)*(1+.08*S.net.prec)*(1+.025*(SAVE.meta.prec||0))*(1+.06*M('all_dmg'))
       *(1+.08*(SAVE.lvl[k]||0))*(1+accEff(k,'dmg'))
       *(1+(specHas(k,'dmg')?.15:0))*(1+condEff('dmg'))*(1+.18*M('overdrive'))
       *(1+.90*(t.plus||0))*(hasPerk(t,'econdmg')?1.5:1)*(hasPerk(t,'globdmg')?1.45:1)
-      *(hasPerk(t,'g_dmg')?1.25:1)*(1+.08*vetOf(t))*((S&&S.check>0)?1.7:1);
+      *(hasPerk(t,'g_dmg')?1.25:1)*(1+.08*vetOf(t))*((S&&S.check>0)?1.7:1)*(1+.10*auraBonus(t,'g_aura_dmg'))
+      *(1-.06*M('cap'));   // Terenni ceta: vic stanovisek za slabsi ranu
  if(k==='theo')m*=1+.22*M('theo_dmg');
  if(T[k].hero)m*=hrdSila(k);
  return T[k].dmg[t.l]*m;
@@ -13617,6 +13711,7 @@ function perkRng(t){
  if(hasPerk(t,'slowwide'))m*=1.5;
  if(hasPerk(t,'pulsewide'))m*=1.45;
  if(hasPerk(t,'aura2')&&['mark','support','boost','weather'].indexOf(T[t.k].kind)>=0)m*=1.5;
+ if(hasPerk(t,'g_aura_wide')&&['mark','support','boost','weather','boostall'].indexOf(T[t.k].kind)>=0)m*=1.3;
  if(hasPerk(t,'g_rng'))m*=1.25;
  return m;
 }
@@ -13653,9 +13748,10 @@ function globalRate(){
  return m;
 }
 function rateOf(t){return T[t.k].rate[t.l]*(T[t.k].hero?hrdKadence(t.k):1)*perkRate(t)*globalRate()*(1+(t.buffT||0))*(1+(specHas(t.k,'rate')?.15:0))
- *(1+.08*M('rate'))*(1+condEff('rate'))*(S.rush>0?1.6:1);}
+ *(1+.05*M('rate'))*(1+condEff('rate'))*(S.rush>0?1.6:1)
+ *(1-.05*M('range'))*(1+.10*auraBonus(t,'g_aura_rate'));}   // Rozhledny: dal videt za nizsi kadenci
 function critOf(t){
- let c=.08*M('crit')+.015*(SAVE.meta.crit||0)+accEff(t.k,'crit')+(specHas(t.k,'crit')?.10:0)+(hasPerk(t,'g_crit')?.15:0);
+ let c=.08*auraBonus(t,'g_aura_crit')+.05*M('crit')+.015*(SAVE.meta.crit||0)+accEff(t.k,'crit')+(specHas(t.k,'crit')?.10:0)+(hasPerk(t,'g_crit')?.15:0);
  if(S)S.towers.forEach(g=>{ if(g.k==='basecal'&&hasPerk(g,'ballcrit'))c+=.10; });
  // Ostra zamera: hranol zvysuje sanci sousedum v dosahu.
  if(S)S.towers.forEach(g=>{
@@ -13749,7 +13845,7 @@ function updateMark(t,dt){
 function updateSweep(t,dt){
  if(t.jam)return;
  const def=T.rotlaser;
- t.ang=(t.ang||0)+def.spin[t.l]*dt*(1+(t.buffT||0))*(hasPerk(t,'spin')?1.6:1);
+ t.ang=(t.ang||0)+def.spin[t.l]*dt*(1+(t.buffT||0))*(hasPerk(t,'spin')?1.6:1)*(1+accEff(t.k,'spin'));
  t.tick=(t.tick||0)-dt;
  if(t.tick<=0){
    t.tick=1/Math.max(.2,rateOf(t)*(hasPerk(t,'spin')?1.6:1));
@@ -13778,11 +13874,13 @@ function updateWalker(t,dt){
    t.pi=nearestPathIdx(t);
    t.drones=[];for(let i=0;i<wn;i++)t.drones.push({p:t.pi+(i?1.2:0),dir:i?-1:1,cd:i*.3});
  }
- const reach=T.backpack.rng[t.l]*(hasPerk(t,'dronefar')?1.6:1);
+  // Mapovaci vuz ma vlastni rng/rad; do v102 se pro KAZDEHO chodce cetla
+  // tabulka batohu, takze hrdina za 700 poharu chodil s dosahem batohu.
+  const reach=T[t.k].rng[t.l]*(hasPerk(t,'dronefar')?1.6:1);
  t.pMin=Math.max(0,t.pi-reach); t.pMax=Math.min(pathOf(t.path).length-1.01,t.pi+reach);
- const rad=T.backpack.rad[t.l]*CS*(hasPerk(t,'bomb')?1.5:1), D=dmgOf(t), CR=critOf(t);
+  const rad=T[t.k].rad[t.l]*CS*(hasPerk(t,'bomb')?1.5:1), D=dmgOf(t), CR=critOf(t);
  t.drones.forEach(w=>{
- w.p+=w.dir*1.25*(hasPerk(t,'walkfast')?1.7:1)*dt;
+ w.p+=w.dir*1.25*(hasPerk(t,'walkfast')?1.7:1)*(1+accEff(t.k,'walk'))*dt;
  if(w.p>=t.pMax){w.p=t.pMax;w.dir=-1;}
  if(w.p<=t.pMin){w.p=t.pMin;w.dir=1;}
  w.cd-=dt;
@@ -13797,6 +13895,49 @@ function updateWalker(t,dt){
  if(w.flash>0)w.flash-=dt;
  });
 }
+// KLADIVO: zatlouka na trasu docasne hreby. Hreb je male stanoviste - sam
+// tluce do vseho ve svem okruhu a po `hziv` sekundach se otluce a vypadne.
+// Kladivo samo nestrili; jeho rychlost urcuje, jak casto zatluka dalsi.
+function updateNails(t,dt){
+ if(t.jam||t.bossJam>0)return;
+ S.hreby=S.hreby||[];
+ const def=T[t.k];
+ t.cd-=dt;
+ if(t.cd>0)return;
+ const strop=def.hr[t.l]+(hasPerk(t,'nailmore')?2:0);
+ const moje=S.hreby.filter(x=>x.src===t);
+ if(moje.length>=strop){ t.cd=.25; return; }
+ const R=rngOf(t), tx=tcx(t), ty=tcy(t);
+ // Misto se hleda na OBOU trasach, stejne jako u kolíku - na dvouproudem
+ // uzemi by jinak druhy pas zustal bez hrebu.
+ let nej=null,nejD=1e9,nejPi=0;
+ for(let pi=0;pi<PATHS.length;pi++){
+   const len=pathOf(pi).length-1;
+   for(let p=0;p<=len;p+=.25){
+     const q=pathPos(p,pi);
+     const d=Math.hypot(q.x-tx,q.y-ty);
+     if(d>R)continue;
+     if(moje.some(m=>m.pi===pi&&Math.abs(m.p-p)<.7))continue;
+     if(d<nejD){nejD=d;nej=p;nejPi=pi;}
+   }
+ }
+ if(nej===null){ t.cd=.3; return; }
+ t.cd=1/Math.max(.05,rateOf(t));
+ S.hreby.push({p:nej,pi:nejPi,src:t,
+   r:def.hrad[t.l]*CS*(hasPerk(t,'nailwide')?1.5:1),
+   dmg:dmgOf(t)*(hasPerk(t,'nailhard')?1.45:1),
+   cr:critOf(t),
+   t:def.hziv[t.l]*(hasPerk(t,'naillong')?1.7:1)*(1+accEff('kladivo','hziv')),
+   per:1/Math.max(.2,def.hrate[t.l]),acc:0,c:def.c});
+ if(S.hreby.length>30){
+   const i0=S.hreby.findIndex(x=>x.src===t);
+   S.hreby.splice(i0>=0?i0:0,1);
+ }
+ const q=pathPos(nej,nejPi);
+ S.fx.push({type:'ring',x:q.x,y:q.y,r:CS*.28,c:def.c,t:.22,d:.22});
+ t.flash=.16; snd('s_tape');
+}
+
 // KOLIK: osazuje znacky na trasu ve svem dosahu. Delá to i tehdy, kdyz na
 // trase nikdo neni - v tom je cely rozdil proti zbytku hry, kde prazdna
 // trasa znamena promarnenou kadenci. Zato neumi zareagovat na to, co uz
@@ -13833,7 +13974,11 @@ function updateMine(t,dt){
  S.miny.push({p:nej,pi:nejPi,
    r:def.bl[t.l]*CS*(hasPerk(t,'minewide')?1.55:1),
    slow:hasPerk(t,'mineslow')?1:0,
-   dmg:dmgOf(t)*(hasPerk(t,'minedmg')?1.45:1),c:def.c,src:t,zrani:.35});
+    dmg:dmgOf(t)*(hasPerk(t,'minedmg')?1.45:1),
+    // Sance na dvojnasobnou ranu se ulozi PRI OSAZENI znacky. Bez toho byly pro
+    // kolik mrtve laborka 'Mereni ve dvou polohach', karta 'Opakovane mereni'
+    // i jeho vlastni uzel g_crit - hurt() dostaval crit=0.
+    cr:critOf(t),c:def.c,src:t,zrani:.35});
  if(S.miny.length>26){
    // Strop je globalni, ale mazat cizi znacku by bralo hraci to, co si
    // zaplatil - zahodi se nejstarsi znacka TOHOTO stanoviska.
@@ -13890,7 +14035,7 @@ function updateDrones(t,dt){
 }
 function drawDrone(g,t,dr){
  const walker=T[t.k].kind==='walker';
- const q=pathPos(dr.p,t.path),c=T[t.k].c,rad=(walker?T.backpack.rad[t.l]:T.photo.rad[t.l])*CS;
+ const q=pathPos(dr.p,t.path),c=T[t.k].c,rad=(walker?T[t.k].rad[t.l]:T.photo.rad[t.l])*CS;
  g.save();
  g.strokeStyle=c;g.globalAlpha=.25;g.lineWidth=1;g.setLineDash([2,4]);
  g.beginPath();g.moveTo(tcx(t),tcy(t));g.lineTo(q.x,q.y);g.stroke();
@@ -13980,7 +14125,8 @@ function rollShop(free){
    if(pool.length<2)pool=usableTypes().filter(k=>S.ban.indexOf(k)<0);
  }
  if(pool.length<3)while(pool.length<3)pool.push(pool[0]);
- const slots=(pool.length>=5?4:3)+M('slot')+M('depot');
+ // Ramcova smlouva zlevnuje, ale uzi nabidku - kdo chce vybirat, plati.
+ const slots=Math.max(2,(pool.length>=5?4:3)+M('slot')+M('depot')-(M('cheap')?1:0));
  // "Vetsi sklad" 2. urovne a "Polni sklad" byly do v96 bez ucinku: slotu
  // pribylo, ale nabidka se bere z BALICKU, a ten ma nejvys pet typu - sesty
  // a sedmy slot proto zustal prazdny a hrac za tu kartu utratil volbu
@@ -14002,6 +14148,12 @@ function rollShop(free){
 }
 
 /* ==================== VLNY ==================== */
+// Nasobek mistrovskeho mereni. Do v102 to bylo 1,32, tedy MIN nez skok mezi
+// dvema sousednimi uzemimi (1,27 -> 1,66): "mistrovska" verze uzemi byla
+// lehci nez dalsi uzemi v rade a robot ji prosel se 100 % presnosti.
+// Toast o nem navic sliboval 55 %; text se ted bere odsud, aby se cislo
+// a slib nemohly rozejit.
+const HARD_MM=1.6;
 function waveScale(){
  const h=MAPS[S.map].hp;
  // Nasobek uzemi plati CELY uz od prvni etapy. Driv se u tezkych uzemi (h>1)
@@ -14010,7 +14162,7 @@ function waveScale(){
  let mm=h;
  if(chMod('tough'))mm*=1.35;
  if(S.chal&&S.chal.hpMul)mm*=S.chal.hpMul;
- if(S.hard)mm*=1.32;
+ if(S.hard)mm*=HARD_MM;
  // Odolnost vln: rovnomernejsi tlak misto exploze na konci. Sila hrace se
  // zastavi u 4. rady kolem 10. etapy, takze exponent 1,175 delal z posledni
  // tretiny kazdeho uzemi jen odpocitavani. Linearni clen nahoru, exponent dolu:
@@ -14032,8 +14184,19 @@ function waveScale(){
  return (1+.56*(S.wave-1))*Math.pow(1.10,Math.max(0,S.wave-8))*mm;
 }
 function lastWaveOf(){ return S?(S.chal?S.chalWaves:(MAPS[S.map].waves+(S.hard?3:0))):99; }
+// O kolik etap napred zacina SKLADBA vlny na pozdnich uzemich. Do v102 visel
+// roster jen na cisle etapy, takze prvni ctvrtina KAZDEHO uzemi vypadala
+// stejne - na patnactem uzemi chodila v prvni etape sama Chyba odectu jako
+// na prvnim. Zmereno: etapy 1-9 tvorily 49 % vsech etap a v 99,6 % z nich
+// hrac neprisel o nic. Odolnost (waveScale) se tim NEMENI, jen slozeni.
+function rosterSkok(){
+ if(!S)return 0;
+ const m=MAPS[S.map];
+ return (m&&m.skok!==undefined)?m.skok:Math.min(4,Math.floor(S.map/3));
+}
 function waveComp(w){
  const l=[];
+ const wr=w+((S&&S.rush5)?0:rosterSkok());
  if(S&&S.rush5){
    // Bossova smrst byla nejlehci rezim ve hre, prestoze za ni padala
    // legendarni bedna: robot ji na koncovem uzemi prosel devetkrat z deviti
@@ -14051,17 +14214,23 @@ function waveComp(w){
  if((w>=6&&w%5===0)||isFinal) l.push(['boss',isFinal?2:1,4.5]);
  if(w>=16&&w%5===0) l.push(['boss',1,4.5]);
  const bossWave=(w>=6&&w%5===0)||w===lastWaveOf();
- l.push(['err',Math.round((5+w*1.1)*(bossWave?.7:1)),Math.max(.34,.9-w*.02)]);
- if(w>=3) l.push(['refr',2+Math.round((w-2)*.7),Math.max(.24,.7-w*.02)]);
- if(w>=4) l.push(['subs',Math.max(1,Math.round((w-3)*.55)),1.7]);
- if(w>=6) l.push(['multi',Math.max(1,Math.round((w-5)*.7)),1.0]);
- if(w>=6) l.push(['noise',5+Math.round(w*.85),.28]);
- if(w>=7) l.push(['blun',1+Math.round(w*.22),1.6]);
- if(w>=11) l.push(['jam',1+Math.round(w*.16),2.2]);
- if(w>=12) l.push(['drift',1+Math.round(w*.20),1.5]);
- if(w>=13) l.push(['jump',1+Math.round(w*.14),2.4]);
- if(w>=10) l.push(['heal',Math.max(1,Math.round((w-9)*.35)),2.8]);
- if(w>=15) l.push(['cover',1+Math.round(w*.12),2.6]);
+ l.push(['err',Math.round((5+wr*1.1)*(bossWave?.7:1)),Math.max(.34,.9-wr*.02)]);
+ if(wr>=3) l.push(['refr',2+Math.round((wr-2)*.7),Math.max(.24,.7-wr*.02)]);
+ if(wr>=4) l.push(['subs',Math.max(1,Math.round((wr-3)*.55)),1.7]);
+ if(wr>=6) l.push(['multi',Math.max(1,Math.round((wr-5)*.7)),1.0]);
+ if(wr>=6) l.push(['noise',5+Math.round(wr*.85),.28]);
+ if(wr>=7) l.push(['blun',1+Math.round(wr*.22),1.6]);
+ // ZMERENO (robot, 3 kola x 15 uzemi, 847 etap): do 10. etapy hrac neprisel
+ // o NIC (0 ztrat ze 450 etap) a v 11. mu naraz prisly TRI rusicky, k tomu
+ // drift a hned nato preklep - podil etap se ztratou skocil z 0 na 24 %,
+ // median uzaveru z 50 na 74. Nebyla to rampa, ale zed, a na kazdem uzemi
+ // stejna. Kazdy druh proto zacina o nekolik etap driv a v JEDNOM kuse;
+ // pozdni pocty zustavaji, kde byly.
+ if(wr>=7)  l.push(['jam',Math.max(1,Math.round((wr-6)*.28)),2.2]);
+ if(wr>=9)  l.push(['drift',Math.max(1,Math.round((wr-8)*.32)),1.5]);
+ if(wr>=11) l.push(['jump',Math.max(1,Math.round((wr-10)*.26)),2.4]);
+ if(wr>=10) l.push(['heal',Math.max(1,Math.round((wr-9)*.35)),2.8]);
+ if(wr>=13) l.push(['cover',Math.max(1,Math.round((wr-12)*.30)),2.6]);
  return mixUzemi(l);
 }
 
@@ -14409,6 +14578,16 @@ function glyphBody(g,k,s,l){
    g.beginPath();g.moveTo(-s*.26,s*.10);g.lineTo(s*.26,s*.10);g.stroke();
    for(let i=0;i<l;i++){g.globalAlpha=.62;g.beginPath();
      g.arc(0,-s*.36,s*(.24+i*.15),-2.5,-.6);g.stroke();}
+   g.globalAlpha=1;
+ }else if(k==='kladivo'){
+   // kladivo: nasada s hlavou, pod ni zatluceny hreb; s radou pribyvaji hreby
+   g.beginPath();g.moveTo(-s*.06,s*.46);g.lineTo(s*.10,-s*.16);g.stroke();
+   g.beginPath();g.moveTo(-s*.26,-s*.30);g.lineTo(s*.30,-s*.18);g.stroke();
+   g.lineWidth=Math.max(2,s*.14);
+   g.beginPath();g.moveTo(-s*.20,-s*.28);g.lineTo(s*.04,-s*.23);g.stroke();
+   g.lineWidth=Math.max(1.4,s*.07);
+   for(let i=0;i<=l;i++){g.globalAlpha=.5;
+     g.beginPath();g.moveTo(-s*.34+i*s*.20,s*.50);g.lineTo(-s*.34+i*s*.20,s*.30);g.stroke();}
    g.globalAlpha=1;
  }else if(k==='ctrl'){
    // kontroler: displej s radky zapisu, s radou pribyvaji radky
@@ -15388,6 +15567,21 @@ function draw(){
 
  // Merické znacky kolíku. Kresli se jako maly kolik s hlavou a kruhem
  // dosahu, aby bylo videt, KDE presne to bouchne.
+ // Hreby kladiva: hlavicka na trase a kolem ni okruh, do ktereho tluce.
+ // Zbyvajici zivot je videt na sytosti - hrac pozna, ktery uz dotluka.
+ if(S.hreby)S.hreby.forEach(hb=>{
+   const q=pathPos(hb.p,hb.pi), z=Math.max(0,Math.min(1,hb.t/2));
+   ctx.save();
+   ctx.globalAlpha=.10*(z*.6+.4);ctx.fillStyle=hb.c;
+   ctx.beginPath();ctx.arc(q.x,q.y,hb.r,0,7);ctx.fill();
+   ctx.globalAlpha=.45*(z*.6+.4);ctx.strokeStyle=hb.c;ctx.lineWidth=1.1;
+   ctx.beginPath();ctx.arc(q.x,q.y,hb.r,0,7);ctx.stroke();
+   ctx.globalAlpha=.85;ctx.lineWidth=2.4;ctx.lineCap='round';
+   ctx.beginPath();ctx.moveTo(q.x,q.y+CS*.14);ctx.lineTo(q.x,q.y-CS*.12);ctx.stroke();
+   ctx.lineWidth=3.2;
+   ctx.beginPath();ctx.moveTo(q.x-CS*.09,q.y-CS*.14);ctx.lineTo(q.x+CS*.09,q.y-CS*.14);ctx.stroke();
+   ctx.restore();
+ });
  if(S.miny)S.miny.forEach(m=>{
    // Souradnice se pocitaji az tady: kdyby se vzaly z ulozenych pixelu,
    // po otoceni telefonu by znacka lezela jinde, nez kde opravdu vybuchne.
@@ -15600,7 +15794,8 @@ function spawnAt(k,p,scale,forceElite,pi){
  let el=null;
  if(k!=='boss'&&(forceElite||Math.random()<eliteChance(S.wave)))
    el=ELITE[(Math.random()*ELITE.length)|0];
- const hp=d.hp*scale*(el?el.hp:1);
+ // Rozbahneny pristup: vlivy jsou pomalejsi, zato odolnejsi.
+ const hp=d.hp*scale*(el?el.hp:1)*(1+.05*M('entry_slow'));
  const e={k,p:Math.max(0,p),pi:pi||0,hp,mhp:hp,slowT:0,slowM:1,mark:0,dead:false,el:el};
  // Finalovy boss uzemi si s sebou nese rysy z tabulky RYS.
  if(k==='boss'){
@@ -15635,11 +15830,14 @@ function shieldOf(e){
  for(let i=0;i<list.length;i++){
    const o=list[i]; if(o.dead)continue;
    const z=pathPos(o.p,o.pi);
-   if(Math.hypot(z.x-q.x,z.y-q.y)<=CS*1.9){sh=Math.max(sh,E[o.k].shield||o.bShield||0); if(sh>=.25)break;}
+   if(Math.hypot(z.x-q.x,z.y-q.y)<=CS*1.9){sh=Math.max(sh,E[o.k].shield||o.bShield||0); if(sh>=.55)break;}
  }
  return sh;
 }
-function hurt(e,amount,pierce,crit,src){
+// `bezStitu` je pro pulz sonaru: jeho popisek slibuje, ze ho kryti nezajima,
+// ale hurt() stit odecital vzdy. S 55% Zakrytem (v103) uz to neni kosmetika -
+// sonar je proti nemu odpoved.
+function hurt(e,amount,pierce,crit,src,bezStitu){
  // Laborka 'Rozbor odchylek': + poskozeni bossum a elitam.
  if(SAVE.meta.boss&&(e.k==='boss'||e.elite))amount*=(1+.02*SAVE.meta.boss);
  if(src){
@@ -15662,7 +15860,7 @@ function hurt(e,amount,pierce,crit,src){
  // Podlaha plati pro rany, ne pro drobne tiky zon - jinak by zona na 120Hz
  // telefonu delala dvakrat tolik co na 60Hz a pancir by se vubec neuplatnil.
  // Prah je MER (drive 1), aby do tikove vetve spadly tytez veci co driv.
- let d=(amount<MER?Math.max(0,amount-ar):Math.max(MER,amount-ar))*(1-shieldOf(e));
+ let d=(amount<MER?Math.max(0,amount-ar):Math.max(MER,amount-ar))*(bezStitu?1:(1-shieldOf(e)));
  e.hit=.16;
  const kk=e.k;
  if(M('swarm')&&(kk==='noise'||kk==='refr'))d*=1+.30*M('swarm');
@@ -15700,7 +15898,7 @@ function hurt(e,amount,pierce,crit,src){
    SAVE.killed=SAVE.killed||{};SAVE.killed[e.k]=(SAVE.killed[e.k]||0)+1;
    // Odmena za vliv rostla jen tim, kolik jich ve vlne je - jejich odolnost
    // pritom roste i exponencialne. Mirny prirustek s etapou to srovnava.
-   const g=Math.round(E[e.k].b*.72*(1+.03*(((S&&S.wave)||1)-1))*(e.el?e.el.b:1)*((ruleOf()&&ruleOf().gold)||1)
+   const g=Math.round(E[e.k].b*.72*(1+.08*(((S&&S.wave)||1)-1))*(e.el?e.el.b:1)*((ruleOf()&&ruleOf().gold)||1)
      *((S.tacheo>0)?2:1));S.cr+=g;
    {const q2=pathPos(e.p,e.pi);
     S.fx.push({type:'coin',x:q2.x,y:q2.y,t:.55,d:.55,s:'+'+g});}
@@ -15758,7 +15956,9 @@ function fire(t){
    // levnejsi a rychlejsi, byl teodolit za dvojnasobek ceny horsi nakup nez
    // pasmo prakticky ve vsem. Roje (Sum, Refrakce, Chyba odectu) maji pancir
    // nula, takze pasmo v tom, na co je urcene, neztraci nic.
-   const prub=hasPerk(t,'pierce')?999:(t.k==='theo'?99:0);
+   // Ocelove pasmo (prislusenstvi) pridava pruraz - jedina vec, ktera pasmu
+   // chybi proti pancerovanym cilum.
+   const prub=hasPerk(t,'pierce')?999:(t.k==='theo'?99:Math.round(accEff(t.k,'prub')));
    hurt(e,D*mult,prub,CR,t);snd(t.face?'s_theo':(TSND[t.k]||'shoot'));
    if(hasPerk(t,'spread')){
      const o=cand.filter(x=>x!==e).sort((a,b)=>b.p-a.p)[0];
@@ -15817,7 +16017,7 @@ function fire(t){
  }else if(k==='push'){
    const e=pickTarget(t,cand),p=pathPos(e.p,e.pi);
    hurt(e,D,0,CR,t);
-   const pf=def.push[t.l]*(hasPerk(t,'pushfar')?2:1);
+   const pf=def.push[t.l]*(hasPerk(t,'pushfar')?2:1)*(1+accEff(t.k,'push'));
    e.p=Math.max(0,e.p-pf);
    if(hasPerk(t,'pushvuln')){e.mark=Math.max(e.mark||0,3);e.markPow=Math.max(e.markPow||0,.35);}
    if(hasPerk(t,'pushall'))cand.forEach(o=>{if(o!==e)o.p=Math.max(0,o.p-pf*.6);});
@@ -15848,7 +16048,7 @@ function fire(t){
    snd('s_quad');
  }else if(k==='pulse'){
    const mult2=hasPerk(t,'reso')?(1+.12*cand.length):1;
-   cand.forEach(e=>{hurt(e,D*mult2,99,CR,t);
+   cand.forEach(e=>{hurt(e,D*mult2,99,CR,t,true);
      if(hasPerk(t,'pulsestun')&&Math.random()<.10){e.slowT=Math.max(e.slowT,1);e.slowM=0.01;}});
    S.fx.push({type:'ring',x:tx,y:ty,r:R,c:def.c,t:.35,d:.35});
    S.fx.push({type:'ring',x:tx,y:ty,r:R*.6,c:def.c,t:.25,d:.25});
@@ -15909,7 +16109,7 @@ function fire(t){
  }else if(k==='ortho'){
    // PENTAGONALNI HRANOL: meri jen v pravem uhlu - po rade nebo po sloupci.
    // Vybere osu s vetsim poctem cilu a projde ji celou; nic mimo osy nevidi.
-   const sirka=def.sirka[t.l]*CS*terRng(t)*(hasPerk(t,'orthowide')?1.7:1);
+   const sirka=def.sirka[t.l]*CS*terRng(t)*(hasPerk(t,'orthowide')?1.7:1)*(1+accEff(t.k,'sirka'));
    const nase={x:[],y:[]};
    cand.forEach(e=>{ const q=pathPos(e.p,e.pi);
      if(Math.abs(q.y-ty)<=sirka)nase.x.push(e);
@@ -15934,7 +16134,7 @@ function fire(t){
    const e=pickTarget(t,cand),p=pathPos(e.p,e.pi);
    const vr=def.vir[t.l]*CS*(hasPerk(t,'pullbig')?1.5:1);
    const dur=def.vdur[t.l]*(hasPerk(t,'pulllong')?1.8:1);
-   const tah=def.vtah[t.l]*(hasPerk(t,'pullstrong')?2:1);
+   const tah=def.vtah[t.l]*(hasPerk(t,'pullstrong')?2:1)*(1+accEff(t.k,'vtah'));
    S.vir=S.vir||[];
    S.vir.push({x:p.x,y:p.y,r:vr,t:dur,d:dur,tah:tah,
      dps:D*(hasPerk(t,'pullcrush')?3:1),c:def.c,src:t,uhel:Math.random()*6.283,acc:0});
@@ -15950,7 +16150,11 @@ function fire(t){
    hurt(e,D,0,CR,t);
    e.vrst=Math.min(strop,(e.vrst||0)+(hasPerk(t,'stackfast')?2:1));
    e.vrstD=Math.max(e.vrstD||0,D);      // sila vybiti podle nejlepsiho zapisu
-   e.vrstV=Math.max(e.vrstV||0,def.vd[t.l]);
+    // Odchylka ubira PODIL Z RANY toho zapisniku, ktery ji zapsal. Driv to
+    // bylo pevnych 0,09-0,18 bodu za vterinu absolutne, takze v 15. etape
+    // proti cili se ctyrmi sty body odolnosti delalo osm odchylek pod 10 %
+    // vykonu pristroje - mechanika, na ktere stoji popisek, byla neznatelna.
+    e.vrstV=Math.max(e.vrstV||0,def.vd[t.l]*D);
    e.vrstSrc=t;
    if(e.vrst>=strop){
      hurt(e,e.vrstD*e.vrst*.8*(hasPerk(t,'stackburst')?1.7:1),0,CR,t);
@@ -15971,7 +16175,7 @@ function fire(t){
    // nebo zpomalenemu je skoro slepy, proti Refrakci (sp 2,25) nejlepsi.
    const e=pickTarget(t,cand),p=pathPos(e.p,e.pi);
    const v=rychlostCile(e);
-   const vm=def.vmul[t.l]*(1+accEff('dopp','vmul'))*(hasPerk(t,'doppgain')?1.35:1);
+   const vm=doppVm(t);
    const podlaha=hasPerk(t,'doppfloor')?vm*.6:.25;
    const f=podlaha+(vm-podlaha)*Math.min(1,v/2.3);
    hurt(e,D*f,0,CR,t);
@@ -16047,13 +16251,25 @@ function useAbil(i){
    // Pribyl tedy ucinek, ktery hra UZ UMI (`slowDmg`, dosud jen z perku
    // nivelaku): co se skoro nehybe, to jde zamerit presneji. Sila zpomaleni
    // zustava, jen uz neprepisuje silnejsi zpomaleni odjinud.
-   const dur=5*abilPow('freeze');
-   S.enemies.forEach(e=>{ if(e.dead)return;
+   // ZMERENO ZNOVU (parove, 4 opakovani): zastavena CELA trasa se shlukla a
+   // prosla obranou naraz - metoda vychazela na -2,4 az -3,2 vlivu, tedy HUR
+   // nez ji nepouzit. Ted jde poradem jen CELO vlny: sest cilu nejbliz
+   // nulovemu bodu. Zbytek trasy plyne dal, takze se nema co nahromadit.
+   // Druhe mereni po uprave: samotne zpomaleni cela porad vychazelo zaporne
+   // (-2,8 vlivu) - co se zbrzdi, to ostatni dozeni a projde s nimi. Porad se
+   // proto MERI: kdo v nem stoji, dostane rovnou zasah a pancir mu klesne.
+   const dur=3*abilPow('freeze');
+   const D3=(2.5+1.8*S.wave)*abilPow('freeze');
+   const celoF=S.enemies.filter(e=>!e.dead).sort((x,y)=>y.p-x.p).slice(0,6);
+   celoF.forEach(e=>{
      e.slowT=Math.max(e.slowT,dur);
      e.slowM=Math.max(SLOW_MIN,Math.min(e.slowM===1?9:e.slowM,.25));
-     e.slowDmg=1; e.armorCut=4; });
+     e.slowDmg=1; e.armorCut=Math.max(e.armorCut||0,4);
+     hurt(e,D3,4,0);
+     const q=pathPos(e.p,e.pi);
+     S.fx.push({type:'ring',x:q.x,y:q.y,r:CS*.8,c:'#7fd4ff',t:.4,d:.4}); });
    S.fx.push({type:'flash',c:'#7fd4ff',t:.35,d:.35});
-   toast('Polygonový pořad · trasa zbrzděná na '+dur.toFixed(1)+' s');
+   toast('Polygonový pořad · '+celoF.length+' cílů v čele zaměřeno za '+Math.round(D3));
  }else if(a.id==='repair'){
    S.acc=Math.min(100,S.acc+Math.round(6*abilPow('repair')));
    S.fx.push({type:'flash',c:'#a9e08c',t:.35,d:.35});
@@ -16063,13 +16279,21 @@ function useAbil(i){
    S.fx.push({type:'flash',c:'#12bfae',t:.35,d:.35});
    toast('Kontrolní měření · +70 % poškození na '+Math.round(S.check)+' s');
  }else if(a.id==='stop'){
-   const dur=2.5*abilPow('stop');
-   S.enemies.forEach(e=>{if(e.dead)return;
-     e.slowT=Math.max(e.slowT,dur);e.slowM=0.001;e.haste=0;
-     hurt(e,2+.8*S.wave,0,0);
-     e.slowDmg=1;});   // az PO zasahu, at si uzaver nenasobi vlastni ranu
+   // Zastavena cela trasa se shlukla a prosla obranou naraz - metoda vysla
+   // v parovem mereni na -1,0 zastaveneho vlivu. Ted vraci osm cilu nejbliz
+   // nulovemu bodu o tri pole ZPET: hrac kupuje cas presne tam, kde ho
+   // potrebuje, a vlna se nikde nehromadi.
+   const D2=(2+.8*S.wave)*abilPow('stop');
+   const celoS=S.enemies.filter(e=>!e.dead).sort((x,y)=>y.p-x.p).slice(0,8);
+   celoS.forEach(e=>{
+     e.p=Math.max(0,e.p-3);
+     e.slowT=Math.max(e.slowT,1.2);
+     e.slowM=Math.max(SLOW_MIN,Math.min(e.slowM===1?9:e.slowM,.5));
+     hurt(e,D2,0,0);
+     const q=pathPos(e.p,e.pi);
+     S.fx.push({type:'ring',x:q.x,y:q.y,r:CS*.7,c:'#f0426e',t:.35,d:.35}); });
    S.fx.push({type:'flash',c:'#f0426e',t:.4,d:.4});
-   toast('Uzávěr pořadu · trasa stojí '+dur.toFixed(1)+' s');
+   toast('Uzávěr pořadu · '+celoS.length+' cílů vráceno o tři pole zpět');
  }else if(a.id==='rush'){
    S.rush=8*abilPow('rush');
    S.fx.push({type:'flash',c:'#e5b455',t:.35,d:.35});
@@ -16093,9 +16317,13 @@ function useAbil(i){
    S.fx.push({type:'flash',c:'#ffc21f',t:.35,d:.35});
    toast('Tachymetrie · dvojnásobný příjem na '+Math.round(S.tacheo)+' s');
  }else{
-   S.enemies.forEach(e=>{if(!e.dead)e.mark=Math.max(e.mark||0,10*abilPow('stake'));});
+   S.enemies.forEach(e=>{if(e.dead)return;
+     e.mark=Math.max(e.mark||0,10*abilPow('stake'));
+     // Vytyceny bod se meri presneji: krome oznaceni jde dolu i pancir.
+     // Samotne oznaceni vyslo v parovem mereni na -2,3 vlivu, tedy na nic.
+     e.armorCut=Math.max(e.armorCut||0,2);});
    S.fx.push({type:'flash',c:'#ee6c2b',t:.35,d:.35});
-   toast('Vytyčení · všechny cíle označeny na 10 s');
+   toast('Vytyčení · cíle označeny a pancíř o 2 níž');
  }
  uiAbil();
 }
@@ -16110,6 +16338,15 @@ function step(dt){
      spawnAt(q.k,(S.detour||0)*(pathOf(q.pi||0).length-1),waveScale()*((ruleOf()&&ruleOf().hp)||1),ruleOf()&&ruleOf().elite&&Math.random()<ruleOf().elite,q.pi||0);
      const last=S.enemies[S.enemies.length-1];
      if(last){
+        // Jmena vlivu hrac dosud videl jen v bublince pri UPLNE prvnim setkani
+        // a v nahledu vlny; kdo ji odklepl, uz si jmeno k tvaru nepriradil.
+        // Ted se prvni kus kazdeho druhu v etape sam pojmenuje.
+        S.videnoVlna=S.videnoVlna||{};
+        if(!S.videnoVlna[last.k]&&last.k!=='boss'){
+          S.videnoVlna[last.k]=1;
+          const qq=pathPos(last.p,last.pi);
+          S.fx.push({type:'txt',x:qq.x,y:qq.y-CS*.62,s:E[last.k].n,c:E[last.k].c,t:1.5,d:1.5});
+        }
        firstTime('e_'+last.k,E[last.k].n+' — '+(COUNTER[last.k]||E[last.k].note||''),E[last.k].c);
        if(last.el){snd('s_elite');
          firstTime('elite','Elitní vliv má barevný obrys, vyšší odolnost i odměnu.',last.el.c);}
@@ -16189,7 +16426,7 @@ function step(dt){
      const q=pathPos(e.p,e.pi);
      S.enemies.forEach(o=>{ if(o.dead||o===e)return;
        const z=pathPos(o.p,o.pi);
-       if(Math.hypot(z.x-q.x,z.y-q.y)<=CS*1.9)o.hp=Math.min(o.mhp,o.hp+o.mhp*.013*dt);});
+       if(Math.hypot(z.x-q.x,z.y-q.y)<=CS*2.6)o.hp=Math.min(o.mhp,o.hp+o.mhp*.035*dt);});
    }
    const rg=(E[e.k].regen||0)+((e.el&&e.el.rg)||0);
    if(rg&&e.slowT<=0)e.hp=Math.min(e.mhp,e.hp+e.mhp*rg*dt);
@@ -16217,6 +16454,7 @@ function step(dt){
        return;
      }
      S.acc=Math.max(0,S.acc-capped);
+     S.accZtrata=Math.round((S.accZtrata||0)+capped);
      const p=pathPos(pathOf(e.pi).length-1,e.pi);
      S.fx.push({type:'txt',x:p.x,y:p.y,s:'−'+Math.round(capped)+'%',c:'#ff4d7e',t:1,d:1});
      // 'prosel' bylo natvrdo v muzskem rode, ale pulka vlivu je zenskeho
@@ -16234,6 +16472,7 @@ function step(dt){
    if(kk==='boost')return;
    if(t.bossJam>0){t.bossJam-=dt;return;}
    if(kk==='mine'){ updateMine(t,dt); return; }
+   if(kk==='nails'){ updateNails(t,dt); return; }
    if(kk==='mark'){ updateMark(t,dt); return; }
    if(kk==='sweep'){ updateSweep(t,dt); return; }
    if(kk==='walker'){ updateWalker(t,dt); return; }
@@ -16305,6 +16544,32 @@ function step(dt){
      S.miny.splice(i,1);
    }
  }
+ // Hreby kladiva: kazdy je male docasne stanoviste. Tika pevnym krokem,
+ // aby rychlost hry (1x az 4x) nemenila jeho kadenci.
+ if(S.hreby&&S.hreby.length){
+   for(let i=S.hreby.length-1;i>=0;i--){
+     const hb=S.hreby[i];
+     hb.t-=dt;
+     if(hb.t<=0){
+       const q0=pathPos(hb.p,hb.pi);
+       S.fx.push({type:'ring',x:q0.x,y:q0.y,r:hb.r*.5,c:hb.c,t:.2,d:.2});
+       S.hreby.splice(i,1); continue;
+     }
+     hb.acc+=dt;
+     let ran=0;
+     while(hb.acc>=hb.per&&ran<4){
+       hb.acc-=hb.per; ran++;
+       const q=pathPos(hb.p,hb.pi);
+       let zasah=false;
+       S.enemies.forEach(e=>{ if(e.dead)return;
+         const z=pathPos(e.p,e.pi);
+         if(Math.hypot(z.x-q.x,z.y-q.y)<=hb.r){ hurt(e,hb.dmg,0,hb.cr,hb.src); zasah=true; } });
+       if(zasah)S.fx.push({type:'ring',x:q.x,y:q.y,r:hb.r*.75,c:hb.c,t:.14,d:.14});
+       else { hb.acc=0; break; }
+     }
+   }
+ }
+
  // Tihove anomalie gravimetru: tahnou zpatky po trase, zpomaluji a berou.
  if(S.vir&&S.vir.length){
    S.vir.forEach(v=>{
@@ -16406,22 +16671,31 @@ function startWave(){
    }
  }
  S.readyAt=0;
- S.autoT=0;S.wave++;S.phase='combat';S.spawnT=0;S.queue=[];
+ S.autoT=0;S.wave++;S.phase='combat';S.spawnT=0;S.queue=[];S.videnoVlna={};
  S.rule=pickRule(S.wave);
  const rl=ruleOf();
  let comp=waveComp(S.wave);
  if(rl&&rl.f)comp=rl.f(comp);
  comp=dveTrasy(comp);   // tatáž úprava, jakou ukazuje náhled PŘÍŠTÍ
  let off=0;
+ const obeTrasy=finaleRysy().some(r=>r.obe);
  comp.forEach(([k,n,gap])=>{
-   for(let i=0;i<n;i++)S.queue.push({k,t:off+i*gap,pi:PATHS.length>1?(i%PATHS.length):0});
+   for(let i=0;i<n;i++){
+     // Rys 'obetrasy' byl mrtvy: klic `obe` necetl nikdo a bossove se mezi
+     // trasy delili vzdy, takze rys byl jen sleva na odolnosti (cena 1,60).
+     // Ted jdou bossove po jedne trase a rozdeli se JEN s nim.
+     const pi=PATHS.length>1?((k==='boss'&&!obeTrasy)?0:(i%PATHS.length)):0;
+     S.queue.push({k,t:off+i*gap,pi});
+   }
    off+=.6;
  });
  S.queue.sort((a,b)=>a.t-b.t);
  // Vysypani vlny ma strop. Pozdni etapy jinak trvaly pres minutu a pritom
  // byly rozhodnute davno pred koncem - hrac jen cekal. Poctu ani sily vlivu
  // se to nedotyka, jen se zkrati rozestupy.
- const SPAWN_STROP=32;
+ // Od 15. etapy je vlna hustsi: etapa trvala 48-51 s a byla rozhodnuta
+ // po patnacti. Pocet ani sila vlivu se nemeni, jen rozestupy.
+ const SPAWN_STROP=S.wave>=15?24:32;
  const posl=S.queue.length?S.queue[S.queue.length-1].t:0;
  if(posl>SPAWN_STROP){ const f=SPAWN_STROP/posl; S.queue.forEach(q=>q.t*=f); }
  S.waveTotal=S.queue.length;
@@ -16480,7 +16754,7 @@ function endWave(){
    S.ammo[a.id]=Math.min(mx,(S.ammo[a.id]===undefined?mx:S.ammo[a.id])+dopln);
  });
  addSeasonXp(3);   // sezonni cesta odmenuje i samotne hrani, ne jen denni rituál
- if(M('service'))S.acc=Math.min(100,S.acc+3*M('service'));
+ if(M('service'))S.acc=Math.min(100,S.acc+2*M('service'));
  // Meteostanice po etape vraci presnost site - slibuje to i popis pristroje.
  S.towers.filter(t=>t.k==='meteo').forEach(m=>{
    S.acc=Math.min(100,S.acc+T.meteo.reg[m.l]*(hasPerk(m,'weatherreg')?2:1));
@@ -16499,6 +16773,7 @@ function endWave(){
  S.towers.filter(t=>t.k==='gnss').forEach(g=>bonus+=(T.gnss.inc[g.l]+6*M('gnss_inc')+accEff('gnss','inc'))*(hasPerk(g,'supinc')?2:1));
  S.towers.filter(t=>t.k==='mensula'&&hasPerk(t,'econwave')).forEach(()=>bonus+=12);
  S.towers.filter(t=>t.k==='basecal'&&hasPerk(t,'ballinc')).forEach(()=>bonus+=15);
+ S.towers.filter(t=>hasPerk(t,'g_aura_inc')).forEach(()=>bonus+=6);
  // Radiomodem pridava 2,2 za stanici, takze bonus vysel zlomkovy a hra hlasila
  // "+18.2 rozpoctu". Rozpocet je cele cislo, zaokrouhli se az tady, aby se
  // po ceste nic neztratilo.
@@ -16511,7 +16786,7 @@ function endWave(){
  // Spojite, ne zaskrtavatko. Prah 45 % prochazel ve 13 etapach ze 14 -
  // takove cislo uz hraci nic nerika. Takhle dostane kazda etapa vlastni
  // vysledek: cim dal od nuloveho bodu se to zastavilo, tim vetsi dotace.
- S.uzavrBon=Math.round((1-S.uzavr/100)*(4+Math.min(S.wave,16)*.9));
+ S.uzavrBon=Math.round((1-S.uzavr/100)*(4+Math.min(S.wave,24)*.9)*(M('income')?.5:1));
  bonus+=S.uzavrBon;
  // Mraz: "-18 % rozpoctu za etapu". Do v96 to byla veta bez ucinku.
  if(condInc)bonus=Math.max(0,Math.round(bonus*(1+condInc)));
@@ -16523,8 +16798,14 @@ function endWave(){
  // Oba ucinky jsou nasobne a nezavisle, poradi na vysledku nic nemeni.
  if(chMod('rich'))bonus*=2;
  S.cr+=bonus;
- if(S.net.rep||SAVE.meta.rep)S.acc=Math.min(100,S.acc+S.net.rep*2+(SAVE.meta.rep||0));
- if(M('regen'))S.acc=Math.min(100,S.acc+2*M('regen'));
+ // ZMERENO: 14 % etap s prunikem skoncilo se ztratou nula - obnova (az
+ // 20 % za etapu) prevysila cenu propusteneho vlivu (0,8 %), takze hlavni
+ // zpetna vazba hry lhala: etapa s peti pruniky ukazala 100 %. Obnova je
+ // ted polovicni a uzaver etapy hlasi ztratu i obnovu zvlast.
+ const accPred=S.acc;
+ if(S.net.rep||SAVE.meta.rep)S.acc=Math.min(100,S.acc+S.net.rep+(SAVE.meta.rep||0));
+ if(M('regen'))S.acc=Math.min(100,S.acc+1*M('regen'));
+ S.accObnova=Math.round(S.acc-accPred);
  rollShop(true);
  if(S.endless&&S.wave%5===0){
    const cr=S.wave>=25?'epic':S.wave>=15?'rare':'common';
@@ -16536,6 +16817,10 @@ function endWave(){
  if(!S.endless&&S.wave>=(S.chal?S.chalWaves:(MAPS[S.map].waves+(S.hard?3:0))))return finish(true);
  saveRun();
  feed('Etapa '+S.wave+' hotova · <b>+'+bonus+'</b> rozpočtu','var(--brass)');
+ if(S.accZtrata||S.accObnova)
+   feed('Přesnost: <b>−'+(S.accZtrata||0)+' %</b> za průniky · <b>+'+(S.accObnova||0)+' %</b> obnova',
+     (S.accZtrata||0)>(S.accObnova||0)?'#ff9a6c':'var(--moss)');
+ S.accZtrata=0;
  feed('Uzávěr etapy <b>'+S.uzavr+' %</b> — '+
    (S.uzavr<=25?'vzorný uzávěr':S.uzavr<=50?'v mezní odchylce'
     :S.uzavr<=80?'trasa udržená':'na hranici odchylky')+
@@ -16555,7 +16840,12 @@ function endWave(){
    toast('Tip: '+TIPS[(Math.random()*TIPS.length)|0]); },3200);
  ui();
  saveRun();
- openDraft();
+ // ZMERENO: robot bez karet prohral poslednich sedm uzemi 20x z 28, tyz robot
+ // s kartami na poskozeni vyhral VSECHNO se 100 % presnosti - o vysledku
+ // rozhodoval draft, ne hrani. Vyber je ted po kazde DRUHE etape (zmereno
+ // 5/8 misto 8/8) a tri nejsilnejsi karty jsou slabsi.
+ if(S.wave%2===0||S.wave>=lastWaveOf()-1)openDraft();
+ else firstTime('draft2','Vybavení si vybíráš po každé druhé etapě.','var(--sky)');
 }
 function finish(win){
  if(S.over)return;
@@ -17971,6 +18261,8 @@ function ui(){
    if(def.kind==='drone')extra=' · dronů '+(def.drones[t.l]+(hasPerk(t,'drone2')?1:0))+' · značka +25 %';
    if(def.kind==='mine')extra=' · značek '+(def.zn[t.l]+(hasPerk(t,'minecap')?2:0))+
      ' · výbuch '+def.bl[t.l].toFixed(2)+' pole';
+   if(def.kind==='nails')extra=' · hřebů '+(def.hr[t.l]+(hasPerk(t,'nailmore')?2:0))+
+      ' · vydrží '+Math.round(def.hziv[t.l]*(hasPerk(t,'naillong')?1.7:1)*(1+accEff('kladivo','hziv')))+' s';
    if(def.kind==='stack')extra=' · strop odchylek '+
      (def.vrs[t.l]+Math.round(accEff('ctrl','vrs'))+(hasPerk(t,'stackdeep')?5:0));
    if(def.kind==='dopp')extra=' · proti nejrychlejším ×'+
@@ -20237,6 +20529,7 @@ function renderDeck(){
 }
 let DEMO=null;
 const DEMONOTE={
+ kladivo:'Zatlouká hřeby na trasu. Každý chvíli sám tluče do okolí, pak se otluče a vypadne.',
  kolik:'Nestřílí po cílech — osazuje na trasu značky, které vybuchnou, až po nich někdo šlápne.',
  ctrl:'Každý zásah přidá cíli odchylku. Čím víc jich má, tím rychleji ztrácí odolnost.',
  dopp:'Zaměří nejrychlejší cíl. Proti pomalému nebo zpomalenému je skoro slepý.',
@@ -23166,6 +23459,7 @@ function renderCodex(){
      case 'multi': return 'Míří na nejsilnější cíl a ubere mu i '+pct(d.pct[3])+' % jeho celkové odolnosti.';
      case 'compass': return 'Odsune cíl o '+cis(d.push[3])+' pole zpátky po trase.';
      case 'kolik': return 'Neútočí — osadí až '+d.zn[3]+' značek, každá vybuchne v okruhu '+cis(d.bl[3])+' pole.';
+      case 'kladivo': return 'Zatluče až '+d.hr[3]+' hřebů; každý '+cis(d.hziv[3])+' s tluče do okruhu '+cis(d.hrad[3])+' pole.';
      case 'ctrl': return 'Každý zásah přidá odchylku, na '+d.vrs[3]+' se pořad uzavře a vybije naráz.';
      case 'dopp': return 'Proti nejrychlejším cílům až '+cis(d.vmul[3])+'× síla, proti stojícím čtvrtina.';
      default: return '';
@@ -23176,7 +23470,7 @@ function renderCodex(){
      k:['tape','theo','compass','machine','multi','ctrl','dopp']},
     {n:'Zasáhne víc cílů naráz',ak:'--sky',
      p:'Pruh ukazuje poškození na JEDEN cíl. Ve skutečnosti tyhle přístroje bijí tím víc, čím hustší hlouček před nimi jde — s předchozí skupinou je proto nesrovnávej.',
-     k:['edm','lidar','quadrant','sonar','backpack','gpr','penta','insar','kolik']},
+     k:['edm','lidar','quadrant','sonar','backpack','gpr','penta','insar','kolik','kladivo']},
     {n:'Drží vlnu na místě',ak:'--violet',
      p:'Poškození je u nich vedlejší. Jejich práce je zpomalení a tah.',
      k:['nivel','gravi']},
@@ -23724,7 +24018,7 @@ window.__sugDeck=()=>{
 $('lvHard').onclick=()=>{
  const i=window.__lvl;$('lvl').classList.remove('on');
  snd('ui');newRun(i,false,null,true);show('game');resize();ui();window.scrollTo(0,0);
- toast('Mistrovské měření · o 55 % odolnější vlivy a tři etapy navíc');
+ toast('Mistrovské měření · o '+Math.round((HARD_MM-1)*100)+' % odolnější vlivy a tři etapy navíc');
 };
 $('lvEndless').onclick=()=>{
  const i=window.__lvl;$('lvl').classList.remove('on');
