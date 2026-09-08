@@ -2844,7 +2844,7 @@ html[data-theme="hc"] #profOv .box{background:#fff}
   flex-wrap:wrap;font-size:calc(12px*var(--fs,1));margin-top:var(--m1)}
 .pfRad .pfK{flex:none}
 .pfRad .pfK{color:var(--t3);text-transform:uppercase;letter-spacing:.06em;font-weight:800;
-  font-size:calc(11px*var(--fs,1))}
+  font-size:max(12px,calc(12px*var(--fs,1)))}
 .pfRad .pfV{color:var(--t2);text-align:right;flex:1 1 auto;min-width:0}
 #profTelo .pfB{height:12px;border-radius:999px;background:var(--s1);
   border:var(--w2) solid var(--stroke);overflow:hidden}
@@ -7837,8 +7837,8 @@ html[data-theme="hc"] #playBar #playLabel{
 /* Nad nazvem rezimu je slovo "Rezim", aby bylo poznat, ze KAMPAN je volba. */
 #playBar .modeChip .mcK{
   display:block;
-  color:var(--t3);font-size:calc(11px*var(--fs,1));font-weight:800;
-  letter-spacing:.10em;text-transform:uppercase;line-height:1.1;
+  color:var(--t3);font-size:max(12px,calc(12px*var(--fs,1)));font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;line-height:1.1;
   margin-bottom:1px;
 }
 html[data-theme="hc"] #playBar .modeChip .mcK{color:#06131c}
@@ -17024,13 +17024,16 @@ function step(dt){
        const z=pathPos(e.p,e.pi);
        if(Math.hypot(z.x-q.x,z.y-q.y)<=mn.r)spust=e; });
      if(!spust)continue;
-     hurt(spust,mn.dmg,0,0,mn.src);
+     // Sance na dvojnasobnou ranu se ulozila pri OSAZENI znacky (`cr`), takze
+     // laborka 'Mereni ve dvou polohach', karta 'Opakovane mereni' i uzel
+     // g_crit plati i pro kolik. Bez toho tu stala nula.
+     hurt(spust,mn.dmg,0,mn.cr||0,mn.src);
      if(mn.slow){spust.slowT=Math.max(spust.slowT,1.4);
        spust.slowM=Math.max(SLOW_MIN,Math.min(spust.slowM===1?9:spust.slowM,.6));}
      S.enemies.forEach(e=>{ if(e.dead||e===spust)return;
        const z=pathPos(e.p,e.pi);
        if(Math.hypot(z.x-q.x,z.y-q.y)<=mn.r){
-         hurt(e,mn.dmg*.6,0,0,mn.src);
+         hurt(e,mn.dmg*.6,0,mn.cr||0,mn.src);
          if(mn.slow){e.slowT=Math.max(e.slowT,1.4);
            e.slowM=Math.max(SLOW_MIN,Math.min(e.slowM===1?9:e.slowM,.6));}
        } });
