@@ -9878,9 +9878,309 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
   font-weight:800;color:var(--laserL);text-align:center}
 .tiDeckBtn{margin-top:8px}
 .tiDeckBtn.on{--plA:var(--brassL,#e8c67a);--plB:var(--brass);color:#2a1f06}
+/* ===== v103-menu ===== */
+
+/* ============================================================
+   v103 / MENU - devet schvalenych oprav vzhledu a ovladani (M2..M12)
+   Blok se nacita jako POSLEDNI, takze prebiji vsechny vrstvy nad nim.
+   Vsechno je namerene spustenim na 390x844 a 375x667, den i noc.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   M3  JEDEN ZNAK PRO JEDNU VEC
+   Pohar delal tri veci naraz (odznak profilu, mena Pohary, zalozka
+   Kariera) a vyzkum mel ctyri ruzne znaky. Znaky ted stoji v <defs>
+   nahore v <body> a vsude se vkladaji pres <use>.
+   ------------------------------------------------------------ */
+/* Znaky ze sady jsou VYPLNENE siluety; vsude, kde okolni pravidlo
+   nastavuje obrys (.kotouc, .karIko, svg.ni), si barvu vezmou z `color`. */
+.tbAva{color:#3a2400}
+.tbAva svg{width:20px;height:20px}
+.kotouc svg use,.karIko svg use{fill:currentColor;stroke:none}
+.karIko svg{color:var(--ak)}
+/* Cena v obchode se plati VYZKUMEM - drive u ni byl holy zlaty kotouc. */
+.shBuy:after{display:none}
+.shBuy .ikMena{width:17px;height:17px;flex:none;order:-1;color:var(--brassT)}
+/* Jmeno hrace: na 390 px bylo schovane uplne (`.tbName b{display:none}`
+   od 430 px dolu), takze z odznaku zbyl prazdny vycnelek. Vejde se
+   zkracene - mereno na 375 i 390 px. */
+@media (min-width:360px){
+  .tbName{padding:3px 10px 3px 3px;max-width:118px}
+  .tbName b{display:block}
+}
+
+/* ------------------------------------------------------------
+   M2  SBIRKA: PODMINKA ODEMCENI POD IKONOU, NE V PROUZKU
+   Prouzek postupu je 85 px sirokych s nowrap+ellipsis - z 26 dlazdic
+   se podminka u 17 usekla na "uzemi ne...", "450 poh...".
+   ------------------------------------------------------------ */
+.rOdkud{margin:5px 8px 0;text-align:center;
+  font-size:calc(12px*var(--fs,1));font-weight:700;line-height:1.25;
+  white-space:normal;color:var(--t2);
+  min-height:calc(2.5em);display:flex;align-items:center;justify-content:center}
+html[data-theme="hc"] .rOdkud{color:#06131c}
+
+/* ------------------------------------------------------------
+   M9  ODZNAK "V SESTAVE" A RADEK RAZENI
+   Odznak lezel pres hornich 13 px kotouce s ikonou. Ikona dostava
+   vlastni misto pod odznakem - vyska dlazdice zustava u VSECH stejna.
+   ------------------------------------------------------------ */
+/* Jen ve Sbirce - dlazdice na vysledkove obrazovce (#rcards) zadny
+   odznak nemaji a vyssi kartu by tam nikdo nechtel. */
+#collBody .rart{height:96px;padding:20px 0 4px;box-sizing:border-box}
+#collBody .rdeck{top:4px;right:6px}
+/* Pet knofliku razeni se lamalo na dva radky (blok 82 px, pismo 11 px).
+   Ted jeden knoflik s dotykovym tercem 44 px. */
+.razBtn{display:flex;align-items:center;gap:7px;width:100%;
+  margin:6px 0 0;min-height:44px;padding:0 13px;
+  border-radius:var(--r1);
+  background:linear-gradient(180deg,var(--s3),var(--s2));
+  border:var(--w3) solid var(--stroke);
+  box-shadow:var(--hrana),0 3px 0 var(--stroke);
+  color:var(--t1);font-size:calc(12.5px*var(--fs,1));font-weight:700;
+  text-align:left}
+.razBtn .razK{color:var(--t3);font-weight:600}
+.razBtn .razN{font-weight:800;flex:1 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.razBtn i{font-style:normal;color:var(--t3);flex:none}
+.razBtn:active{transform:translateY(2px);box-shadow:var(--hrana)}
+html[data-theme="hc"] .razBtn{background:#fff;color:#06131c;border:2px solid #000;
+  box-shadow:none}
+html[data-theme="hc"] .razBtn .razK,html[data-theme="hc"] .razBtn i{color:#06131c}
+
+/* ------------------------------------------------------------
+   M4  TEREN: MAPA JE JEDINY ROLER STRANKY
+   Bylo: okno mapy 352 px s vlastnim rolovanim UVNITR stranky, ktera
+   se rolovala taky (videt 2-3 uzemi), panel "Co ted" zacinal na 578 px
+   pod listou HRAT na 680 px a pevny sokl mel 176 px.
+   ------------------------------------------------------------ */
+#pgTeren{height:var(--terenH,58vh);overflow:hidden;
+  display:flex;flex-direction:column;padding-bottom:0}
+#pgTeren .tMapa{flex:1 1 auto;min-height:150px;display:flex;flex-direction:column;
+  margin-bottom:0}
+#pgTeren #worldWrap{height:auto;flex:1 1 auto;min-height:0}
+#pgTeren .tPod{flex:none;margin-top:var(--m1)}
+#pgTeren .tVer{flex:none;margin:var(--m1) 0 0}
+/* Lista, za kterou je slozeny panel "Co ted". */
+#pgTeren .tUkolyBar{flex:none;display:flex;align-items:center;gap:8px;
+  width:100%;margin:var(--m1) 0 0;min-height:44px;padding:0 13px;
+  border-radius:var(--r1);
+  background:linear-gradient(180deg,var(--s3),var(--s2));
+  border:var(--w3) solid var(--stroke);
+  box-shadow:var(--hrana),0 3px 0 var(--stroke);
+  color:var(--t1);font-size:calc(12.5px*var(--fs,1));font-weight:800;
+  text-align:left}
+#pgTeren .tUkolyBar .tuK{flex:1 1 auto;min-width:0;text-align:left}
+#pgTeren .tUkolyBar .tuN:not(:empty){flex:none;min-width:22px;padding:2px 7px;
+  border-radius:999px;background:var(--laser);color:var(--onAccent,#062028);
+  font-family:var(--num);font-weight:900;font-size:calc(12px*var(--fs,1));
+  text-align:center}
+#pgTeren .tUkolyBar i{font-style:normal;color:var(--t3);flex:none;
+  transition:transform .16s ease}
+#pgTeren .tUkolyBar[aria-expanded="true"] i{transform:rotate(180deg)}
+#pgTeren .tUkolyBar.prazdno{display:none}
+#pgTeren .tUkoly{display:none;min-height:0;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  margin-top:var(--m1)}
+/* Panel si bere jen tolik, kolik potrebuje, nejvys ale polovinu stranky -
+   jinak by ho smrsteni flexu srazilo na 105 px, zatimco mapa by drzela 310. */
+#pgTeren .tUkoly.on{display:block;flex:0 0 auto;max-height:48%}
+html[data-theme="hc"] #pgTeren .tUkolyBar{background:#fff;color:#06131c;
+  border:2px solid #000;box-shadow:none}
+html[data-theme="hc"] #pgTeren .tUkolyBar i{color:#06131c}
+/* Na nizkem displeji (iPhone SE, 667 px) sezere svisly prostor kazdy radek:
+   verze hry se schova (je i v Nastaveni) a odsazeni se stahnou.
+   Mereno na 375x667: mapa 236 -> 273 px. */
+@media (max-height:720px){
+  #pgTeren .tVer{display:none}
+  #pgTeren .tPod{margin-top:4px}
+  #pgTeren .tUkolyBar{margin-top:4px;min-height:40px}
+  #podDeska{padding-top:4px}
+}
+/* Sokl: ctvrtina obrazovky na tri listy je moc. 176 -> pod 150 px. */
+:root{--navH:52px; --navMez:16px}
+#podDeska{padding:var(--m1) var(--m2) max(var(--m1),var(--sbot))}
+#podDeska:has(#playBar.hide){padding-top:var(--m2)}
+#navBar button:before{top:5px;width:36px;height:36px;margin-left:-18px}
+#navBar button.on:before{top:-11px;width:50px;height:50px;margin-left:-25px}
+#navBar svg.ni,#navBar .playTab svg.ni{width:22px;height:22px}
+#navBar button{gap:4px;padding:0 1px 3px}
+#navBar button.on{padding:0 1px 3px}
+.modeChip{flex:0 0 96px;min-height:50px}
+/* HRAT na jedne rade: "HRAT · Mestska zastavba". */
+.playBig{min-height:50px;flex-direction:row;align-items:baseline;
+  justify-content:center;gap:8px;padding:8px 10px}
+.playBig b{font-size:calc(19px*var(--fs,1))}
+.playBig s{flex:0 1 auto;min-width:0;font-size:calc(12.5px*var(--fs,1))}
+.playBig s:before{content:'· '}
+
+/* ------------------------------------------------------------
+   M5  DETAIL UZEMI: HLAVNI AKCE JE HLAVNI
+   Bylo: 174 / 294 / 151 / 107 px v boxu 362 px, hlavni akce vlevo
+   a polovicni, okno bez krizku.
+   ------------------------------------------------------------ */
+#lvl .lvHead{position:relative;padding-right:calc(var(--m4) + 46px)}
+#lvl .lvX{position:absolute;right:var(--m2);top:var(--m2);z-index:3}
+#lvl #lvGo{display:flex;min-height:56px;padding:12px 16px}
+#lvl #lvAlt{display:flex;flex-direction:column;gap:var(--m1)}
+#lvl #lvAlt button{display:flex;min-height:44px}
+#lvl .lvBtnRow{display:grid;grid-template-columns:1fr 1fr;gap:var(--m2);
+  margin:var(--m2) var(--m4) 0}
+#lvl .lvBtnRow>#lvMore::after{position:absolute;right:10px;top:calc(50% - 6px)}
+#lvl #lvDetail{margin-bottom:max(var(--m4),var(--sbot))}
+
+/* ------------------------------------------------------------
+   M6  DETAIL PRISTROJE: NEJHLASITEJSI BYL "ZAVRIT"
+   Prilepene ZAVRIT bylo 362x56 syty mint, akcni VYLEPSIT tyz gradient
+   zprusvitneny na 45 %. Okno uz krizek ma, takze pata smi byt ticha.
+   ------------------------------------------------------------ */
+#tinfo #tiClose{--plA:transparent;--plB:transparent;--plC:transparent;
+  background:none;box-shadow:none;text-shadow:none;
+  border:1px solid rgba(255,255,255,.16);
+  color:var(--t3);font-weight:700;min-height:46px;
+  font-size:calc(12.5px*var(--fs,1))}
+html[data-theme="hc"] #tinfo #tiClose{background:#fff;color:#06131c;
+  border:2px solid #000}
+/* Nedostupne VYLEPSIT uz neni "totez, jen vybledle" - je to seda plocha
+   s vetou, co chybi. */
+button.tiUpBtn:disabled{opacity:1;--plA:transparent;--plB:transparent;
+  --plC:transparent;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);
+  color:var(--t3);text-shadow:none;box-shadow:none}
+html[data-theme="hc"] button.tiUpBtn:disabled{background:#fff;color:#33474f;
+  border:2px solid #000}
+/* VYJMOUT/DO SESTAVY je druhotna volba, ne treti plnobarevne tlacitko. */
+.tiDeckBtn,.tiDeckBtn.on{--plA:transparent;--plB:transparent;--plC:transparent;
+  background:rgba(8,11,38,.34);border:1px solid rgba(255,255,255,.18);
+  box-shadow:none;text-shadow:none;color:var(--t2);font-weight:800}
+.tiDeckBtn.on{color:var(--brassT);
+  border-color:color-mix(in srgb,var(--brass) 45%,transparent)}
+html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
+  background:#fff;color:#06131c;border:2px solid #000}
+
+/* ------------------------------------------------------------
+   M8  LEPIVA HLAVICKA CELOOBRAZOVKOVYCH OKEN A VYREZ IPHONU
+   Hlavicka se lepila az 47 px pod horni hranou, takze se v pasu pod
+   hodinami posouval obsah. Plati pro kaFull, seFull, profOv, npOv...
+   #tinfo ma vlastni reseni (banner nese odsazeni) a to zustava.
+   ------------------------------------------------------------ */
+.ovCela .celaHlava{
+  top:calc(-1 * var(--m3) - env(safe-area-inset-top,0px));
+  margin-top:calc(-1 * var(--m3) - env(safe-area-inset-top,0px));
+  padding-top:calc(var(--m3) + env(safe-area-inset-top,0px))}
+
+/* ------------------------------------------------------------
+   M11  OBCHOD
+   Posledni licha karta uz nestoji sama vedle prazdneho mista -
+   lehne si na sirku.
+   ------------------------------------------------------------ */
+#shopGrid>.shopCard:last-child:nth-child(odd){
+  grid-column:1 / -1;
+  display:grid;grid-template-columns:84px minmax(0,1fr) auto;
+  grid-template-rows:auto auto;align-items:center;
+  column-gap:var(--m2);padding:var(--m2) var(--m2) var(--m2) 0}
+#shopGrid>.shopCard:last-child:nth-child(odd) .shArt{
+  grid-column:1;grid-row:1 / 3;height:70px;margin:0}
+#shopGrid>.shopCard:last-child:nth-child(odd) .shRar{
+  grid-column:2;grid-row:1;text-align:left;background:none;border:0;
+  padding:0 0 3px}
+#shopGrid>.shopCard:last-child:nth-child(odd) .shT{
+  grid-column:2;grid-row:2;text-align:left;min-height:0;padding:0}
+#shopGrid>.shopCard:last-child:nth-child(odd) .shBuy{
+  grid-column:3;grid-row:1 / 3;margin:0;align-self:center}
+/* Odpocet je ted v podtitulu stranky, ne v nadpisu sekce. */
+#topBar+#pagerWrap .pgHead #shopTimer{margin-left:0}
+
+/* ------------------------------------------------------------
+   M12  SPODNI MEZ PISMA A DOTYKOVE TERCE
+   Pravidla, ktera prezila plosnou spodni mez pisma z bloku "5" (stoji
+   v souboru NIZ nez ona, takze ji prebijela).
+   ------------------------------------------------------------ */
+#deckRow .dslot .dlv s{font-size:calc(12px*var(--fs,1));letter-spacing:.04em}
+.pfMr span{font-size:calc(12px*var(--fs,1))}
+.rReady{font-size:calc(12px*var(--fs,1))}
+.shRar{font-size:calc(12px*var(--fs,1));letter-spacing:.06em}
+.shT s{font-size:calc(12px*var(--fs,1))}
+.shBuy i{font-size:calc(12px*var(--fs,1))}
+.modeChip i{font-size:calc(12px*var(--fs,1))}
+#pgTeren .tStitek{font-size:calc(12px*var(--fs,1));letter-spacing:.08em}
+#pgTeren .tTip{font-size:calc(12.5px*var(--fs,1))}
+#pgTeren .tUkoly .djT s{font-size:calc(12.5px*var(--fs,1))}
+.pkSp{font-size:calc(12px*var(--fs,1));line-height:1.4}
+.pkRole{font-size:calc(12px*var(--fs,1))}
+.pkNm{font-size:calc(12.5px*var(--fs,1))}
+#navBar button,#navBar .playTab{font-size:calc(12px*var(--fs,1))}
+/* Otaznik: 21 px byl terc pro kurzor, ne pro prst. Vizualne 28 px,
+   zasah 44 px. */
+.hintBtn{width:28px;height:28px;min-height:28px;
+  font-size:calc(13px*var(--fs,1))}
+.hintBtn::after{inset:-8px}
+
+
+/* ---- druhe kolo mereni ----------------------------------------- */
+/* M5: <button> se s `width:auto` smrskne na obsah i jako blok, takze
+   ZAHAJIT MERENI melo 170 px z 322. Sirku je nutne napsat cislem.
+   Pravidla `#lvl #lvMore` maji dve ID, takze na ne trida nedosahne. */
+#lvl #lvGo{width:calc(100% - 2*var(--m4))}
+#lvl #lvAlt button{width:100%}
+#lvl .lvBtnRow>#lvMore,#lvl .lvBtnRow>#lvClose{
+  display:flex;width:100%;margin:0;min-height:48px;
+  align-items:center;justify-content:center;text-align:center}
+#lvl .lvBtnRow>#lvMore{padding:8px 24px 8px 10px;position:relative}
+#lvl .lvBtnRow>#lvClose{margin-bottom:0}
+
+/* M12: posledni dve mista pod 12 px v detailu pristroje. */
+#tinfo .tiUpK,#tinfo .tiUpK s{font-size:calc(12px*var(--fs,1))}
+.rezOdm{font-size:calc(12px*var(--fs,1))}
+
+/* M3: misto na jmeno v odznaku profilu. Cislice men se zkratit nedaji,
+   takze se sahlo na odsazeni - odznak tim dostal 14 px navic. */
+#topBar{gap:4px}
+.tb1,.tb2,.tb3{padding:3px 7px 3px 3px;gap:5px}
+.tb1 svg,.tb2 svg,.tb3 svg{padding:3px}
+.tbOzub{width:36px;height:36px;min-height:36px}
+.tbAva{width:28px;height:28px}
+.tbAva svg{width:18px;height:18px}
+.tbName{max-width:132px}
+.tbName b{letter-spacing:.02em}
 </style>
 </head>
 <body>
+<!-- ============ ZNAKY (jeden zdroj pro celou hru) ============
+     v103/M3: pohar delal tri ruzne veci naraz (profil, mena, zalozka
+     Kariera) a vyzkum mel ctyri ruzne znaky (banka nahore, holy kotouc
+     v obchode, krouzek v okne Meny, kresleny glyf v Kariere). Znak ted
+     stoji na JEDNOM miste a vsude se vklada pres <use>. -->
+<svg id="ikony" width="0" height="0" aria-hidden="true" focusable="false"
+     style="position:absolute;left:-9999px;width:0;height:0;overflow:hidden"><defs>
+ <symbol id="ikVyzkum" viewBox="0 0 24 24">
+  <path fill="currentColor" stroke="none" d="M10 3h4v5.4l4.6 8.2A2.6 2.6 0 0 1 16.3 21H7.7a2.6 2.6 0 0 1-2.3-4.4L10 8.4z"/>
+  <path fill="currentColor" stroke="none" d="M9.2 2.2h5.6v1.7H9.2z"/>
+ </symbol>
+ <symbol id="ikPohar" viewBox="0 0 24 24">
+  <path fill="currentColor" stroke="none" d="M6.8 3.4h10.4v5.4a5.2 5.2 0 0 1-10.4 0z"/>
+  <path fill="currentColor" stroke="none" d="M17.7 4.8h2.6v1.7a3.1 3.1 0 0 1-2.9 3.1V7.9a1.4 1.4 0 0 0 1.3-1.4zM6.3 4.8H3.7v1.7a3.1 3.1 0 0 0 2.9 3.1V7.9a1.4 1.4 0 0 1-1.3-1.4z"/>
+  <path fill="currentColor" stroke="none" d="M11.1 13.6h1.8v5.1h-1.8z"/>
+  <path fill="currentColor" stroke="none" d="M8.4 19.2h7.2v1.9H8.4z"/>
+ </symbol>
+ <symbol id="ikMeznik" viewBox="0 0 24 24">
+  <path fill="currentColor" stroke="none" d="M12 2.4 16.6 5.8v11.1H7.4V5.8z"/>
+  <path fill="currentColor" stroke="none" d="M4.2 18.3h15.6v1.9H4.2z"/>
+ </symbol>
+ <symbol id="ikProfil" viewBox="0 0 24 24">
+  <path fill="currentColor" stroke="none" d="M9.1 3.1h5.8v3.3H9.1z"/>
+  <path fill="currentColor" stroke="none" d="M6.5 6.5h11v1.9h-11z"/>
+  <path fill="currentColor" stroke="none" d="M11.2 8.4h1.6v3.1h-1.6z"/>
+  <path fill="currentColor" stroke="none" d="M11.2 11.2h1.6v9.9h-1.6z"/>
+  <path fill="currentColor" stroke="none" d="m11.2 11.2 1.5.5-4.2 9.6-1.5-.6z"/>
+  <path fill="currentColor" stroke="none" d="m12.8 11.2-1.5.5 4.2 9.6 1.5-.6z"/>
+ </symbol>
+ <symbol id="ikKariera" viewBox="0 0 24 24">
+  <path fill="currentColor" stroke="none" d="M2.8 16.6h4.4V21H2.8zM9.8 12.2h4.4V21H9.8zM16.8 8.2h4.4V21h-4.4z"/>
+  <path fill="currentColor" stroke="none" d="M16.8 2.4h1.7v4.6h-1.7z"/>
+  <path fill="currentColor" stroke="none" d="M18.4 2.6h3.9l-1.1 1.5 1.1 1.5h-3.9z"/>
+ </symbol>
+</defs></svg>
 <div id="bgPlast" aria-hidden="true"></div>
 <div id="rotate"><span>📱</span>Otoč telefon na výšku.<br>Deska bodového pole se na šířku nevejde.</div>
 
@@ -9930,10 +10230,10 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
 </svg></div><div id="menuToast"></div>
  <div id="topBar">
    <button type="button" class="tbChip tbName" id="tbName" aria-label="Profil, hodnost a jméno">
-     <span class="tbAva"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M10 14h4M9 20h6M12 14v6"/></svg></span><b>Geodet</b></button>
-   <div class="tbChip tb1 menaKlik" id="tbResChip" role="button" tabindex="0" title="Výzkum" aria-label="Výzkum – co to je a kde se to bere"><svg viewBox="0 0 24 24"><path d="M10 3h4v5.4l4.6 8.2A2.6 2.6 0 0 1 16.3 21H7.7a2.6 2.6 0 0 1-2.3-4.4L10 8.4z" fill="#fff"/><path d="M7.4 15.6h9.2" stroke="#c07a00" stroke-width="2"/><circle cx="10.4" cy="17.8" r="1.5" fill="#c07a00"/><circle cx="14.1" cy="18.4" r="1.1" fill="#c07a00"/><path d="M9.4 3h5.2" stroke="#c07a00" stroke-width="2.2" stroke-linecap="round"/></svg><b id="tbRes">0</b></div>
-   <div class="tbChip tb2 menaKlik" id="tbTrChip" role="button" tabindex="0" title="Poháry" aria-label="Poháry – co to je a kde se to bere"><svg viewBox="0 0 24 24"><path d="M6.8 3.8h10.4v5a5.2 5.2 0 0 1-10.4 0z" fill="#fff"/><path d="M17.4 5.2h2.4v1.4a2.6 2.6 0 0 1-2.4 2.6M6.6 5.2H4.2v1.4a2.6 2.6 0 0 0 2.4 2.6" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><path d="M8.6 20.4h6.8M12 14.2v6.2" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg><b id="tbTr">0</b></div>
-   <div class="tbChip tb3 menaKlik" id="tbMezChip" role="button" tabindex="0" title="Mezníky" aria-label="Mezníky – co to je a kde se to bere"><svg viewBox="0 0 24 24"><path d="M12 2.6 16.4 6v11.4H7.6V6z" fill="#fff"/><path d="M9.6 9.6h4.8M12 7.4v6.4" stroke="#5b4a2e" stroke-width="2.2" stroke-linecap="round"/><path d="M4.4 18.8h15.2" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M6.6 21.4h10.8" stroke="#fff" stroke-opacity=".55" stroke-width="1.8" stroke-linecap="round"/></svg><b id="tbMez">0</b></div>
+     <span class="tbAva"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ikProfil"/></svg></span><b>Geodet</b></button>
+   <div class="tbChip tb1 menaKlik" id="tbResChip" role="button" tabindex="0" title="Výzkum" aria-label="Výzkum – co to je a kde se to bere"><svg class="ikS" viewBox="0 0 24 24"><use href="#ikVyzkum"/></svg><b id="tbRes">0</b></div>
+   <div class="tbChip tb2 menaKlik" id="tbTrChip" role="button" tabindex="0" title="Poháry" aria-label="Poháry – co to je a kde se to bere"><svg class="ikS" viewBox="0 0 24 24"><use href="#ikPohar"/></svg><b id="tbTr">0</b></div>
+   <div class="tbChip tb3 menaKlik" id="tbMezChip" role="button" tabindex="0" title="Mezníky" aria-label="Mezníky – co to je a kde se to bere"><svg class="ikS" viewBox="0 0 24 24"><use href="#ikMeznik"/></svg><b id="tbMez">0</b></div>
    <button type="button" class="tbChip tbOzub" id="tbOpts" aria-label="Nastavení">
      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg></button>
  </div>
@@ -9942,18 +10242,22 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
 
    <!-- ---- 0. OBCHOD ---- -->
    <section class="page">
-    <div class="pgHead"><h2>Obchod</h2><span>nabídka se mění každý den</span></div>
+    <!-- M11: odpocet "obnovi se za 9 h" prelezal na druhy radek nadpisu
+         "Denni nabidka". Patri do podtitulu stranky, kde je pro nej misto. -->
+    <div class="pgHead"><h2>Obchod</h2><span id="shopTimer" class="timerChip">nabídka se mění každý den</span></div>
     <div class="filtRow" id="shopTabs">
       <button data-t="nabidka" class="on">Nabídka</button>
       <button data-t="mez">Za mezníky</button>
     </div>
-    <button type="button" class="menaTip" id="shopMezTip">
+    <!-- M11: banner patri k zalozce "Za mezniky", ne k denni nabidce,
+         ktera za mezniky neprodava nic. Startuje skryty. -->
+    <button type="button" class="menaTip hide" id="shopMezTip">
       <span class="mtIk"><svg viewBox="0 0 24 24"><path d="M12 3.4 19 7v10l-7 3.6L5 17V7z"/><path d="M9.4 8.6h5.2M12 6v5.2"/></svg></span>
       <span class="mtT"><b>Mezníky</b> jsou vzácná měna za výkon v terénu. Platí se jimi vzhledy přístrojů.</span>
       <span class="mtV">Kde se berou</span>
     </button>
     <div id="shopFree"></div>
-    <div class="secTitle" id="shopNadpis">Denní nabídka <span id="shopHint"></span><span id="shopTimer" class="timerChip"></span></div>
+    <div class="secTitle" id="shopNadpis">Denní nabídka <span id="shopHint"></span></div>
     <div id="shopGrid"></div>
     <div id="shopMez" class="hide">
       <div class="hlavni mezHero" style="--ak:var(--laser)">
@@ -9965,11 +10269,6 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
             a jednou denně za dávku výzkumu.</p>
         </div>
       </div>
-      <button type="button" class="menaTip" id="mezOdkudTip">
-        <span class="mtIk"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.4"/><path d="M12 7.6v.1"/></svg></span>
-        <span class="mtT">Nekupují se ani nepadají z beden. Podívej se, za co je hra dává.</span>
-        <span class="mtV">Kde se berou</span>
-      </button>
       <div class="secTitle">Nákup za mezníky</div>
       <div id="mezRes"></div>
       <div class="secTitle">Vzhledy přístrojů <span id="skHint"></span></div>
@@ -10037,13 +10336,10 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
         <button data-f="miss">Chybí mi</button>
         <button data-f="deck">V sestavě</button>
        </div>
-       <div class="filtRow filtRow--raz" id="collSort">
-        <button data-s="def" class="on">Výchozí</button>
-        <button data-s="rar">Vzácnost</button>
-        <button data-s="lvl">Úroveň</button>
-        <button data-s="new">Nově odemčené</button>
-        <button data-s="use">Nejvíc hraju</button>
-       </div>
+       <!-- M9: pet knofliku razeni se do sirky nevejde - lamaly se na dva
+            radky (blok 82 px) a mely 11px pismo pod dotykovou mezi. Ted je
+            to jeden knoflik, ktery otevre stejny list jako Rezim na Terenu. -->
+       <button type="button" class="razBtn" id="collSortBtn" aria-haspopup="dialog"><span class="razK">Řadit</span><span class="razN" id="collSortN">Výchozí</span><i aria-hidden="true">▾</i></button>
        <div id="collBody" class="vbCollBody"></div>
       </div>
      </div>
@@ -10108,8 +10404,14 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
      </div>
     </div>
 
-    <!-- 3. zastavka: UKOLY. "Co ted" a Zakazka dne v jedne karte. -->
-    <div class="tUkoly">
+    <!-- 3. zastavka: UKOLY. "Co ted" a Zakazka dne v jedne karte.
+         M4: karta merila 394 px a zacinala na 578 px, ale plovouci lista
+         HRAT zacina na 680 px - videt z ni bylo 102 px a na 375x667 nic.
+         Ted je slozena za listou "Co ted", ktera je videt vzdycky; po
+         klepnuti se vysune nad mapou (mapa se o to zmensi). -->
+    <button type="button" class="tUkolyBar" id="todoTrig" aria-expanded="false"
+            aria-controls="tUkolyPanel"><span class="tuK">Co teď</span><span class="tuN" id="todoTrigN"></span><i aria-hidden="true">▾</i></button>
+    <div class="tUkoly" id="tUkolyPanel">
      <!-- "Co ted" tu chybelo. Funkce `renderTodo()` existuje, vola se v `ui()`
           a styly pro ni jsou napsane vcetne vlastniho bloku
           `#pgTeren .tUkoly #todoBox`, jen PRVEK v HTML nikdo nepridal - takze
@@ -10237,7 +10539,7 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
    <button data-p="1"><svg class="ni fi" viewBox="0 0 24 24"><rect x="2.6" y="7" width="18.8" height="13.4" rx="3" fill="currentColor"/><path d="M8 7V5.6A1.6 1.6 0 0 1 9.6 4h4.8A1.6 1.6 0 0 1 16 5.6V7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="10.4" y="11.4" width="3.2" height="4" rx="1" fill="#0b1030" opacity=".45"/></svg>Vybavení</button>
    <button data-p="2" class="on playTab"><svg class="ni fi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4" fill="currentColor"/><circle cx="12" cy="12" r="3.6" fill="#0b1030" opacity=".5"/><path d="M12 .8v4.4M12 18.8v4.4M.8 12h4.4M18.8 12h4.4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Terén</button>
    <button data-p="3"><svg class="ni fi" viewBox="0 0 24 24"><path d="M3 8.4 12 3.6l9 4.8v7.6L12 20.8 3 16z" fill="currentColor"/><path d="M3 8.4 12 13.2l9-4.8M12 13.2v7.6" fill="none" stroke="#0b1030" stroke-opacity=".45" stroke-width="2.2"/></svg>Laborka</button>
-   <button data-p="4"><svg class="ni fi" viewBox="0 0 24 24"><path d="M6.6 3.6h10.8v5.2a5.4 5.4 0 0 1-10.8 0z" fill="currentColor"/><path d="M17.4 5h2.8v1.8a3 3 0 0 1-2.8 3M6.6 5H3.8v1.8a3 3 0 0 0 2.8 3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M9 20.2h6M12 14.4v5.8" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>Kariéra</button>
+   <button data-p="4"><svg class="ni fi ikS" viewBox="0 0 24 24"><use href="#ikKariera"/></svg>Kariéra</button>
  </nav>
  </div></div>
 </div>
@@ -10502,6 +10804,8 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
 <!-- ============ DETAIL ÚZEMÍ ============ -->
 <div class="ov" data-okno="info" id="lvl" style="z-index:24"><div class="box">
   <div class="lvHead">
+    <!-- M5: okno jako jedine z celoobrazovkovych oken nemelo krizek. -->
+    <button class="xBtn lvX" id="lvX" type="button" aria-label="Zavřít">✕</button>
     <canvas id="lvThumb" width="140" height="180"></canvas>
     <div>
       <div class="lvName" id="lvName"></div>
@@ -10520,7 +10824,13 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
     <button class="hide" id="lvHard">Mistrovské měření</button>
     <button class="hide" id="lvEndless">Nekonečné měření</button>
   </div>
-  <button class="lvMore" id="lvMore" aria-expanded="false">Zadání, cíle a terén</button>
+  <!-- M5: ctyri knofliky mely ctyri ruzne sirky (174 / 294 / 151 / 107 px)
+       v boxu 362 px. Hlavni akce je ted plna sirka, dva tiche stoji vedle
+       sebe v jedne rade a maji stejnou vysku. -->
+  <div class="lvBtnRow">
+    <button class="lvMore" id="lvMore" aria-expanded="false">Zadání, cíle a terén</button>
+    <button class="big ghost" id="lvClose">Zpět na mapu</button>
+  </div>
   <div id="lvDetail" class="hide">
     <div id="lvBrief" class="lvBrief"></div>
     <div class="secTitle" style="margin:14px 0 8px">Cíle území</div>
@@ -10528,7 +10838,6 @@ html[data-theme="hc"] #vbPane0 .vbBar{border-bottom:0}
     <div class="secTitle" style="margin:14px 0 8px">Terén</div>
     <div id="lvTer" class="terLeg"></div>
   </div>
-  <button class="big ghost" id="lvClose">Zpět na mapu</button>
 </div></div>
 
 <!-- ============ DETAIL PŘÍSTROJE ============ -->
@@ -19409,8 +19718,7 @@ function skNahled(k,id,px,l){
    3 za zkousku na plny pocet a 1 s pravdepodobnosti 6 % za vyhru. */
 const MENY={
  res:{n:'Výzkum',jed:'výzkumu',ak:'var(--brass)',
-  ik:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/>'
-    +'<path d="M12 6.6v10.8M9.2 9.4h5.6M9.2 14.6h5.6"/></svg>',
+  ik:'<svg class="ikS" viewBox="0 0 24 24"><use href="#ikVyzkum"/></svg>',
   co:'Běžná provozní měna. Sype se z každého měření a zase se utrácí — '
     +'je jí hodně a je pořád v pohybu.',
   odkud:['za dokončené etapy a území','z beden a z bezplatné bedny v Laborce',
@@ -19419,8 +19727,7 @@ const MENY={
     +'a příslušenství do sestavy.',
   hod:function(){ return SAVE.res||0; }},
  tr:{n:'Poháry',jed:'pohárů',ak:'var(--sky)',
-  ik:'<svg viewBox="0 0 24 24"><path d="M6.8 3.8h10.4v5a5.2 5.2 0 0 1-10.4 0z"/>'
-    +'<path d="M9 20h6M12 14.2v5.8"/></svg>',
+  ik:'<svg class="ikS" viewBox="0 0 24 24"><use href="#ikPohar"/></svg>',
   co:'Ukazatel postupu, ne měna — poháry se neutrácejí. Ukazují, jak daleko '
     +'jsi došel, a za prohru jich pár ubyde.',
   odkud:['za dokončené měření','za mistrovská a nekonečná měření'],
@@ -19428,8 +19735,7 @@ const MENY={
     +'i celé části hry.',
   hod:function(){ return SAVE.tr||0; }},
  mez:{n:'Mezníky',jed:'mezníků',ak:'var(--laser)',
-  ik:'<svg viewBox="0 0 24 24"><path d="M12 3.4 19 7v10l-7 3.6L5 17V7z"/>'
-    +'<path d="M9.4 8.6h5.2M12 6v5.2"/></svg>',
+  ik:'<svg class="ikS" viewBox="0 0 24 24"><use href="#ikMeznik"/></svg>',
   co:'Nejvzácnější měna ve hře. Nedají se koupit ani nepadají z beden — '
     +'jsou jen za odvedený výkon v terénu.',
   odkud:['<b>3</b> za tři hvězdy na území — jednou za každé území',
@@ -19650,7 +19956,7 @@ function initShopTabs(){
    [...tabs.children].forEach(x=>x.classList.toggle('on',x===b));
    const mez=b.dataset.t==='mez';
    if(!mez)skHraStop();   // nahled ve hre bezi jen na zalozce Za mezniky
-   {const tp=$('shopMezTip'); if(tp)tp.classList.toggle('hide',mez);}
+   {const tp=$('shopMezTip'); if(tp)tp.classList.toggle('hide',!mez);}
    $('shopMez').classList.toggle('hide',!mez);
    $('shopGrid').classList.toggle('hide',mez);
    $('shopNadpis').classList.toggle('hide',mez);
@@ -19724,8 +20030,11 @@ function renderShop(){
    const btn=document.createElement('button');
    const nemam=!bought&&SAVE.res<o.price;
    btn.className='shBuy'+(bought?' koupeno':'')+(nemam?' nemam':'');
+   // M3: cena se plati VYZKUMEM, takze u ni stoji znak vyzkumu - drive to
+   // byl holy zlaty kotouc, ktery nesel spojit s bankou v horni liste.
    btn.innerHTML=bought?'<span class="stav">KOUPENO</span>'
-     :('<span class="cena">'+o.price+'</span> <i>výzkumu</i>');
+     :('<svg class="ikS ikMena" viewBox="0 0 24 24" aria-hidden="true"><use href="#ikVyzkum"/></svg>'
+       +'<span class="cena">'+o.price+'</span> <i>výzkumu</i>');
    btn.disabled=bought||nemam;
    btn.onclick=()=>buyOffer(o);
    d.appendChild(btn);
@@ -19978,17 +20287,31 @@ function odstupOdList(){
 // Vysku pageru rid podle PRAVE zobrazene stranky. #pagerWrap ma overflow:hidden,
 // takze zastarala vyska by useknula konec stranky - proto se hlida i pri zmene obsahu.
 let __ro=null;
+/* M4: stranka Teren je JEDINA, ktera se nesmi rolovat - mapa sveta je
+   sama roler. Drive to bylo dvoji rolovani (okno mapy 352 px uvnitr
+   stranky, ktera se rolovala taky) a videt byla dve az tri uzemi.
+   Vyska se pocita z toho, co stranku kryje: horni lista a spodni deska. */
+function terenVyska(){
+ const tb=$('topBar'), pd=$('podDeska');
+ if(!tb||!pd)return;
+ const h=Math.round(innerHeight
+   - tb.getBoundingClientRect().height
+   - pd.getBoundingClientRect().height);
+ document.documentElement.style.setProperty('--terenH',Math.max(320,h)+'px');
+}
 function srovnejVysku(){
  const pg=$('pager'); if(!pg)return;
  const s=pg.children[PAGE];
  if(!s)return;
- // konec stranky nesmi zmizet pod plovoucimi listami
- s.style.paddingBottom=odstupOdList()+'px';
+ terenVyska();
+ // konec stranky nesmi zmizet pod plovoucimi listami; Teren zadny konec
+ // pod listami nema - jeho vyska je presne to, co listy nekryji
+ s.style.paddingBottom=(s.id==='pgTeren'?6:odstupOdList())+'px';
  pg.style.height=s.scrollHeight+'px';
  if(window.ResizeObserver){
    if(!__ro)__ro=new ResizeObserver(()=>{
      const cur=$('pager'), akt=cur&&cur.children[PAGE];
-     if(akt){ akt.style.paddingBottom=odstupOdList()+'px';
+     if(akt){ akt.style.paddingBottom=(akt.id==='pgTeren'?6:odstupOdList())+'px';
               cur.style.height=akt.scrollHeight+'px'; }
    });
    __ro.disconnect();
@@ -20160,6 +20483,30 @@ function renderCountdowns(){
    b2.textContent='zbývá '+dní+(dní===1?' den':(dní<5?' dny':' dní'));
  }
  const c=$('dailyTimer'); if(c)c.textContent='do půlnoci '+t;
+}
+/* M4: lista, za kterou je slozeny panel "Co ted". Obsah panelu dela
+   renderTodo(), tahle funkce se ho ani nedotkne - jen spocita polozky
+   a napise je na listu. Kdyz neni co delat, lista zmizi. */
+function todoLista(){
+ const bar=$('todoTrig'), pan=$('tUkolyPanel');
+ if(!bar||!pan)return;
+ const box=$('todoBox');
+ let k=box?box.querySelectorAll('.todoI').length:0;
+ const dj=$('dailyBox');
+ if(dj&&!dj.classList.contains('done')&&dj.children.length)k++;
+ const c=$('todoTrigN'); if(c)c.textContent=k?String(k):'';
+ bar.classList.toggle('prazdno',!k);
+ if(!k&&pan.classList.contains('on')){
+   pan.classList.remove('on'); bar.setAttribute('aria-expanded','false');
+ }
+}
+function todoPrepni(){
+ const bar=$('todoTrig'), pan=$('tUkolyPanel');
+ if(!bar||!pan)return;
+ const on=!pan.classList.contains('on');
+ pan.classList.toggle('on',on);
+ bar.setAttribute('aria-expanded',on?'true':'false');
+ try{ snd('ui'); }catch(e){}
 }
 function renderTodo(){
  const el=$('todoBox'); if(!el)return;
@@ -21091,7 +21438,10 @@ function openTinfo(k){
     '</div>';
    const bt=document.createElement('button');
    bt.type='button';bt.className='big key tiUpBtn';
-   bt.innerHTML='VYLEPŠIT NA ÚROVEŇ '+(lv+1);
+   bt.innerHTML=lze?('VYLEPŠIT NA ÚROVEŇ '+(lv+1))
+     :('VYLEPŠIT · chybí '+
+       [chybiK?(chybiK+cardWord(chybiK)):'',
+        chybiV?(chybiV+' výzkumu'):''].filter(Boolean).join(' a '));
    bt.disabled=!lze;
    bt.onclick=function(){
      if(!vylepsiPristroj(k))return;
@@ -21905,6 +22255,7 @@ function renderTitle(){
  renderQuests();
  renderStarRew();
  renderTodo();
+ todoLista();
  renderBossRush();
  renderSprint();
  renderAch();
@@ -22287,14 +22638,16 @@ function renderAch(){
 /* ==================== 40 KARIERA: spolecne pomucky ==================== */
 function karSvg(d){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';}
 const KAR_SVG={
- res:'<circle cx="12" cy="12" r="8.2"/><path d="M12 6.6v10.8M9.2 9.4h5.6M9.2 14.6h5.6"/>',
+ // M3: vyzkum i pohar berou znak ze spolecneho zdroje (#ikony), aby to
+ // byl TYZ znak jako v horni liste, v obchode a v okne Meny.
+ res:'<use href="#ikVyzkum"/>',
  cards:'<rect x="3.2" y="6.4" width="10.6" height="14" rx="2.2"/><path d="M7.6 4.2h9.2a2.2 2.2 0 0 1 2.2 2.2v11.4"/>',
  abil:'<path d="M12 3.2l2.4 5.1 5.6.7-4.1 3.8 1.1 5.5L12 15.5l-5 2.8 1.1-5.5-4.1-3.8 5.6-.7z"/>',
  acc:'<path d="M4.6 8.2h14.8l-1.3 11A2.2 2.2 0 0 1 15.9 21H8.1a2.2 2.2 0 0 1-2.2-1.8z"/><path d="M8.8 8.6V6.4a3.2 3.2 0 0 1 6.4 0v2.2"/>',
  lock:'<rect x="5" y="10.4" width="14" height="9.8" rx="2.6"/><path d="M8.2 10.4V7.3a3.8 3.8 0 0 1 7.6 0v3.1"/>',
  ok:'<path d="M4.6 12.6l4.8 4.8L19.4 7"/>',
  tower:'<path d="M12 3.2v4.6M12 7.8l-6.2 4.2L12 16.2l6.2-4.2z"/><path d="M9 20.4h6M12 16.2v4.2"/>',
- pohar:'<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3M10 14h4M9 20h6M12 14v6"/>'
+ pohar:'<use href="#ikPohar"/>'
 };
 /* Odmena rozlozena na dlazdice: {t,ak,nad,pod}. Popisek nad je to hlavni,
    pod je vysvetleni - drive to byla jedina zkratka typu "8 karet" v 11 px. */
@@ -22769,14 +23122,45 @@ function razitkujOdemceni(){
  ORD.forEach(k=>{ if(hasType(k)&&!SAVE.odemkl[k]){ SAVE.odemkl[k]=++n; zmena=true; } });
  if(zmena)save();
 }
+// M9: volby razeni sbirky. Drive to byla rada peti knofliku, ktera se
+// lamala na dva radky; ted je to jeden knoflik + list (tyz #pickTower,
+// jaky ma vyber rezimu na Terenu).
+const COLL_RAZ=[
+ {s:'def',n:'Výchozí',   d:'vlastněné, pak odemčené, pak zamčené'},
+ {s:'rar',n:'Vzácnost',  d:'od legendárních dolů'},
+ {s:'lvl',n:'Úroveň',    d:'nejvíc vylepšené nahoře'},
+ {s:'new',n:'Nově odemčené', d:'poslední přírůstky do sbírky nahoře'},
+ {s:'use',n:'Nejvíc hraju',  d:'podle toho, co nosíš do terénu'}
+];
+function collRazNazev(){
+ const s=window.__collSort||'def';
+ const x=COLL_RAZ.find(y=>y.s===s);
+ return x?x.n:'Výchozí';
+}
 function initCollSort(){
- const row=$('collSort'); if(!row||row.dataset.init)return;
- row.dataset.init='1';
- [...row.children].forEach(b=>b.onclick=()=>{
-   window.__collSort=b.dataset.s;
-   [...row.children].forEach(x=>x.classList.toggle('on',x===b));
-   snd('ui');renderColl();
+ const b=$('collSortBtn'); if(!b||b.dataset.init)return;
+ b.dataset.init='1';
+ b.onclick=()=>{ snd('ui'); openCollRaz(); };
+}
+function openCollRaz(){
+ const L=$('ptList'); if(!L)return;
+ L.innerHTML='';
+ ptNadpis('Řadit sbírku');
+ const lead=$('ptLead');
+ if(lead)lead.textContent='Určuje pořadí dlaždic. Zamčené přístroje jsou vždycky až na konci.';
+ ptSloupec();
+ const akt=window.__collSort||'def';
+ COLL_RAZ.forEach(o=>{
+   const d=document.createElement('div');
+   d.className='ptrow'+(o.s===akt?' on':'');
+   d.style.setProperty('--ak','var(--sky)');
+   d.innerHTML='<div class="pi"><div class="pn2">'+o.n+'</div>'+
+     '<div class="pd2">'+o.d+'</div></div>';
+   d.onclick=()=>{ window.__collSort=o.s; snd('ui');
+     $('pickTower').classList.remove('on'); renderColl(); };
+   L.appendChild(d);
  });
+ $('pickTower').classList.add('on');
 }
 function collPorovnej(a,b){
  const s=window.__collSort||'def';
@@ -22806,6 +23190,7 @@ function renderColl(){
  {const ch=$('collHint');
   if(ch){const mam=ORD.filter(k=>hasType(k)).length;
     ch.textContent=mam+' z '+ORD.length;}}
+ {const sn=$('collSortN'); if(sn)sn.textContent=collRazNazev();}
  razitkujOdemceni();
  const grid=document.createElement('div');grid.className='cgrid';
  const order=ORD.slice().sort((a,b)=>{
@@ -22837,6 +23222,8 @@ function renderColl(){
    const cv=mini(k,Math.min(3,lv?Math.min(3,lv-1):0),88);
    art.appendChild(cv);
    if(lv){const b2=document.createElement('div');b2.className='rlev';b2.textContent='úr. '+lv;art.appendChild(b2);}
+   // M9: odznak lezel pres horni okraj kroužku s ikonou (13 px). Ma ted
+   // v horni casti dlazdice vlastni pruh, do ktereho ikona nesaha.
    if(inDeck){const b3=document.createElement('div');b3.className='rdeck';b3.textContent='V SESTAVĚ';art.appendChild(b3);}
    const pk=(SAVE.perk&&SAVE.perk[k]||[]).length;
    if(pk){const b5=document.createElement('div');b5.className='rperk';b5.textContent='◆'.repeat(pk);art.appendChild(b5);}
@@ -22847,12 +23234,22 @@ function renderColl(){
    card.appendChild(art);
    const nm=document.createElement('div');nm.className='rnm';nm.textContent=T[k].n[0];
    card.appendChild(nm);
-   // pruh karet
-   const barw=document.createElement('div');barw.className='rbar';
-   const pct=cost?Math.min(100,have/cost.cards*100):100;
-   barw.innerHTML='<i style="width:'+pct+'%"></i><span>'+
-     (unlocked?(cost?have+'/'+cost.cards:'MAX'):towerOdkudKratce(k))+'</span>';
-   card.appendChild(barw);
+   // Pruh karet - jen u ODEMCENEHO pristroje, protoze jen tam neco meri.
+   // M2: u zamcene dlazdice v nem drive stala PODMINKA ODEMCENI, jenze
+   // prouzek je 85 px siroky a ma nowrap+ellipsis, takze se z 26 dlazdic
+   // u 17 usekla na "uzemi ne...", "450 poh...", "3200 po...". Podminka
+   // ted stoji pod nazvem jako stitek, ktery se smi zalomit na dva radky.
+   if(unlocked){
+     const barw=document.createElement('div');barw.className='rbar';
+     const pct=cost?Math.min(100,have/cost.cards*100):100;
+     barw.innerHTML='<i style="width:'+pct+'%"></i><span>'+
+       (cost?have+'/'+cost.cards:'MAX')+'</span>';
+     card.appendChild(barw);
+   } else {
+     const lk=document.createElement('div');lk.className='rOdkud';
+     lk.textContent=towerOdkudKratce(k);
+     card.appendChild(lk);
+   }
    const btn=document.createElement('button');
    if(!unlocked){btn.textContent='ZAMČENO';btn.disabled=true;}
    else if(!cost){btn.textContent='MAX';btn.disabled=true;}
@@ -22874,7 +23271,7 @@ function renderColl(){
  });
  b.appendChild(grid);
  const note=document.createElement('div');
- note.style.cssText='font-size:11px;color:var(--dim);margin-top:12px;line-height:1.5';
+ note.style.cssText='font-size:calc(12px*var(--fs,1));color:var(--t3);margin-top:12px;line-height:1.5';
  note.textContent='Každá úroveň přidá přístroji +8 % poškození a +4 % dosahu ve všech dalších měřeních.';
  b.appendChild(note);
  renderAcc();
@@ -23952,6 +24349,8 @@ $('rzInfoX').onclick=function(){$('rezimInfo').classList.remove('on');};
 $('rzInfoClose').onclick=function(){$('rezimInfo').classList.remove('on');};
 ozdobRezimy();
 $('lvClose').onclick=()=>{$('lvl').classList.remove('on');};
+$('lvX').onclick=()=>{snd('ui');$('lvl').classList.remove('on');};
+{const tt=$('todoTrig'); if(tt)tt.onclick=todoPrepni;}
 $('kaX').onclick=kaZavri;
 $('kaClose').onclick=kaZavri;
 $('kaGo').onclick=()=>{ if(kaAkce)kaAkce(); };
