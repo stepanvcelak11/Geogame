@@ -10732,7 +10732,7 @@ function goalDone(id){
 const TER={
  rock :{n:'Skála',       c:'#9a8f86', build:false, note:'Sem se stavět nedá.'},
  water:{n:'Vodní plocha',c:'#63bfe2', build:'water',note:'Jen sonar, dron, batoh nebo meteostanice na plovoucí plošině.'},
- wood :{n:'Les',         c:'#4f9c4a', build:true,  rng:-.15, note:'Zákryt: přístroje tu mají o 15 % kratší dosah.'},
+ wood :{n:'Les',         c:'#4f9c4a', build:true,  rng:-.15, note:'Porost: přístroje tu mají o 15 % kratší dosah.'},
  hill :{n:'Vyvýšenina',  c:'#c9a45c', build:true,  rng:.20,  note:'Rozhled: přístroje tu mají o 20 % delší dosah.'}
 };
 const WATEROK=['sonar','photo','backpack','meteo'];
@@ -11222,7 +11222,7 @@ const T={
  lidar:{n:['Laserový skener','Mobilní mapování','Panoramatický skener','Skenovací věž'],c:'#ff4d7e',cost:22,kind:'splash',
    dmg:[1.4,3,6.2,13.4],rng:[2.2,2.5,2.7,3.1],rate:[.8,.85,.95,1.05],spl:[1.15,1.45,1.8,2.25],
    d:'Naskenuje celý profil naráz. Plošné poškození kolem cíle.'},
- nivel:{n:['Nivelační přístroj','Digitální nivelák','Hydrostatická síť','Gravimetrická síť'],c:'#a9e08c',cost:13,kind:'slow',
+ nivel:{n:['Nivelační přístroj','Digitální nivelák','Přesná nivelace','Nivelační síť'],c:'#a9e08c',cost:13,kind:'slow',
    // NIVELAK byl nejsilnejsi pristroj hry, a pritom je druhy nejlevnejsi a
    // ma ho kazdy od zacatku v sestave. ZMERENO trikrat nezavisle: sam vyhral
    // 8 z 8 nejtezsich uzemi se stoprocentni presnosti (InSAR za 32 dal 87 %,
@@ -11315,14 +11315,14 @@ const T={
    c:'#c79fe0',cost:16,kind:'boost',
    dmg:[0,0,0,0],rng:[1.5,1.8,2.2,2.5],br:[.10,.15,.20,.26],bt:[.14,.20,.28,.38],rate:[1,1,1,1],
    d:'Neútočí. Sousedním stanoviskům přidá dosah a hlavně rychlost měření.'},
- insar:{n:['Radarový snímek','Interferometrie','Diferenční InSAR','Družicový monitoring'],
+ insar:{n:['Radarový snímek','Radarová dvojice','Diferenční InSAR','Družicový monitoring'],
    c:'#ff6fb1',cost:32,kind:'global',
    dmg:[2.2,4.7,9.8,20.4],rng:[99,99,99,99],rate:[.29,.32,.36,.41],
    d:'Nezaměřuje. V pravidelných pulzech zasáhne úplně všechno na mapě a prochází pancířem.'},
  basecal:{n:['Komparační základna','Kalibrovaná základna','Etalonová základna','Státní etalon'],
    c:'#ffd24a',cost:30,kind:'boostall',
    dmg:[0,0,0,0],rng:[99,99,99,99],ball:[.10,.15,.21,.28],rate:[1,1,1,1],
-   d:'Neútočí. Zpřesní úplně všechna stanoviska na mapě bez ohledu na vzdálenost.'},
+   d:'Neútočí. Zesílí úplně všechna stanoviska na mapě bez ohledu na vzdálenost.'},
  penta:{n:['Pentagonální hranol','Dvojitý pentagon','Pentagonová souprava','Ortogonální stanice'],
    c:'#ff8f2e',cost:23,kind:'ortho',
    dmg:[2.3,4.9,10.2,21],rng:[3.0,3.4,3.8,4.3],rate:[.85,.9,1.0,1.1],
@@ -11369,7 +11369,7 @@ const E={
  err  :{n:'Chyba odečtu',hp:3.6,sp:1.15,ar:0,b:3,dm:3,c:'#9aa7ad',r:.30},
  refr :{n:'Refrakce',hp:2.4,sp:2.25,ar:0,b:3,dm:3,c:'#5aa9ff',r:.26},
  subs :{n:'Sedání bodu',hp:15,sp:.72,ar:3,b:6,dm:6,c:'#c08a5e',r:.38},
- multi:{n:'Multipath',hp:7.8,sp:1.35,ar:6,b:5,dm:5,c:'#b07bff',r:.32},
+ multi:{n:'Odražený signál',hp:7.8,sp:1.35,ar:6,b:5,dm:5,c:'#b07bff',r:.32},
  noise:{n:'Šum měření',hp:1.5,sp:1.55,ar:0,b:1,dm:1,c:'#e8f1ec',r:.22},
  blun :{n:'Hrubá chyba',hp:9.5,sp:1.0,ar:1,b:7,dm:5,c:'#ff8c2e',r:.36,split:3,
    note:'Po zničení se rozpadne na tři šumy.'},
@@ -11377,7 +11377,7 @@ const E={
    note:'Umlčí stanoviska ve svém okolí. Sundej ji z dálky.'},
  drift:{n:'Drift bodu',hp:13.5,sp:.85,ar:1,b:8,dm:5,c:'#5fd39b',r:.34,regen:.04,
    note:'Regeneruje, dokud není zpomalený.'},
- heal :{n:'Dorovnávaný posun',hp:12,sp:.9,ar:2,b:9,dm:5,c:'#ffe066',r:.34,heal:1,
+ heal :{n:'Rozetřená chyba',hp:12,sp:.9,ar:2,b:9,dm:5,c:'#ffe066',r:.34,heal:1,
    note:'Léčí okolní rušivé vlivy. Zlikviduj ho dřív než ostatní.'},
  cover:{n:'Zákryt',hp:17,sp:.8,ar:4,b:10,dm:6,c:'#39c2c9',r:.38,shield:.55,
    note:'Kryje okolí: sousedé dostávají o 55 % míň. Sundej ho první.'},
@@ -11405,14 +11405,14 @@ const CARDS=[
  {id:'gnss_inc',n:'Servisní smlouva',   d:'Každá GNSS stanice +6 rozpočtu za etapu',max:3,r:'r'},
  {id:'photo_fly',n:'Výkonné baterie',   d:'Drony +25 % doletu a +15 % rychlosti',max:3,r:'r'},
  {id:'pierce',  n:'Odrazné fólie',      d:'Dálkoměry prorazí 3 body pancíře',max:3,r:'r'},
- {id:'armor',   n:'Kalibrovaná měřidla',d:'Všechny cíle mají o 2 nižší pancíř',max:4,r:'r'},
+ {id:'armor',   n:'Ověřená měřidla',   d:'Všechny cíle mají o 2 nižší pancíř',max:4,r:'r'},
  {id:'ability_cd',n:'Záložní akumulátory',d:'Každá metoda unese o 1 náboj víc',max:3,r:'r'},
  {id:'refund',  n:'Výkup přístrojů',    d:'Zrušení stanoviska vrátí plnou cenu',max:1,r:'r'},
  {id:'slot',    n:'Větší sklad',        d:'+1 nabídka přístrojů ve skladu',max:2,r:'r'},
  {id:'leak',    n:'Záložní značky',     d:'Průnik k nulovému bodu bolí o 30 % míň',max:3,r:'r'},
  // epické
  {id:'swarm',   n:'Hromadné zpracování',d:'+30 % poškození proti šumu a rojům',max:3,r:'e'},
- {id:'boss',    n:'Rozbor systematiky', d:'+22 % poškození proti bossům',max:3,r:'e'},
+ {id:'boss',    n:'Zaměřeno na bosse',  d:'+22 % poškození proti bossům',max:3,r:'e'},
  {id:'armorbust',n:'Průrazné metody',   d:'+25 % poškození proti pancéřovaným',max:3,r:'e'},
  {id:'markall', n:'Průběžné vytyčení',  d:'Cíle jsou trvale označené (+10 %)',max:2,r:'e'},
  {id:'fwd',w:4,     n:'Předsunuté stanoviště',d:'Hned uvolní dvě místa u trasy',max:2,r:'r'},
@@ -11603,7 +11603,7 @@ const TIPS=[
  'Zadej do totální stanice teplotu a tlak. Bez korekce máš na kilometru chybu kolem 1 mm na každý stupeň.',
  'Plný úhel má 400 gonů. Pravý úhel je tedy rovných 100 gonů.',
  'Výšky v Česku jsou v systému Balt po vyrovnání — asi o 0,4 m nižší než jadranské.',
- 'S-JTSK má osu X k jihu a Y k západu, proto jsou souřadnice v Česku záporné.',
+ 'S-JTSK má osu X k jihu a Y k západu, takže souřadnice v Česku vycházejí kladné — záporné znaménko přidávají až GIS programy.',
  'RTK dá polohu za pár sekund s přesností 1–3 cm. Statické měření po hodinách i milimetry.',
  'Dron létej s podélným překrytem snímků 70–80 %, jinak model nedrží pohromadě.',
  'Vlícovací body rozmísti po celé lokalitě, ne jen doprostřed — jinak se model prohne.',
@@ -12172,7 +12172,7 @@ const GEN={
  g_vet:  {n:'Školení obsluhy',   d:'Zkušenost stanoviska roste dvakrát rychleji.'},
  g_first:{n:'První záměra',      d:'+40 % poškození cíli s plnou odolností.'},
  g_low:  {n:'Dorážka',           d:'+50 % poškození cíli pod 30 % odolnosti.'},
- g_boss: {n:'Rozbor systematiky',d:'+35 % poškození bossům.'}
+ g_boss: {n:'Systematika bossů',d:'+35 % poškození bossům.'}
  ,
  // Aurove uzly. Do v102 dostavalo pet druhu, ktere NEUTOCI (Termokamera,
  // GNSS, Hranol, Meteostanice, Etalon), ve 3. a 4. patre uzly na vlastni
@@ -12252,7 +12252,7 @@ const PERKS={
          [{id:'wide',n:'Panoramatický záběr',d:'Plocha zásahu o 60 % větší.'},
           {id:'splashslow',n:'Prachový mrak',d:'Zasažení jsou o 35 % pomalejší.'}]],
  slow:[[{id:'freeze',n:'Zmrazení',d:'15 % šance cíl na 1 s úplně zastavit.'},
-        {id:'slowall',n:'Hydrostatická síť',d:'Zpomalení je o 60 % silnější.'}],
+        {id:'slowall',n:'Spojité nádoby',d:'Zpomalení je o 60 % silnější.'}],
        [{id:'slowdmg',n:'Tvrdé srovnání',d:'Zpomalené cíle dostávají o 40 % víc.'},
         {id:'slowwide',n:'Dlouhá záměra',d:'Dosah pulzu o 50 % větší.'}]],
  mortar:[[{id:'frag',n:'Tříštivá střela',d:'Po dopadu vybuchne druhá menší vlna.'},
@@ -12615,10 +12615,10 @@ const ACH=[
  {id:'own19', n:'Kompletní výbava',    d:'Vlastni všechny dostupné přístroje',
   get g(){ return ziskatelneTypy().length; },
   f:()=>ziskatelneTypy().filter(ownsType).length, r:{crate:'legend',res:300}},
- {id:'lvl5',  n:'Kalibrovaná řada',    d:'Dostaň přístroj na úroveň 5',  g:5,  f:()=>Math.max(0,...ORD.map(k=>SAVE.lvl[k]||0)), r:{res:250,cards:6}},
+ {id:'lvl5',  n:'Pátá úroveň',          d:'Dostaň přístroj na úroveň 5',  g:5,  f:()=>Math.max(0,...ORD.map(k=>SAVE.lvl[k]||0)), r:{res:250,cards:6}},
  // Trvaly citac; `chalHist` je jen sedmidenni okno a postup z nej padal zpet.
  // Rozehrane hry o nic neprijdou - bere se to vyssi z obou.
- {id:'chal3', n:'Výzvař',              d:'Dokonči 3 denní výzvy',        g:3,
+ {id:'chal3', n:'Vyzývatel',            d:'Dokonči 3 denní výzvy',        g:3,
   f:()=>Math.max(SAVE.chalWins||0,(SAVE.chalHist||[]).filter(h=>h.ok).length), r:{crate:'epic'}},
  {id:'star20',n:'Sběratel hvězd',   d:'Nasbírej 20 hvězd',            g:20, f:()=>starsTotal(), r:{crate:'epic',res:260}},
  {id:'perk5', n:'Vývojář',          d:'Zvol 5 větví vývoje',          g:5,
@@ -12631,7 +12631,7 @@ const ACH=[
   f:()=>Math.max(0,...(SAVE.endless||[0])), r:{cards:10,res:300}},
  {id:'quiz',  n:'Zkoušený',         d:'Zvládni zkoušku 5 dní',        g:5,
   f:()=>SAVE.quizDays||0, r:{res:220,cards:5}},
- {id:'lvl8',  n:'Etalon',           d:'Dostaň přístroj na úroveň 8',  g:8,
+ {id:'lvl8',  n:'Osmá úroveň',      d:'Dostaň přístroj na úroveň 8',  g:8,
   f:()=>Math.max(0,...ORD.map(k=>SAVE.lvl[k]||0)), r:{crate:'legend',res:400}},
  {id:'kill20k',n:'Vyrovnaná síť',   d:'Znič 20 000 rušivých vlivů',   g:20000,
   f:()=>SAVE.stats.kills, r:{crate:'legend',cards:12}},
@@ -12746,7 +12746,7 @@ function questName(q){
 }
 
 const SPEC={
- 4:[{id:'dmg',n:'Přesnost',d:'+15 % poškození'},{id:'rng',n:'Rozhled',d:'+15 % dosahu'}],
+ 4:[{id:'dmg',n:'Tvrdá rána',d:'+15 % poškození'},{id:'rng',n:'Rozhled',d:'+15 % dosahu'}],
  8:[{id:'rate',n:'Kadence',d:'+15 % rychlosti měření'},{id:'crit',n:'Opakovaná měření',d:'+10 % šance na dvojnásobek'}]
 };
 function specHas(k,id){ return (SAVE.spec&&SAVE.spec[k]||[]).indexOf(id)>=0; }
@@ -12861,7 +12861,7 @@ const META=[
  // --- zaklad mereni ---
  {id:'budget',n:'Provozní záloha',d:'+6 startovního rozpočtu',max:10,cost:labCena(LAB_B)},
  {id:'cap',n:'Stálý tým',d:'+1 základní kapacita stanovisek za dvě úrovně',max:10,cost:labCena(LAB_A)},
- {id:'prec',n:'Etalon',d:'+2,5 % poškození po celé měření',max:10,cost:labCena(LAB_A)},
+ {id:'prec',n:'Tvrdší rána',d:'+2,5 % poškození po celé měření',max:10,cost:labCena(LAB_A)},
  {id:'rng',n:'Dalekohledy',d:'+2 % dosahu všech stanovisek',max:10,cost:labCena(LAB_B)},
  {id:'rate',n:'Servisní prohlídky',d:'+2 % rychlosti měření',max:10,cost:labCena(LAB_A)},
  {id:'crit',n:'Měření ve dvou polohách',d:'+1,5 % šance na dvojnásobnou ránu',max:10,cost:labCena(LAB_A)},
@@ -17659,7 +17659,7 @@ const EINFO={
    f:'Refrakce ruší asi sedminu vlivu zakřivení Země — proto se obě opravy zavádějí společně. U trigonometrické výšky dělají na kilometru přes 6 cm.'},
  subs:{p:'Sedání bodu je svislý pohyb stabilizace: měřická značka klesá s podložím, s násypem nebo se stavbou. Zjišťuje se opakovanou nivelací v epochách a porovnáním s bodem mimo ovlivněnou oblast.',
    f:'Aby se dalo poznat sedání od chyby měření, musí být přesnost aspoň třikrát lepší než sledovaný posun. Proto se pro monitoring používá přesná nivelace, ne GNSS.'},
- multi:{p:'Multipath je odražený signál družice — od fasády, auta, plechové střechy nebo vodní hladiny. Přijímač dostane tentýž signál dvakrát, po delší dráze, a poloha se posune. Je to hlavní důvod, proč se v zastavěné části RTK bod měří dvakrát v jinou denní dobu.',
+ multi:{p:'Odražený signál (multipath) je signál družice — od fasády, auta, plechové střechy nebo vodní hladiny. Přijímač dostane tentýž signál dvakrát, po delší dráze, a poloha se posune. Je to hlavní důvod, proč se v zastavěné části RTK bod měří dvakrát v jinou denní dobu.',
    f:'Odražený signál se dá potlačit choke-ring anténou, delší observací a hlavně tím, že se anténa nedává těsně ke zdi.'},
  noise:{p:'Šum měření je náhodná chyba: drobné výkyvy s nulovým průměrem, které mají normální rozdělení. Nedá se odstranit, ale dá se zmenšit — průměr z n měření má chybu menší v poměru odmocniny z n.',
    f:'Čtyřnásobek měření sníží náhodnou chybu jen na polovinu. Proto se u přesných prací vyplatí spíš lepší metoda než víc opakování.'},
@@ -17669,7 +17669,7 @@ const EINFO={
    f:'Levné rušičky do zapalovače, kterými řidiči vyřazují sledování vozidel, spolehlivě položí i geodetický přijímač v okolí několika desítek metrů.'},
  drift:{p:'Drift bodu je pomalý plynulý posun — sesuv svahu, poddolované území, dotvarování konstrukce. Na rozdíl od sedání se často projevuje i vodorovně a odhalí ho až porovnání epoch nebo družicová interferometrie.',
    f:'InSAR umí zachytit pokles i o pár milimetrů za rok na ploše stovek kilometrů čtverečních, aniž by kdokoli vyjel do terénu.'},
- heal:{p:'Dorovnávaný posun je chyba, kterou vyrovnání „rozpustí" do sítě: místo aby se ukázala na jednom bodě, rozdělí se po malých kouscích do všech okolních. Síť pak vypadá bezvadně a přitom je celá pokřivená.',
+ heal:{p:'Rozetřená chyba je odchylka, kterou vyrovnání „rozpustí" do sítě: místo aby se ukázala na jednom bodě, rozdělí se po malých kouscích do všech okolních. Síť pak vypadá bezvadně a přitom je celá pokřivená.',
    f:'Proto se před vyrovnáním hledají odlehlá měření a teprve pak se počítá. Vyrovnání není nástroj na schování chyby, ale na rozdělení nevyhnutelných nepřesností.'},
  cover:{p:'Zákryt je překážka v záměře — budova, porost, hřeben. U optiky znamená nutnost pomocného bodu nebo rajónu, u GNSS zaclonění oblohy: čím menší kus nebe je vidět, tím horší je geometrie družic a tím větší PDOP.',
    f:'Pod korunami stromů klesne počet viditelných družic natolik, že RTK nedrží fix. Klasické měření z totální stanice je tam často jediná cesta.'},
@@ -18476,7 +18476,7 @@ function ui(){
        (used?' — tohle je '+(used+1)+'. v tomto měření.':'.')))+'</s>';
    row.appendChild(tt);
    const b3=document.createElement('button');
-   b3.textContent=behem?'po etapě':(cost+' v.');
+   b3.textContent=behem?'po etapě':String(cost);
    b3.style.color='var(--moss)';
    b3.disabled=behem||S.cr<cost;
    b3.onclick=()=>{
@@ -18508,7 +18508,7 @@ function ui(){
      tt.innerHTML='Kalibrovat vše<s>Zvýší kalibraci u '+list.length+' stanovisek naráz.</s>';
      row.appendChild(tt);
      const bb=document.createElement('button');
-     bb.textContent=total+' v.';bb.style.color='var(--brass)';
+     bb.textContent=String(total);bb.style.color='var(--brass)';
      bb.disabled=S.cr<total;
      bb.onclick=()=>{
        let n=0;
@@ -18533,7 +18533,7 @@ function ui(){
    for(let i=0;i<u.max;i++){const p=document.createElement('div');p.className='pip'+(i<lv?' f':'');pips.appendChild(p);}
    tt.appendChild(pips);
    const b=document.createElement('button');
-   b.textContent=lv>=u.max?'MAX':cost+' v.';
+   b.textContent=lv>=u.max?'MAX':String(cost);
    b.disabled=lv>=u.max||S.cr<cost;
    b.onclick=()=>{if(S.cr<cost)return;S.cr-=cost;S.net[u.id]++;recalcBuffs();ui();};
    row.append(tt,b);nb.appendChild(row);
@@ -19068,7 +19068,7 @@ const MODES=[
   ic:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M9.5 2h5"/></svg>',
   dd:'Osm zrychlených etap, dvojnásobná dotace za etapu a měří se čas. '+
      'Za první dokončení dne vzácná bedna.'},
- {id:'boss',  n:'Bossová smršť', d:'Deset etap plných bossů', c:'tape', odm:'legendární bedna · 1× denně',
+ {id:'boss',  n:'Samí bossové', d:'Deset etap plných bossů', c:'tape', odm:'legendární bedna · 1× denně',
   ic:'<svg viewBox="0 0 24 24"><path d="M4 8.5 12 4l8 4.5v6L12 19l-8-4.5z"/><path d="M9 11.5h6M9 14.5h6"/></svg>',
   dd:'Deset etap, v každé jde jen boss nebo pancéřovaný vliv. Otevře se po '+
      'dokončení prvního území, za první dokončení dne je legendární bedna.'}
@@ -19803,9 +19803,9 @@ function startSelected(){
    S.speed=Math.max(2,SAVE.opts.spd||2);S.sprintT=0;
  }
  else {
-   if(!SAVE.won.some(x=>x))return toast2('Bossová smršť se otevře po dokončení prvního území.');
+   if(!SAVE.won.some(x=>x))return toast2('Samí bossové se otevřou po dokončení prvního území.');
    const i2=Math.min(MAPS.length-1,Math.max(0,SAVE.unlocked-1));
-   newRun(i2,false,{map:i2,waves:10,mods:[{n:'Bossová smršť',d:'V každé etapě přicházejí bossové.'}],rush5:true});
+   newRun(i2,false,{map:i2,waves:10,mods:[{n:'Samí bossové',d:'V každé etapě přicházejí bossové.'}],rush5:true});
  }
  show('game');resize();ui();window.scrollTo(0,0);
 }
@@ -20212,7 +20212,7 @@ function renderBossRush(){
  btn.onclick=()=>{
    snd('ui');
    const mi=Math.min(MAPS.length-1,Math.max(0,SAVE.unlocked-1));
-   newRun(mi,false,{map:mi,waves:10,mods:[{n:'Bossová smršť',d:'V každé etapě přicházejí bossové.'}],rush5:true});
+   newRun(mi,false,{map:mi,waves:10,mods:[{n:'Samí bossové',d:'V každé etapě přicházejí bossové.'}],rush5:true});
    show('game');resize();ui();window.scrollTo(0,0);
    toast('Deset etap plných bossů. Hodně štěstí.');
  };
@@ -20553,7 +20553,7 @@ const DEMONOTE={
  gpr:'Prosvítí úsek trasy. Vše, co jím projde, průběžně dostává zásah.',
  multi:'Zaměří nejsilnější cíl a ubere mu i část celkové odolnosti.',
  insar:'Nezaměřuje jednotlivé cíle. V pulzech zasáhne úplně všechno na mapě a projde pancířem.',
- basecal:'Neútočí. Zpřesní všechna stanoviska na mapě bez ohledu na to, jak daleko stojí.',
+ basecal:'Neútočí. Zesílí všechna stanoviska na mapě bez ohledu na to, jak daleko stojí.',
  gnss:'Neútočí. Zpřesňuje sousední stanoviska a přináší dotaci za etapu.',
  prism:'Neútočí. Sousedům přidá dosah a hlavně rychlost měření.',
  plumb:'Velmi rychlé krátké rány na nejbližší cíl. Nejlevnější a nejrychlejší v celé hře.',
@@ -23451,7 +23451,7 @@ function renderCodex(){
      case 'gnss': return 'Sousedům +'+pct(d.bd[3])+' % poškození a +'+pct(d.br[3])+' % dosahu · +'+d.inc[3]+' do rozpočtu za etapu.';
      case 'thermal': return 'Označené cíle dostávají od všech o '+pct(d.mk[3])+' % víc.';
      case 'meteo': return 'Potlačí až '+pct(d.supp[3])+' % nepříznivých podmínek · po etapě vrátí '+d.reg[3]+' přesnosti.';
-     case 'basecal': return 'Zpřesní o '+pct(d.ball[3])+' % úplně všechna stanoviska na mapě.';
+     case 'basecal': return 'Zesílí o '+pct(d.ball[3])+' % úplně všechna stanoviska na mapě.';
      case 'photo': return 'Nad trasou krouží '+d.drones[3]+' drony a označují cíle.';
      case 'rotlaser': return 'Paprsek se otáčí dokola a řeže vše, čím projde.';
      case 'mensula': return 'Za každý zásah přisype '+d.gold[3]+' do rozpočtu.';
