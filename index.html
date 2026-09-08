@@ -9322,6 +9322,12 @@ html[data-theme="hc"] #confetti{opacity:.5}
 
 /* Cisla pristroje: pruhy dostaly vic mista a hodnota vetsi rez. */
 #tinfo .tiBar{gap:var(--m2)}
+.tiSoucet{margin:var(--m2) var(--m3) 0;padding:var(--m2) var(--m3);
+  background:var(--s2);border-radius:12px;border:1px solid var(--ln,rgba(255,255,255,.10));
+  font-size:max(12px,calc(12.5px*var(--fs,1)));line-height:1.45;color:var(--t2)}
+.tiSoucet b{color:var(--t1)}
+.tiSoucet s{display:block;margin-top:2px;text-decoration:none;color:var(--t3);
+  font-size:max(12px,calc(12px*var(--fs,1)))}
 #tinfo .tiBar span{width:88px;font-size:calc(12.5px*var(--fs,1))}
 #tinfo .tiBar div{height:11px}
 #tinfo .tiBar b{width:48px;font-size:calc(14px*var(--fs,1))}
@@ -10925,6 +10931,7 @@ html[data-theme="hc"] .tiDeckBtn,html[data-theme="hc"] .tiDeckBtn.on{
     </div>
     <div class="tiSect">Čísla přístroje</div>
     <div class="tiBars" id="tiBars"></div>
+      <div id="tiSoucet" class="tiSoucet"></div>
     <div id="tiUp"></div>
   </div>
 
@@ -21626,6 +21633,25 @@ function tiTab(k){
    b.onclick=()=>{ tiTab(b.dataset.tk); try{snd('ui')}catch(e){} };
  });
 })();
+/* Z ceho se sklada sila pristroje. Hra nasobi poskozeni sedmnacti vrstvami
+   (uroven ze sbirky, laborka, prislusenstvi, specializace, strom, kalibrace,
+   mistrovska rada, zkusenost, karty, sit, synergie...) a hrac nemel jak
+   zjistit, co mu ktera platba dala. Tenhle radek scita ty TRVALE, tedy ty,
+   ktere plati uz pri postaveni stanoviska. */
+function silaRozpis(k){
+ const casti=[];
+ const lv=SAVE.lvl[k]||0;
+ if(lv)casti.push(['úroveň '+lv,.08*lv]);
+ const meta=.025*(SAVE.meta.prec||0);
+ if(meta)casti.push(['laborka',meta]);
+ const acc=accEff(k,'dmg');
+ if(acc)casti.push(['příslušenství',acc]);
+ if(typeof specHas==='function'&&specHas(k,'dmg'))casti.push(['specializace',.15]);
+ const perky=(SAVE.perk&&SAVE.perk[k])||[];
+ if(perky.indexOf('g_dmg')>=0)casti.push(['strom vývoje',.25]);
+ let m=1; casti.forEach(c=>m*=(1+c[1]));
+ return {casti:casti,nasobek:m};
+}
 function openTinfo(k){
  const def=T[k], rr=rarOf(k), lv=SAVE.lvl[k]||0, inf=INFO[k]||{p:'',f:''};
  const box=document.querySelector('#tinfo .box');
@@ -21658,6 +21684,17 @@ function openTinfo(k){
  $('tiBars').innerHTML=bars.map(b=>'<div class="tiBar"><span>'+b[0]+'</span>'+
    '<div><i style="width:'+Math.round(Math.max(4,Math.min(100,b[1]*100)))+'%"></i></div>'+
    '<b>'+b[2]+'</b></div>').join('');
+ // Odkud se sila bere. Bez tohohle radku hrac videl jen vysledne cislo
+ // a nemel jak poznat, co mu koupena uroven, laborka nebo prislusenstvi daly.
+ {const sr=silaRozpis(k), el=$('tiSoucet');
+  if(el){
+    if(!def.dmg||!def.dmg[3]){ el.textContent='Tenhle přístroj neútočí — jeho síla je v tom, co dá okolí.'; }
+    else if(!sr.casti.length){ el.textContent='Zatím bez trvalých vylepšení: rána je základních 100 %.'; }
+    else el.innerHTML='Trvalá vylepšení: '+
+      sr.casti.map(c=>c[0]+' <b>+'+Math.round(c[1]*100)+' %</b>').join(' · ')+
+      ' → rána <b>'+Math.round(sr.nasobek*100)+' %</b> základu'+
+      '<s>V měření k tomu ještě přibude kalibrace, mistrovská řada, zkušenost, karty a síť.</s>';
+  }}
  $('tiPrax').textContent=inf.p;
  $('tiFact').textContent=inf.f;
  const tt=$('tiTiers');tt.innerHTML='';
