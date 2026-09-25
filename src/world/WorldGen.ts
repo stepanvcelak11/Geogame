@@ -561,6 +561,23 @@ function generateMeadow(): World {
       return { id: `kulna-${n}`, code: 'ROH_BUDOVY' as const, label: `Roh kůlny ${n}`, pos: { x, y: heightmap.heightAt(x, z), z } };
     }),
   ];
+  // Hraniční kameny na mezi pod stromořadím (pod korunami GNSS nedá FIX – měří se stanicí).
+  // Východní mez u bodu 5102: kámen vždy u kmene, pod korunou, ale se záměrou na stanovisko.
+  const eastHedge = hedgeTrees.filter((q) => q.x > 65 && q.x < 90);
+  (
+    [
+      [9.5, -1.5, 2.5],
+      [0.6, 1, -2.5],
+      [-6.5, 0, 2.5],
+    ] as const
+  ).forEach(([tz, dx, dz], i) => {
+    const t = eastHedge.reduce((b, q) => (Math.abs(q.z - tz) < Math.abs(b.z - tz) ? q : b), eastHedge[0]);
+    const x = t.x + dx;
+    const z = t.z + dz;
+    const gy = heightmap.heightAt(x, z);
+    scenery.push({ kind: 'post', x, z, yaw: 0.3 * i, w: 0.18, d: 0.14, h: 0.08, groundY: gy, color: 0x8f8d88 });
+    features.push({ id: `mez-${i + 1}`, code: 'HRANICE', label: `Hraniční kámen na mezi ${i + 1}`, pos: { x, y: gy + 0.08, z } });
+  });
   const fields: FieldInfo[] = [
     { crop: 'wheat', corners: [ { x: -200, z: -72 }, { x: 62, z: -76 }, { x: 62, z: -200 }, { x: -200, z: -200 } ] },
     { crop: 'plowed', corners: [ { x: 82, z: -150 }, { x: 200, z: -150 }, { x: 200, z: 18 }, { x: 82, z: 18 } ] },

@@ -323,6 +323,38 @@ const world = generateWorld('stavba');
     });
     check('rohy kůlny jdou změřit GNSS s FIXem', sols.every((x) => x === 'fix'), sols.join(','));
   }
+  {
+    const { GnssReceiver } = await import('../src/gnss/GnssReceiver');
+    const { Rng } = await import('../src/core/Rng');
+    const stones = meadow.features.filter((f) => f.id.startsWith('mez-'));
+    check('mez na louce: 3 kameny s kódem Hranice', stones.length === 3 && stones.every((f) => f.code === 'HRANICE'));
+    const mezJob = JOBS.find((j) => j.id === 'louka-mez')!;
+    check('zakázka meze míří na existující prvky a body', mezJob.featureIds!.every((id) => meadow.features.some((f) => f.id === id)) && [mezJob.stationAt, mezJob.orientOn].every((id) => meadow.marks.some((m) => m.id === id)));
+    const sols = stones.map((f) => {
+      const g = new GnssReceiver(new Rng(5));
+      g.powerOn();
+      const a = { x: f.pos.x, y: f.pos.y + 2, z: f.pos.z };
+      for (let t = 0; t < 20; t += 1 / 30) g.update(1 / 30, a, meadow);
+      return g.solution;
+    });
+    check('pod stromořadím GNSS FIX nedá', sols.every((x) => x !== 'fix'), sols.join(','));
+    const st = meadow.marks.find((m) => m.id === mezJob.stationAt)!;
+    const eye = { x: st.pos.x, y: st.pos.y + 1.55, z: st.pos.z };
+    const clear = stones.map((f) => {
+      const p = { x: f.pos.x, y: f.pos.y + 2, z: f.pos.z };
+      const d = Math.hypot(p.x - eye.x, p.y - eye.y, p.z - eye.z);
+      const h = meadow.raycast(eye, { x: (p.x - eye.x) / d, y: (p.y - eye.y) / d, z: (p.z - eye.z) / d }, d);
+      return !h || h.t > d - 0.05;
+    });
+    const or = meadow.marks.find((m) => m.id === mezJob.orientOn)!;
+    {
+      const p = { x: or.pos.x, y: or.pos.y + 2, z: or.pos.z };
+      const d = Math.hypot(p.x - eye.x, p.y - eye.y, p.z - eye.z);
+      const h = meadow.raycast(eye, { x: (p.x - eye.x) / d, y: (p.y - eye.y) / d, z: (p.z - eye.z) / d }, d);
+      clear.push(!h || h.t > d - 0.05);
+    }
+    check('ze stanoviska 5102 je na kameny i na orientaci vidět', clear.every(Boolean), clear.join(','));
+  }
 
   const { MappingTask } = await import('../src/jobs/MappingTask');
   const mt = new MappingTask([...world.features]);

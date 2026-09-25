@@ -17,6 +17,9 @@ export interface JobSpec {
   featureCodes?: FeatureCode[]; // polohopis: co zaměřit
   featureIds?: string[]; // polohopis: konkrétní prvky (má přednost před kódy)
   requireStation?: boolean; // měřit jen totální stanicí
+  stationAt?: string; // doporučené stanovisko (ID bodu)
+  orientOn?: string; // orientační bod (ID bodu)
+  stationTask?: string; // popis měření stanicí pro kroky zakázky
   levelFrom?: string; // nivelace: výchozí značka (ID)
   levelTo?: string; // nivelace: určovaný bod (ID prvku)
   pay: number; // odměna [Kč]
@@ -84,6 +87,9 @@ export const JOBS: JobSpec[] = [
     tolerance: { xy: 0.1 },
     featureIds: ['roh-JZ', 'roh-JV', 'roh-SV', 'roh-SZ'],
     requireStation: true,
+    stationAt: 'PBPP-4001',
+    orientOn: 'ZhB-4021',
+    stationTask: 'Změř rohy trafostanice, SZ z volného stanoviska',
     pay: 6900,
     kit: ['tripod', 'tsCase', 'prismPole'],
     difficulty: 3,
@@ -145,6 +151,24 @@ export const JOBS: JobSpec[] = [
     pay: 3600,
     kit: ['gnssCase', 'gnssRover'],
     difficulty: 1,
+  },
+  {
+    id: 'louka-mez',
+    title: 'Zaměření kamenů na mezi',
+    client: 'Marie Dvořáková, vlastnice',
+    location: 'louka',
+    type: 'polohopis',
+    brief:
+      'Pod stromořadím na mezi GNSS nedá FIX. Postav stanici na 5102 a orientuj ji na hraniční znak 302 (nebo volné stanovisko), pak zaměř tři hraniční kameny na mezi s kódem Hranice – výtyčku s hranolem postav na každý kámen.',
+    tolerance: { xy: 0.05 },
+    featureIds: ['mez-1', 'mez-2', 'mez-3'],
+    requireStation: true,
+    stationAt: 'PBPP-5102',
+    orientOn: 'HZ-302',
+    stationTask: 'Zaměř tři kameny na mezi (hranol na kámen, kód Hranice)',
+    pay: 7800,
+    kit: ['tripod', 'tsCase', 'prismPole'],
+    difficulty: 3,
   },
   {
     id: 'louka-hranice',
