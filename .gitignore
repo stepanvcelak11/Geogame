@@ -1,3 +1,4 @@
-# zalohy pred vydanim - do repozitare nepatri, historii drzi git
-*.bak-v*
-__pycache__/
+node_modules/
+dist/
+*.log
+.DS_Store
