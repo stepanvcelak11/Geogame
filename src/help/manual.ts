@@ -115,6 +115,21 @@ export const MANUAL: ManualChapter[] = [
     ],
   },
   {
+    id: 'office',
+    title: 'Zpracování v kanceláři',
+    intro: 'Změřením práce nekončí. Data se v kanceláři zkontrolují, vyčistí a objednatel dostane správný výstup.',
+    steps: [
+      { do: 'Po práci v terénu sbal vybavení a jeď do kanceláře. V dispečinku u zakázky dej Zpracovat data a odevzdat.' },
+      { do: 'Import: načti zápisník z přístroje.' },
+      {
+        do: 'Kontrola: podívej se na kontrolní body a vyřaď měření, která jsou jen FLOAT nebo mimo toleranci přesnosti.',
+        why: 'Objednatel dostane souřadnice na centimetry; jeden decimetrový bod ve výkresu znamená reklamaci. Když ale vyřadíš jediné měření prvku, prvek bude chybět – pak ho musíš přeměřit.',
+      },
+      { do: 'Výstup: vyber, co objednatel čeká – protokol o vytyčení, výkres DXF, nivelační zápisník, nebo záznam o rekognoskaci.' },
+      { do: 'Odeslat: přijde kontrolní zaměření, protokol a faktura.' },
+    ],
+  },
+  {
     id: 'career',
     title: 'Kariéra, vybavení a servis',
     intro: 'Za zakázky dostáváš peníze a postupuješ ve stupních; těžší zakázky dostaneš až se zkušenostmi.',
