@@ -67,7 +67,7 @@ const world = generateWorld('stavba');
   const again = generateWorld('stavba');
   check('stejný seed = stejný svět', world.trees.length === again.trees.length && world.trees[5]?.x === again.trees[5]?.x);
   check('počet stromů', world.trees.length > 300, String(world.trees.length));
-  check('počet bodů', world.marks.length === 9);
+  check('počet bodů (9 značek + 3 štítky)', world.marks.length === 12 && world.marks.filter((m) => m.type === 'ST').length === 3);
   check('chybějící a poškozený bod', world.marks.filter((m) => m.condition === 'missing').length === 1 && world.marks.filter((m) => m.condition === 'damaged').length === 1);
   const nz = world.marks.find((m) => m.type === 'NZ');
   check('nivelační značka má výšku na mm', !!nz && Math.abs(nz.catalog.H * 1000 - Math.round(nz.catalog.H * 1000)) < 1e-6, nz?.catalog.H.toFixed(3));
@@ -463,7 +463,7 @@ const world = generateWorld('stavba');
   const w = generateWorld('stavba');
   const b = w.building!;
   const nw = w.features.find((f) => f.id === 'roh-SZ')!;
-  const known = w.marks.filter((m) => m.condition === 'ok' && m.type !== 'NZ');
+  const known = w.marks.filter((m) => m.condition === 'ok' && m.type !== 'NZ' && m.type !== 'ST');
   // Najdi místo severozápadně od trafostanice, odkud je vidět SZ roh a aspoň 2 známé body.
   let best: { x: number; z: number; vis: typeof known } | null = null;
   for (let z = b.z - 16; z <= b.z + 4 && !best; z += 2)
@@ -982,6 +982,32 @@ const world = generateWorld('stavba');
   check('krajina: stoupání silnic nejvýš 9 %', grade < 0.09, `${(grade * 100).toFixed(1)} %`);
   const e = w.exits![1];
   check('krajina: na ose silnice je asfalt, vedle tráva/krajnice', w.surfaceAt(w.lanes![1].pts[50].x, w.lanes![1].pts[50].z) === 'road' && w.surfaceAt(e.x + 60, e.z + 60) !== 'road');
+}
+
+// --- Volné stanovisko na odrazné štítky
+{
+  const { TotalStation } = await import('../src/survey/TotalStation');
+  const { solveResection } = await import('../src/survey/FreeStation');
+  const { Rng } = await import('../src/core/Rng');
+  const w = generateWorld('stavba');
+  const center = { x: 5, y: w.heightmap.heightAt(5, 24) + 1.55, z: 24 };
+  const ts = new TotalStation(center, null, 0, new Rng(21));
+  const obs = w.marks
+    .filter((m) => m.type === 'ST')
+    .map((m) => {
+      const d = { x: m.pos.x - center.x, y: m.pos.y - center.y, z: m.pos.z - center.z };
+      const l = Math.hypot(d.x, d.y, d.z);
+      const r = ts.shoot({ x: d.x / l, y: d.y / l, z: d.z / l }, w, [], 'reflectorless');
+      return r.ok && Math.hypot(r.shot.hit.x - m.pos.x, r.shot.hit.y - m.pos.y, r.shot.hit.z - m.pos.z) < 0.04
+        ? { markId: m.id, number: m.number, known: m.catalog, hz: r.shot.hz, zen: r.shot.zen, sd: r.shot.sd, vc: 0, use: true }
+        : null;
+    })
+    .filter((o): o is NonNullable<typeof o> => !!o);
+  check('ze staveniště laser trefí všechny 3 štítky', obs.length === 3);
+  const res = solveResection(obs);
+  const truth = w.frame.toSjtsk(center);
+  const e = res ? Math.hypot(res.station.Y - truth.Y, res.station.X - truth.X) : 1;
+  check('volné stanovisko na štítky do 1 cm', e < 0.01, `${(e * 1000).toFixed(1)} mm`);
 }
 
 if (failed) throw new Error(`Selhalo testů: ${failed}`);

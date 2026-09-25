@@ -451,6 +451,30 @@ function generateSite(): World {
     (Math.abs(z - F.z) < 3.5 && x > F.xFrom - 3 && x < F.xTo + 3);
   const trees = scatterTrees(c, forestNoise, blocked, (_x, _z, forest) => 0.03 + 0.92 * forest);
 
+  // Odrazné štítky na fasádách (orientační body, souřadnice z polygonového pořadu kanceláře).
+  const stitek = (num: string, x: number, y: number, z: number, facing: number, where: string): void => {
+    const cat = frame.toSjtsk({ x, y, z });
+    const catalog = { Y: round(cat.Y, 3), X: round(cat.X, 3), H: round(cat.H, 3) };
+    c.marks.push({
+      id: `ST-${num}`,
+      number: num,
+      type: 'ST',
+      stabilization: 'Odrazný štítek 60 × 60 mm na fasádě',
+      description: `${where}. Měří se bez hranolu (laserem), zamíř přesně na střed terče.`,
+      pos: frame.toWorld(catalog),
+      catalog,
+      condition: 'ok',
+      facing,
+    });
+  };
+  {
+    const bx = B.x + B.sizeX / 2 - 0.9;
+    stitek('901', bx, building.groundY + 2.35, B.z + B.sizeZ / 2, 0, 'Jižní stěna trafostanice, 2,35 m nad terénem, vpravo');
+    const office = scenery.find((q) => q.kind === 'siteOffice');
+    if (office) stitek('902', office.x - 1.6, office.groundY + 2.1, office.z - office.d / 2, Math.PI, 'Stavební buňka, jižní stěna vlevo, 2,1 m nad terénem');
+    const pole = scenery.filter((q) => q.kind === 'powerPole').sort((a, b) => a.x - b.x)[0];
+    if (pole) stitek('903', pole.x, pole.groundY + 2.5, pole.z - 0.15, Math.PI, 'Betonový sloup vedení u ulice, strana ke stavbě, 2,5 m nad terénem');
+  }
   const pipeLabels = ['Konec přípojky u domu', 'Lom přípojky 1', 'Lom přípojky 2', 'Napojení na řad (navrtávací pas)'];
   TRENCH.forEach((q, k) =>
     features.push({ id: `vodovod-${k + 1}`, code: 'VODOVOD', label: pipeLabels[k], pos: { x: q.x, y: heightmap.heightAt(q.x, q.z) + 0.04, z: q.z } }),

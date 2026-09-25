@@ -20,7 +20,7 @@ export interface TreeInstance {
 }
 
 /** TB trigonometrický, ZhB zhušťovací, PBPP podrobné pole, HZ hraniční znak, NZ nivelační značka. */
-export type MarkType = 'TB' | 'ZhB' | 'PBPP' | 'HZ' | 'NZ' | 'PB';
+export type MarkType = 'TB' | 'ZhB' | 'PBPP' | 'HZ' | 'NZ' | 'PB' | 'ST';
 
 export const MARK_TYPE_NAME: Record<MarkType, string> = {
   TB: 'Trigonometrický bod',
@@ -29,10 +29,11 @@ export const MARK_TYPE_NAME: Record<MarkType, string> = {
   HZ: 'Hraniční znak',
   NZ: 'Nivelační značka',
   PB: 'Pomocný měřický bod',
+  ST: 'Odrazný štítek (orientační bod)',
 };
 
 /** Zkratky, které geodet zná z katalogu. */
-export const MARK_TYPE_SHORT: Record<MarkType, string> = { TB: 'TB', ZhB: 'ZhB', PBPP: 'PBPP', HZ: 'HZ', NZ: 'NZ', PB: 'PB' };
+export const MARK_TYPE_SHORT: Record<MarkType, string> = { TB: 'TB', ZhB: 'ZhB', PBPP: 'PBPP', HZ: 'HZ', NZ: 'NZ', PB: 'PB', ST: 'Š' };
 
 /** Skutečný stav značky v terénu – katalog o něm neví. */
 export type MarkCondition = 'ok' | 'damaged' | 'missing';
@@ -47,6 +48,7 @@ export interface ControlMark {
   catalog: SjtskCoord; // katalogové souřadnice na cm (NZ výška na mm)
   condition: MarkCondition;
   conditionNote?: string; // co hráč uvidí při prohlídce
+  facing?: number; // štítek na zdi: směr normály (0 = +z, π/2 = +x)
 }
 
 /** Cesta podél osy x: asfaltová ulice s obrubníky, nebo polní cesta. */

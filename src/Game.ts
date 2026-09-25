@@ -1117,7 +1117,7 @@ export class Game {
     let best = SNAP_RADIUS;
     const rodActive = this.activeItem()?.kind === 'rod';
     for (const m of this.world.marks) {
-      if (m.condition !== 'ok' || (m.type === 'NZ' && !rodActive)) continue;
+      if (m.condition !== 'ok' || m.type === 'ST' || (m.type === 'NZ' && !rodActive)) continue;
       const d = Math.hypot(m.pos.x - x, m.pos.z - z);
       if (d < best) {
         best = d;
@@ -1390,6 +1390,11 @@ export class Game {
     return r;
   }
 
+  /** Odrazný štítek, na jehož terč dopadl laser (do 4 cm od středu). */
+  private stitekAt(hit: Vec3): ControlMark | undefined {
+    return this.world.marks.find((m) => m.type === 'ST' && Math.hypot(m.pos.x - hit.x, m.pos.y - hit.y, m.pos.z - hit.z) < 0.04);
+  }
+
   private openScope(tripod: WorldItem): void {
     if (!this.stations.has(tripod.id) || this.tsDeadToast()) return;
     if (this.input.pointerLocked) document.exitPointerLock();
@@ -1419,14 +1424,25 @@ export class Game {
     };
     const dir = lookDirection(sc.yaw, sc.pitch);
     const r = this.tsShoot(ts, sc.itemId, dir, this.prisms(), sc.mode);
-    if (!r.ok) return warn(r.reason);
+    if (!r.ok) {
+      if (sc.mode === 'prism') {
+        const h = this.world.raycast(ts.center, dir, 400);
+        if (h) {
+          const p = { x: ts.center.x + dir.x * h.t, y: ts.center.y + dir.y * h.t, z: ts.center.z + dir.z * h.t };
+          const st = this.world.marks.find((m) => m.type === 'ST' && Math.hypot(m.pos.x - p.x, m.pos.y - p.y, m.pos.z - p.z) < 0.2);
+          if (st) return warn(`Míříš na štítek ${st.number}: ten se měří bez hranolu. Přepni Režim na bez hranolu a zamiř přesně na střed terče.`);
+        }
+      }
+      return warn(r.reason);
+    }
     const shot = r.shot;
     const hd = shot.sd * Math.sin(shot.zen);
     sc.shot = { sd: shot.sd, hd, dh: ts.instrumentHeight + shot.sd * Math.cos(shot.zen) - (shot.prism?.height ?? 0) };
-    const mark = shot.prism?.markId ? this.world.marks.find((m) => m.id === shot.prism?.markId) : undefined;
+    // Známý bod: hranol na značce, nebo bez hranolu přesně na střed odrazného štítku.
+    const mark = shot.prism?.markId ? this.world.marks.find((m) => m.id === shot.prism?.markId) : shot.mode === 'reflectorless' ? this.stitekAt(shot.hit) : undefined;
 
     if (!ts.station) {
-      if (!mark || mark.type === 'NZ' || shot.mode !== 'prism') return warn('Volné stanovisko připoj měřením na hranol na známém bodě.');
+      if (!mark || mark.type === 'NZ' || (shot.mode !== 'prism' && mark.type !== 'ST')) return warn('Volné stanovisko připoj měřením na hranol na známém bodě, nebo bez hranolu na střed odrazného štítku.');
       sc.last = this.addResection(ts, shot, mark);
       return;
     }
@@ -2304,6 +2320,11 @@ export class Game {
             steps.push({ text: `Výtyčkou s hranolem stabilizuj bod pořadu ${spec.traverse.map((_, k) => 8101 + k).join(', ')} (${have} z ${total})`, done: have >= total });
             const ph = this.stationPhase(spec);
             steps.push({ text: `Přestav stanici na ${this.markNo(ph.at)} a orientuj ji zpět na ${this.markNo(ph.on)}`, done: have >= total && !!pc && pc.ts.orientation !== null });
+          } else if (spec.freeStation) {
+            const res = c ? (this.resections.get(c.tripod.id)?.length ?? 0) : 0;
+            steps.push({ text: 'Postav stativ na volném místě s výhledem na štítky 901, 902, 903 a ustav stanici', done: !!c });
+            steps.push({ text: `Režim bez hranolu: zamiř přesně na střed štítku (Jemně) a změř aspoň 2 štítky (${Math.min(res, 3)} z 2)`, done: !!c && (!!c.ts.station || res >= 2) });
+            steps.push({ text: 'V tabletu (Stanice) zkontroluj opravy a přijmi volné stanovisko', done: !!c && !!c.ts.station });
           } else {
             const at = this.markNo(spec.stationAt);
             const on = this.markNo(spec.orientOn);
@@ -2401,6 +2422,7 @@ export class Game {
           }
           const ph = this.stationPhase(spec);
           const pc = this.phaseStation(spec);
+          if (!pc && spec.freeAt) return { x: spec.freeAt.x, y: this.world.heightmap.heightAt(spec.freeAt.x, spec.freeAt.z), z: spec.freeAt.z };
           if (!pc) return this.world.marks.find((m) => m.id === ph.at)?.pos ?? null;
           if (pc.ts.station && pc.ts.orientation === null) return this.world.marks.find((m) => m.id === ph.on)?.pos ?? null;
           if (ph.stabilize && spec.traverse) {
@@ -2492,13 +2514,17 @@ export class Game {
             if (c && spec.traverse?.length)
               return `Přestav stanici na ${this.markNo(ph.at)}: s kufrem zamiř na stativ a sundej stanici, stativ slož, rozlož ho nad ${this.markNo(ph.at)} a stanici znovu nasaď a ustav.`;
             if (t?.state === 'deployed' && !t.secured) return 'Sešlápni nohy stativu (s prázdnýma rukama zamiř na stativ), pak nasaď stanici z kufru.';
+            if (spec.freeStation) return 'Rozlož stativ kdekoli na staveništi, odkud jsou vidět štítky 901, 902 a 903 (šipka ukazuje dobré místo), sešlápni nohy, nasaď stanici a ustav ji.';
             return `Rozlož stativ nad ${this.markNo(ph.at)}, sešlápni nohy, nasaď stanici z kufru a ustav ji.`;
           }
           {
             const miss = this.tsMissingNow();
             if (miss.length) return `V programu stanice (v dalekohledu tlačítko Program): ${this.tsMissText(miss[0])}`;
           }
-          if (!pc.ts.station) return 'Volné stanovisko: připoj ho výtyčkou na dva známé body, pak ho přijmi v tabletu (Stanice).';
+          if (!pc.ts.station)
+            return spec.freeStation
+              ? 'Volné stanovisko na štítky: v dalekohledu přepni Režim na bez hranolu, zamiř přesně na střed štítku (Jemně) a změř aspoň dva. Pak v tabletu (Stanice) přijmi stanovisko.'
+              : 'Volné stanovisko: připoj ho výtyčkou na dva známé body, pak ho přijmi v tabletu (Stanice).';
           if (pc.ts.orientation === null) return `Orientuj stanici: výtyčku s hranolem postav na ${this.markNo(ph.on)}, namiř, Cílit (ATR) a Orientovat.`;
           if (ph.stabilize)
             return `Bod pořadu ${ph.stabilize}: s výtyčkou s hranolem jdi na doporučené místo (šipka) – odkud je vidět dál do lesa – a dej Stabilizovat. Stanice bod změří a zatlučeš hřeb.`;
@@ -3671,12 +3697,12 @@ export class Game {
     const run = this.activeRun();
     const id = run?.spec.requireStation ? this.stationPhase(run.spec).on : undefined;
     const m = id ? this.world.marks.find((x) => x.id === id) : undefined;
-    if (m) return m;
+    if (m) return m.type === 'ST' ? null : m;
     // Jinak nejbližší jiný známý bod (5–250 m od stanice).
     const st = c.tripod.overMarkId;
     return (
       this.world.marks
-        .filter((x) => x.condition === 'ok' && x.type !== 'NZ' && x.id !== st)
+        .filter((x) => x.condition === 'ok' && x.type !== 'NZ' && x.type !== 'ST' && x.id !== st)
         .map((x) => ({ x, d: Math.hypot(x.pos.x - c.tripod.pos.x, x.pos.z - c.tripod.pos.z) }))
         .filter((q) => q.d > 5 && q.d < 250)
         .sort((a, b) => a.d - b.d)[0]?.x ?? null
