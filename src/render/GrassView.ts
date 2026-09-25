@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { World } from '../world/World';
-import { inPolygon } from '../world/WorldGen';
+import { FOREST, inPolygon } from '../world/WorldGen';
 import { canvasTexture } from './textures';
 
 const CELL = 4; // strana buňky rozmístění [m]
@@ -89,12 +89,16 @@ export class GrassView {
           if (w.heightmap.slopeAt(px, pz) > 0.7) continue;
           const field = w.fields.find((f) => inPolygon(px, pz, f.corners));
           if (field?.crop === 'plowed') continue;
+          // V lese jen řídké trsy (kapradí, borůvčí), tmavší.
+          const forest = w.location === 'les' && px > FOREST.edgeX + 4;
+          if (forest && hash(ix, iz, k + 31) > 0.25) continue;
           const tall = field ? 1.9 : 0.8 + hash(ix, iz, k + 50) * 0.9;
           q.setFromAxisAngle(yAxis, hash(ix, iz, k + 90) * Math.PI);
           m.compose(p.set(px, w.heightmap.heightAt(px, pz) - 0.02, pz), q, s.set(1 + hash(ix, iz, k + 7) * 0.6, tall, 1));
           this.mesh.setMatrixAt(n, m);
           if (field?.crop === 'wheat') col.setHSL(0.13, 0.55, 0.55 + hash(ix, iz, k) * 0.08);
           else if (field?.crop === 'rapeseed') col.setHSL(0.16, 0.8, 0.5);
+          else if (forest) col.setHSL(0.27 + hash(ix, iz, k + 3) * 0.05, 0.45, 0.2 + hash(ix, iz, k + 4) * 0.06);
           else col.setHSL(0.24 + hash(ix, iz, k + 3) * 0.06, 0.5, 0.32 + hash(ix, iz, k + 4) * 0.1);
           this.mesh.setColorAt(n, col);
           n++;
