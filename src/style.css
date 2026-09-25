@@ -520,6 +520,8 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .scope-btns .sc-measure:disabled { background: rgba(242, 183, 5, 0.3); color: rgba(31, 36, 40, 0.7); }
 .scope-btns .sc-code { background: #b0249a; border: 0; color: #fff; }
 .sc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sc-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.sc-row-3 button { padding: 0 2px; }
 .sc-row-auto { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 1fr; }
 .sc-row-auto .sc-zoom { grid-column: span 2; }
 .scope-btns .sc-faces.is-on { background: #1f6f8b; border-color: #58b6d6; }
