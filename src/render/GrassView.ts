@@ -42,16 +42,18 @@ export class GrassView {
     const b = plane.clone().rotateY(Math.PI / 2);
     const geo = mergeTwo(a, b);
     const map = canvasTexture('blades', 128, false);
-    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, map: map ?? undefined, alphaTest: 0.45, side: THREE.DoubleSide });
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, map: map ?? undefined, alphaTest: 0.45, side: THREE.DoubleSide }); // tisíce stébel: levný materiál
     this.mesh = new THREE.InstancedMesh(geo, mat, this.max);
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
+    this.mesh.userData.noAO = true;
     parent.add(this.mesh);
     const fmap = canvasTexture('flowers', 128, false);
     const fmat = new THREE.MeshLambertMaterial({ color: 0xffffff, map: fmap ?? undefined, alphaTest: 0.4, side: THREE.DoubleSide });
     this.flowers = new THREE.InstancedMesh(geo, fmat, Math.round(this.max / 4));
     this.flowers.count = 0;
     this.flowers.frustumCulled = false;
+    this.flowers.userData.noAO = true;
     parent.add(this.flowers);
   }
 

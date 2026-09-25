@@ -81,6 +81,12 @@ export class SettingsScreen {
     this.el.innerHTML = `<div class="set-body">
       <h2>Nastavení</h2>
       <h3>Grafika</h3>
+      ${seg('gfx', 'Kvalita', [
+        { v: 0, label: 'Úsporná' },
+        { v: 1, label: 'Realistická' },
+        { v: 2, label: 'Vysoká' },
+      ])}
+      <p class="set-note">Realistická: lesklé kovy a odrazy oblohy. Vysoká: navíc zastínění v koutech (AO), jen pro silnější zařízení. Materiály se plně změní po znovuotevření hry.</p>
       ${onoff('shadows', 'Stíny')}
       ${seg('grass', 'Tráva a kvítí', [
         { v: 0, label: 'Vyp' },

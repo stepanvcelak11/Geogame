@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { BuildingInfo, FenceInfo, RoadInfo } from '../world/World';
 import type { Heightmap } from '../world/Heightmap';
-import { lambert } from './materials';
+import { lambert, matte } from './materials';
 import { canvasTexture as proceduralTexture } from './textures';
 
 function canvasTexture(w: number, h: number, draw: (g: CanvasRenderingContext2D) => void): THREE.CanvasTexture {
@@ -66,7 +66,7 @@ export function createRoad(road: RoadInfo, hm: Heightmap): THREE.Group {
   const tex = proceduralTexture(dirt ? 'dirt' : 'asphalt', 256);
   const asphalt = new THREE.Mesh(
     geo,
-    new THREE.MeshLambertMaterial({ vertexColors: true, map: tex ?? undefined, polygonOffset: true, polygonOffsetFactor: -1 }),
+    matte({ vertexColors: true, map: tex ?? undefined, polygonOffset: true, polygonOffsetFactor: -1 }),
   );
   asphalt.receiveShadow = true;
   g.add(asphalt);
@@ -74,7 +74,7 @@ export function createRoad(road: RoadInfo, hm: Heightmap): THREE.Group {
   // Přerušovaná středová čára na asfaltu.
   if (!dirt) {
     const dash = new THREE.PlaneGeometry(3, 0.12).rotateX(-Math.PI / 2);
-    const white = new THREE.MeshLambertMaterial({ color: 0xe8e8e2, polygonOffset: true, polygonOffsetFactor: -2 });
+    const white = matte({ color: 0xe8e8e2, polygonOffset: true, polygonOffsetFactor: -2 });
     for (let x = road.xMin + 4; x < road.xMax - 4; x += 7) {
       const d = new THREE.Mesh(dash, white);
       d.position.set(x, surf(x + 1.5, road.z) + 0.01, road.z);
@@ -112,7 +112,7 @@ export function createRoad(road: RoadInfo, hm: Heightmap): THREE.Group {
   for (const inlet of road.inlets) {
     const plate = new THREE.Mesh(
       new THREE.PlaneGeometry(0.5, 0.5).rotateX(-Math.PI / 2),
-      new THREE.MeshLambertMaterial({ map: grate, polygonOffset: true, polygonOffsetFactor: -3 }),
+      matte({ map: grate, polygonOffset: true, polygonOffsetFactor: -3 }),
     );
     plate.position.set(inlet.x, surf(inlet.x, inlet.z) + 0.004, inlet.z);
     g.add(plate);
@@ -135,7 +135,7 @@ export function createBuilding(b: BuildingInfo): THREE.Group {
   door.position.set(-0.6, 1.03, b.sizeZ / 2 + 0.02);
   const sign = new THREE.Mesh(
     new THREE.PlaneGeometry(0.3, 0.27),
-    new THREE.MeshLambertMaterial({
+    matte({
       transparent: true,
       map: canvasTexture(128, 116, (x) => {
         x.fillStyle = '#f2b705';

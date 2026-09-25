@@ -51,6 +51,7 @@ import { PlayerController, type MoveIntent } from './player/PlayerController';
 import { Flashlight } from './render/Flashlight';
 import { ItemsView } from './render/ItemsView';
 import { createMarkMesh, createVehicleMesh, DRIVER_EYE, syncVehicle } from './render/PropsView';
+import { setRealisticMaterials } from './render/materials';
 import { detectQuality, RenderContext, SKY_HORIZON, SUN_DIR } from './render/RenderContext';
 import { Sky } from './render/Sky';
 import { StakesView } from './render/StakesView';
@@ -301,6 +302,7 @@ export class Game {
 
     // --- Render (trvalé části)
     const quality = detectQuality();
+    setRealisticMaterials(loadSettings(quality.mobile).gfx >= 1); // materiály se staví se scénou
     this.touchMode = quality.mobile;
     this.gfx = new RenderContext(root, quality);
     this.sky = new Sky(this.gfx.scene, quality.drawDistance * 0.95, SKY_HORIZON, SUN_DIR);
@@ -1696,6 +1698,7 @@ export class Game {
     this.settings = s;
     const mobile = this.gfx.quality.mobile;
     this.gfx.setShadows(s.shadows);
+    this.gfx.setGraphics(s.gfx);
     this.gfx.setPixelCap(s.saver ? (mobile ? 1 : 1.25) : this.gfx.quality.pixelRatioMax);
     this.gfx.setDrawDistance(drawDistanceFor(s, mobile));
     this.daylightT = 0; // mlha se přepočítá s novým dohledem
@@ -3525,7 +3528,7 @@ export class Game {
     if (this.daylightT <= 0) {
       this.daylightT = 1;
       const d = weatherize(daylight(this.clockMin), this.weather);
-      this.gfx.setDaylight(d);
+      this.gfx.setDaylight(d, 1);
       this.sky.setDaylight(d);
       this.clouds.setCover(this.weather.cloud, this.weather.rain);
       this.horizon.setHorizon(d.horizon);

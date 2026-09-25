@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { matte } from './materials';
 import { clamp, smoothstep } from '../core/math';
 import type { Heightmap } from '../world/Heightmap';
 import type { FieldInfo, WaterInfo } from '../world/World';
@@ -12,11 +13,13 @@ const C = (hex: number): RGB => {
   return [f((hex >> 16) & 255), f((hex >> 8) & 255), f(hex & 255)];
 };
 const PAL = {
-  lush: C(0x4d7a2a),
-  fresh: C(0x6f9636),
-  deep: C(0x3b6424),
-  dry: C(0x98934e),
-  clover: C(0x5f8f3a),
+  // Tlumenější, přírodní zelené (skutečná tráva není neonová) a víc suchých skvrn.
+  lush: C(0x51702e),
+  fresh: C(0x6b8a3a),
+  deep: C(0x3a5424),
+  dry: C(0x9a9259),
+  clover: C(0x587c35),
+  straw: C(0x8a8a4c),
   dirt: C(0x7d6a4c),
   rock: C(0x85817a),
   site: C(0x8f7f63),
@@ -79,6 +82,9 @@ export function terrainColor(x: number, z: number, h: number, slope: number, pai
   lerpTo(c, PAL.deep, smoothstep(0.55, 0.85, m2) * 0.6);
   lerpTo(c, PAL.clover, smoothstep(0.7, 0.9, fbm(x / 6, z / 6)) * 0.5);
   lerpTo(c, PAL.dry, clamp((h - 10) / 25, 0, 0.5) * smoothstep(0.3, 0.7, fbm(x / 35 - 5, z / 35)));
+  // Vyšlapaná a přeschlá místa všude po louce, drobná zrnitost.
+  lerpTo(c, PAL.straw, smoothstep(0.6, 0.85, fbm(x / 23 + 7, z / 23 + 3)) * 0.45);
+  scale(c, 0.9 + 0.2 * vnoise(x * 0.9, z * 0.9));
   // Svahy: hlína, na strmých kámen.
   lerpTo(c, PAL.dirt, smoothstep(0.38, 0.6, slope));
   lerpTo(c, PAL.rock, smoothstep(0.62, 0.85, slope) * 0.8);
@@ -197,7 +203,7 @@ export function createTerrainMesh(hm: Heightmap, paint: TerrainPaint): THREE.Mes
   const map = canvasTexture('grass', 256);
   const mesh = new THREE.Mesh(
     geo,
-    new THREE.MeshLambertMaterial({ vertexColors: true, map: map ?? undefined, bumpMap: map ?? undefined, bumpScale: 1.2 }),
+    matte({ vertexColors: true, map: map ?? undefined, bumpMap: map ?? undefined, bumpScale: 1.2 }),
   );
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;
@@ -209,7 +215,7 @@ export function createWater(water: readonly WaterInfo[]): THREE.Group {
   const g = new THREE.Group();
   const mat = new THREE.MeshPhongMaterial({ color: 0x3f6e84, specular: 0xb8c8d6, shininess: 80, transparent: true, opacity: 0.88, emissive: 0x0b1d28 });
   const reedGeo = new THREE.ConeGeometry(0.03, 1.4, 4).translate(0, 0.7, 0);
-  const reedMat = new THREE.MeshLambertMaterial({ color: 0x7a8a3c });
+  const reedMat = matte({ color: 0x7a8a3c });
   for (const w of water) {
     const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), mat);
     disc.scale.set(w.rx * 1.08, 1, w.rz * 1.08);

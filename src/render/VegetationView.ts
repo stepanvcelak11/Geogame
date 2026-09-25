@@ -1,5 +1,41 @@
 import * as THREE from 'three';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { matte } from './materials';
 import type { TreeInstance } from '../world/World';
+
+/**
+ * Nepravidelný tvar koruny: vrcholy posunuté šumem po normále (hladké stínování)
+ * a vertex barvy ztmavené dole a uvnitř – koruna si sama stíní (levné AO).
+ */
+function organic(geo: THREE.BufferGeometry, amp: number, seed: number): THREE.BufferGeometry {
+  // Sloučit vrcholy (koule z three je bez indexu), jinak by normály zůstaly ploché.
+  geo.deleteAttribute('normal');
+  geo.deleteAttribute('uv');
+  const g = mergeVertices(geo);
+  const pos = g.getAttribute('position') as THREE.BufferAttribute;
+  const box = new THREE.Box3().setFromBufferAttribute(pos);
+  const n = (x: number, y: number, z: number): number =>
+    Math.sin(x * 5.1 + seed) * Math.cos(z * 4.3 - seed) * 0.6 + Math.sin(y * 7.7 + x * 3.1 + seed * 2) * 0.4;
+  const v = new THREE.Vector3();
+  const colors = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const r = Math.hypot(v.x, v.z);
+    const d = 1 + n(v.x, v.y, v.z) * amp;
+    // Kužel: posun jen do stran (špička zůstane), koule: celý vektor.
+    if (box.min.y >= -0.01) {
+      v.x *= d;
+      v.z *= d;
+    } else v.multiplyScalar(d);
+    pos.setXYZ(i, v.x, v.y, v.z);
+    const t = (v.y - box.min.y) / Math.max(1e-6, box.max.y - box.min.y); // 0 dole … 1 nahoře
+    const ao = 0.55 + 0.45 * Math.min(1, t * 1.3) * (0.8 + 0.2 * Math.min(1, r));
+    colors[i * 3] = colors[i * 3 + 1] = colors[i * 3 + 2] = ao;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  g.computeVertexNormals();
+  return g;
+}
 
 /** Stromy jako instancované meshe: 3 draw cally pro celý les. */
 export function createVegetation(trees: readonly TreeInstance[], shadows: boolean): THREE.Group {
@@ -7,12 +43,11 @@ export function createVegetation(trees: readonly TreeInstance[], shadows: boolea
   const conifers = trees.filter((t) => t.kind === 'conifer');
   const broadleaves = trees.filter((t) => t.kind === 'broadleaf');
 
-  const trunkGeo = new THREE.CylinderGeometry(0.7, 1.1, 1, 7, 1).translate(0, 0.5, 0);
-  const coneGeo = new THREE.ConeGeometry(1, 1, 9, 1).translate(0, 0.5, 0);
-  const blobGeo = new THREE.IcosahedronGeometry(1, 1);
-  const white = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
-
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x57432f }), trees.length);
+  const trunkGeo = new THREE.CylinderGeometry(0.7, 1.1, 1, 9, 1).translate(0, 0.5, 0);
+  const coneGeo = organic(new THREE.ConeGeometry(1, 1, 16, 3).translate(0, 0.5, 0), 0.09, 11);
+  const blobGeo = organic(new THREE.IcosahedronGeometry(1, 3), 0.16, 5);
+  const white = matte({ color: 0xffffff, vertexColors: true });
+  const trunks = new THREE.InstancedMesh(trunkGeo, matte({ color: 0x57432f }), trees.length);
   const cones = new THREE.InstancedMesh(coneGeo, white, Math.max(1, conifers.length * 3));
   // Listnáč = tři koule koruny + keř u paty u části stromů.
   const blobs = new THREE.InstancedMesh(blobGeo, white, Math.max(1, broadleaves.length * 4));

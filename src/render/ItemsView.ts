@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ItemKind, WorldItem } from '../items/items';
-import { lambert, PALETTE } from './materials';
+import { buildCase, buildLevel, buildPole, buildTripod } from './InstrumentModels';
+import { lambert, matte, PALETTE } from './materials';
 
 type Triple = [number, number, number];
 interface Pose {
@@ -53,7 +54,7 @@ function rodMaterial(): THREE.Material {
     }
     rodTexture = new THREE.CanvasTexture(c);
   }
-  return new THREE.MeshLambertMaterial({ color: 0xffffff, map: rodTexture ?? undefined });
+  return matte({ color: 0xffffff, map: rodTexture ?? undefined });
 }
 
 function mesh(geo: THREE.BufferGeometry, color: number): THREE.Mesh {
@@ -63,155 +64,40 @@ function mesh(geo: THREE.BufferGeometry, color: number): THREE.Mesh {
 }
 
 function buildModel(kind: ItemKind): THREE.Group {
-  const g = new THREE.Group();
   switch (kind) {
     case 'tripod': {
-      // Nohy na kloubech pod hlavou – stejný model složený i rozložený (setTripodPose).
-      const head = mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 12), PALETTE.surveyYellow);
-      g.add(head);
-      const legs: { pivot: THREE.Group; tilt: THREE.Group; leg: THREE.Group }[] = [];
-      for (let i = 0; i < 3; i++) {
-        const pivot = new THREE.Group();
-        pivot.rotation.y = (i / 3) * Math.PI * 2;
-        const tilt = new THREE.Group();
-        tilt.position.z = -0.045;
-        const leg = new THREE.Group();
-        const wood = mesh(new THREE.BoxGeometry(0.035, 1, 0.035), PALETTE.wood);
-        wood.position.y = -0.5;
-        const shoe = mesh(new THREE.BoxGeometry(0.03, 0.1, 0.03), PALETTE.surveyYellow);
-        shoe.position.y = -0.95;
-        leg.add(wood, shoe);
-        tilt.add(leg);
-        pivot.add(tilt);
-        g.add(pivot);
-        legs.push({ pivot, tilt, leg });
-      }
-      // Totální stanice (viditelná po nasazení).
-      const station = new THREE.Group();
-      const base = mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.05, 16), PALETTE.darkMetal);
-      base.position.y = 0.025;
-      const body = mesh(new THREE.BoxGeometry(0.2, 0.2, 0.14), PALETTE.surveyYellow);
-      body.position.y = 0.15;
-      const scope = mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.2, 14).rotateX(Math.PI / 2), PALETTE.darkMetal);
-      scope.position.y = 0.2;
-      const display = mesh(new THREE.BoxGeometry(0.12, 0.07, 0.01), PALETTE.glass);
-      display.position.set(0, 0.12, 0.075);
-      // Alhidáda (tělo s dalekohledem) se otáčí nad pevnou trojnožkou – robot se natáčí za hranolem.
-      const alidade = new THREE.Group();
-      alidade.add(body, scope, display);
-      station.add(base, alidade);
-      station.userData = { alidade };
-      station.visible = false;
-      g.add(station);
-      g.userData = { head, legs, station };
+      const g = buildTripod();
       setTripodPose(g, FOLDED.spread, FOLDED.len);
-      break;
+      return g;
     }
-    case 'tsCase': {
-      const body = mesh(new THREE.BoxGeometry(0.42, 0.36, 0.26), PALETTE.surveyYellow);
-      body.position.y = 0.18;
-      const seam = mesh(new THREE.BoxGeometry(0.43, 0.02, 0.27), PALETTE.darkMetal);
-      seam.position.y = 0.22;
-      const handle = mesh(new THREE.BoxGeometry(0.14, 0.03, 0.03), PALETTE.darkMetal);
-      handle.position.y = 0.385;
-      g.add(body, seam, handle);
-      break;
-    }
-    case 'gnssCase': {
-      // Tvrdý kufr: přijímač, kontroler, držák a baterie ve výlisku.
-      const body = mesh(new THREE.BoxGeometry(0.46, 0.3, 0.3), 0x2f3a44);
-      body.position.y = 0.15;
-      const seam = mesh(new THREE.BoxGeometry(0.47, 0.02, 0.31), PALETTE.surveyYellow);
-      seam.position.y = 0.2;
-      const handle = mesh(new THREE.BoxGeometry(0.14, 0.03, 0.03), PALETTE.darkMetal);
-      handle.position.y = 0.315;
-      g.add(body, seam, handle);
-      break;
-    }
+    case 'tsCase':
+      return buildCase('ts');
+    case 'gnssCase':
+      return buildCase('gnss');
     case 'level': {
-      // Nivelační přístroj na lehkém stativu; záměrná přímka ve výšce 1,45 m.
-      const legs = new THREE.Group();
-      const tilts: THREE.Object3D[] = [];
-      for (let i = 0; i < 3; i++) {
-        const pivot = new THREE.Group();
-        pivot.position.y = 1.3;
-        pivot.rotation.y = (i * 2 * Math.PI) / 3;
-        const tilt = new THREE.Group();
-        const leg = mesh(new THREE.CylinderGeometry(0.014, 0.01, 1.36, 6).translate(0, -0.68, 0), 0xb08a5a);
-        tilt.add(leg);
-        pivot.add(tilt);
-        legs.add(pivot);
-        tilts.push(tilt);
-      }
-      const head = mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.03, 12), PALETTE.darkMetal);
-      head.position.y = 1.315;
-      const body = new THREE.Group();
-      const box = mesh(new THREE.BoxGeometry(0.12, 0.1, 0.22), PALETTE.surveyYellow);
-      box.position.y = 1.43;
-      const obj = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12).rotateX(Math.PI / 2), PALETTE.darkMetal);
-      obj.position.set(0, 1.45, -0.13);
-      body.add(box, obj);
-      g.add(legs, head, body);
-      g.userData = { tilts, body };
-      break;
+      const l = buildLevel();
+      l.root.userData = { tilts: l.tilts, body: l.body };
+      return l.root;
     }
     case 'rod': {
+      const g = new THREE.Group();
       const rod = new THREE.Mesh(new THREE.BoxGeometry(0.05, 3.0, 0.014).translate(0, 1.5, 0), rodMaterial());
+      rod.castShadow = true;
       const foot = mesh(new THREE.BoxGeometry(0.06, 0.03, 0.03), PALETTE.darkMetal);
       foot.position.y = 0.015;
       const bubble = mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.02, 10), PALETTE.darkMetal);
       bubble.position.set(0.035, 1.4, 0);
       g.add(rod, foot, bubble);
-      break;
+      return g;
     }
     case 'prismPole':
+      return buildPole('prism').root;
     case 'gnssRover': {
-      const pole = mesh(new THREE.CylinderGeometry(0.0125, 0.0125, 1.96, 8), PALETTE.metal);
-      pole.position.y = 1.0;
-      const tip = mesh(new THREE.ConeGeometry(0.0125, 0.04, 8).rotateX(Math.PI), PALETTE.darkMetal);
-      tip.position.y = 0.02;
-      const bubble = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 10), PALETTE.darkMetal);
-      bubble.position.set(0.03, 1.35, 0);
-      g.add(pole, tip, bubble);
-      if (kind === 'prismPole') {
-        // Tablet v držáku na výtyčce – ovládá robotickou stanici.
-        const tablet = mesh(new THREE.BoxGeometry(0.2, 0.14, 0.015), PALETTE.darkMetal);
-        tablet.position.set(0, 1.3, 0.05);
-        tablet.rotation.x = -0.5;
-        const screen = mesh(new THREE.BoxGeometry(0.18, 0.12, 0.002), 0x7fb0c9);
-        screen.position.set(0, 1.3 + 0.004, 0.058);
-        screen.rotation.x = -0.5;
-        g.add(tablet, screen);
-        // Hranol: výška středu přesně 2,000 m nad hrotem, sklo vidět z obou stran.
-        const housing = mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.04, 16).rotateX(Math.PI / 2), PALETTE.surveyYellow);
-        housing.position.y = 2.0;
-        const glass = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.043, 16).rotateX(Math.PI / 2), 0xb9d7e6);
-        glass.position.set(0, 2.0, 0);
-        g.add(housing, glass);
-      } else {
-        // Přijímač sedí na vrcholu výtyčky (výška podle vysunutí), kontroler v držáku.
-        const receiver = new THREE.Group();
-        const antenna = mesh(new THREE.SphereGeometry(0.1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0xe9ebe6);
-        antenna.position.y = 0.015;
-        antenna.scale.y = 0.55;
-        const base = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.035, 16), PALETTE.darkMetal);
-        receiver.add(antenna, base);
-        const controller = new THREE.Group();
-        const bracket = mesh(new THREE.BoxGeometry(0.03, 0.04, 0.05), PALETTE.darkMetal);
-        bracket.position.set(0, 0, 0.02);
-        const body = mesh(new THREE.BoxGeometry(0.09, 0.16, 0.03), PALETTE.darkMetal);
-        body.position.set(0, 0.02, 0.05);
-        const screen = mesh(new THREE.BoxGeometry(0.075, 0.1, 0.002), 0x7fb0c9);
-        screen.position.set(0, 0.04, 0.066);
-        controller.add(bracket, body, screen);
-        controller.position.y = 1.18;
-        g.add(receiver, controller);
-        g.userData = { pole, receiver, controller };
-      }
-      break;
+      const p = buildPole('gnss');
+      p.root.userData = { pole: p.pole, receiver: p.receiver, controller: p.controller };
+      return p.root;
     }
   }
-  return g;
 }
 
 const FOLDED = { spread: 0.035, len: 1.0 };

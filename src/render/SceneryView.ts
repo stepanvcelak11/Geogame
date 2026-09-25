@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import type { SceneryItem, World } from '../world/World';
 import { inPolygon } from '../world/WorldGen';
-import { lambert, PALETTE } from './materials';
+import { lambert, matte, PALETTE, type MatteMaterial } from './materials';
 import { canvasTexture, signTexture } from './textures';
 
-const texMat = new Map<string, THREE.MeshLambertMaterial>();
+const texMat = new Map<string, MatteMaterial>();
 /** Materiál s procedurální texturou (sdílený podle klíče). */
-function tmat(name: Parameters<typeof canvasTexture>[0], color: number, repeat: [number, number] = [1, 1]): THREE.MeshLambertMaterial {
+function tmat(name: Parameters<typeof canvasTexture>[0], color: number, repeat: [number, number] = [1, 1]): MatteMaterial {
   const key = `${name}:${color}:${repeat.join('x')}`;
   let m = texMat.get(key);
   if (!m) {
@@ -16,7 +16,7 @@ function tmat(name: Parameters<typeof canvasTexture>[0], color: number, repeat: 
       t.repeat.set(repeat[0], repeat[1]);
       t.needsUpdate = true;
     }
-    m = new THREE.MeshLambertMaterial({ color, map: t ?? undefined });
+    m = matte({ color, map: t ?? undefined });
     texMat.set(key, m);
   }
   return m;
@@ -77,7 +77,7 @@ function office(s: SceneryItem): THREE.Group {
   g.add(box(2.2, 2.4, 0.1, lambert(0x2f3a42, 'glassdoor'), 0, 1.2, s.d / 2 + 0.05));
   g.add(box(3.4, 0.15, 1.6, lambert(0x3a4148, 'canopy'), 0, 2.8, s.d / 2 + 0.8));
   const t = signTexture(s.text ?? 'KANCELÁŘ');
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.1), new THREE.MeshLambertMaterial({ color: 0xffffff, map: t ?? undefined }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.1), matte({ color: 0xffffff, map: t ?? undefined }));
   sign.position.set(0, s.h - 1.0, s.d / 2 + 0.06);
   g.add(sign);
   return g;
@@ -91,7 +91,7 @@ function garage(s: SceneryItem): THREE.Group {
   g.add(box(0.25, s.h, s.d, wall, -s.w / 2 + 0.125, s.h / 2, 0));
   g.add(box(0.25, s.h, s.d, wall, s.w / 2 - 0.125, s.h / 2, 0));
   g.add(box(s.w + 0.4, 0.15, s.d + 0.6, tmat('metal', 0x8d9296, [6, 1]), 0, s.h + 0.05, 0.1));
-  const lamp = box(0.6, 0.06, 0.2, new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xfff2c0 }), 0, s.h - 0.1, 0);
+  const lamp = box(0.6, 0.06, 0.2, matte({ color: 0xffffff, emissive: 0xfff2c0 }), 0, s.h - 0.1, 0);
   g.add(lamp);
   return g;
 }
@@ -289,7 +289,7 @@ export function createScenery(world: World, mobile: boolean): THREE.Group {
 /** Kameny v trávě a na svazích (jen vzhled, bez kolizí). */
 function createRocks(world: World, count: number): THREE.InstancedMesh {
   const geo = new THREE.IcosahedronGeometry(1, 0);
-  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), count);
+  const mesh = new THREE.InstancedMesh(geo, matte({ color: 0xffffff, flatShading: true }), count);
   const hm = world.heightmap;
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
