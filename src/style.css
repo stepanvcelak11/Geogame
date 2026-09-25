@@ -814,7 +814,11 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .job-card .task-progress { max-height: none !important; font-size: 13px !important; }
 .job-card .task-actions { flex-direction: row !important; flex-wrap: wrap; }
 .job-card .task-actions button { flex: 1 1 180px; min-height: 44px !important; font-size: 15px !important; }
-.tab-points .copy-points { width: 100%; }
+.point-export { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.point-export button { min-height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid rgba(238, 241, 234, 0.35);
+  background: transparent; color: var(--paper); font-weight: 700; cursor: pointer; }
+.point-export .copy-points { flex: 1 1 140px; margin: 0; }
+.point-export-label { margin-left: 6px; font-size: 13px; opacity: 0.7; }
 @media (max-height: 400px) {
   .one-view .tablet-tabs button { padding: 0 10px; font-size: 14px; min-height: 36px; }
   .one-view .tb-place, .one-view .tb-ind .ind { display: none; }
@@ -842,7 +846,7 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .proto-pay { margin: 0; font-size: 15px; }
 .proto-actions { display: flex; gap: 8px; margin-top: 12px; }
 .proto-actions button { flex: 1; min-height: 44px; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; }
-.proto-copy { border: 1px solid #1f2428; background: transparent; color: #1f2428; }
+.proto-copy, .proto-save { border: 1px solid #1f2428; background: transparent; color: #1f2428; }
 .proto-close { border: 0; background: #1f6fb5; color: #fff; }
 .od-steps { margin: 0 0 6px; padding-left: 20px; font-size: 14px; line-height: 1.4; }
 

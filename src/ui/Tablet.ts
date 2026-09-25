@@ -1,3 +1,4 @@
+import type { ExportFormat } from '../survey/PointExport';
 import { clamp } from '../core/math';
 import type { MapLayers, MapOverlay, MapRenderer, MapView } from './MapRenderer';
 
@@ -60,6 +61,7 @@ export class Tablet {
   private map: MapRenderer;
   onAction: ((id: string) => void) | null = null;
   onCopyPoints: (() => void) | null = null;
+  onDownloadPoints: ((format: ExportFormat) => void) | null = null;
   onClose: (() => void) | null = null;
 
   constructor(root: HTMLElement, map: MapRenderer) {
@@ -121,7 +123,13 @@ export class Tablet {
         </div>
         <div class="tablet-view tab-points" data-view="points" hidden>
           <div class="job-card">
-            <button class="copy-points">Kopírovat zápisník (CSV)</button>
+            <div class="point-export">
+              <button class="copy-points">Kopírovat CSV</button>
+              <span class="point-export-label">Uložit</span>
+              <button data-export="csv">CSV</button>
+              <button data-export="txt">TXT</button>
+              <button data-export="dxf">DXF</button>
+            </div>
             <ul class="point-list"></ul>
             <p class="point-empty">Zatím nic. Vezmi GNSS rover nebo výtyčku, postav hrot na bod a změř ho.</p>
           </div>
@@ -139,6 +147,9 @@ export class Tablet {
       }),
     );
     this.el.querySelector('.copy-points')?.addEventListener('click', () => this.onCopyPoints?.());
+    this.el.querySelectorAll<HTMLButtonElement>('[data-export]').forEach((b) =>
+      b.addEventListener('click', () => this.onDownloadPoints?.(b.dataset.export as ExportFormat)),
+    );
     const lb = this.el.querySelector('.layers-btn') as HTMLButtonElement;
     lb.addEventListener('click', () => {
       const box = this.el.querySelector('.map-layers') as HTMLElement;

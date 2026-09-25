@@ -15,6 +15,7 @@ import { InteractionSystem, type InteractionPrompt } from './interaction/Interac
 import { ITEM_DEFS, type Hand, type WorldItem } from './items/items';
 import { designTargets } from './jobs/designTargets';
 import { JOB_TYPE_NAME, JOBS, type JobSpec } from './jobs/JobCatalog';
+import { EXPORT_FORMATS, exportPoints, pointsCsv, type ExportFormat } from './survey/PointExport';
 import { MappingTask } from './jobs/MappingTask';
 import { ReconTask, REPORT_RADIUS } from './jobs/ReconTask';
 import { StakeoutTask, type StakeTarget } from './jobs/StakeoutTask';
@@ -294,6 +295,7 @@ export class Game {
     };
     this.tablet.onAction = (id) => this.tabletAction(id);
     this.tablet.onCopyPoints = () => this.copyPoints();
+    this.tablet.onDownloadPoints = (f) => this.downloadPoints(f);
     this.tablet.onClose = () => {
       this.sfx.click();
       this.departConfirm = null;
@@ -319,6 +321,8 @@ export class Game {
     this.hud.onHelper = () => this.openHelper();
     this.protocolScreen = new ProtocolScreen(root);
     this.protocolScreen.onCopy = (t) => this.copyText(t, 'Protokol zkopírován.');
+    this.protocolScreen.onDownload = (t, title) =>
+      this.downloadText(`protokol-den${this.career.day}-${title.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.txt`, t, 'text/plain');
     this.settingsScreen = new SettingsScreen(root);
     this.settingsScreen.onChange = (s) => this.applySettings(s);
     this.settingsScreen.onResetCareer = () => {
@@ -1831,9 +1835,34 @@ export class Game {
 
   /** Zápisník bodů jako CSV do schránky. */
   private copyPoints(): void {
-    const rows = ['cislo;Y;X;H;kod;metoda;reseni;lokalita'];
-    for (const p of this.log.points) rows.push([p.id, p.Y.toFixed(3), p.X.toFixed(3), p.Z.toFixed(3), p.code, p.method, p.solution, p.location].join(';'));
-    this.copyText(rows.join('\n'), `Zápisník zkopírován (${this.log.points.length} bodů, CSV se středníky).`);
+    this.copyText(pointsCsv(this.log.points), `Zápisník zkopírován (${pointsCount(this.log.points.length)}, CSV se středníky).`);
+  }
+
+  /** Zápisník jako soubor do telefonu (CSV, seznam souřadnic TXT nebo výkres DXF). */
+  private downloadPoints(format: ExportFormat): void {
+    if (!this.log.points.length) {
+      this.bus.emit('toast', { text: 'Zápisník je prázdný, zatím není co uložit.', tone: 'warn' });
+      return;
+    }
+    const f = EXPORT_FORMATS.find((x) => x.id === format) ?? EXPORT_FORMATS[0];
+    this.downloadText(`zapisnik-den${this.career.day}.${f.id}`, exportPoints(this.log.points, f.id), f.mime);
+    this.bus.emit('toast', { text: `Zápisník uložen jako ${f.label} (${pointsCount(this.log.points.length)}).` });
+  }
+
+  /** Soubor ke stažení. CSV a TXT dostanou BOM, ať je Excel otevře v UTF-8; DXF ne, CAD by ho nepřečetl. */
+  private downloadText(name: string, text: string, mime: string): void {
+    try {
+      const url = URL.createObjectURL(new Blob([mime === 'application/dxf' ? text : '\ufeff' + text], { type: `${mime};charset=utf-8` }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch {
+      this.bus.emit('toast', { text: 'Uložení souboru tady prohlížeč nepovolil.', tone: 'warn' });
+    }
   }
 
   private copyText(text: string, okMsg: string): void {
@@ -3125,4 +3154,9 @@ export class Game {
     };
     this.hud.setGnss(view);
   }
+}
+
+/** „1 bod“, „3 body“, „7 bodů“. */
+function pointsCount(n: number): string {
+  return `${n} ${n === 1 ? 'bod' : n >= 2 && n <= 4 ? 'body' : 'bodů'}`;
 }

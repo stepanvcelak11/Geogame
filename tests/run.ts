@@ -654,5 +654,20 @@ const world = generateWorld('stavba');
   }
 }
 
+// --- Export zápisníku
+{
+  const { exportPoints } = await import('../src/survey/PointExport');
+  const pts = [
+    { id: '1001', Y: 742400.1234, X: 1046300.5678, Z: 285.0004, code: 'VPUST' as const, sigmaXY: 0.01, sigmaZ: 0.02, method: 'gnss_rtk' as const, timestamp: 0, solution: 'FIX', location: 'Stavba' },
+  ];
+  const csv = exportPoints(pts, 'csv').split('\r\n');
+  check('CSV: hlavička a bod na 3 desetinná místa', csv[0].startsWith('cislo;Y;X;H') && csv[1] === '1001;742400.123;1046300.568;285.000;VPUST;gnss_rtk;FIX;Stavba');
+  const txt = exportPoints(pts, 'txt');
+  check('TXT: pevné sloupce se souřadnicemi', /1001\s+742400\.123\s+1046300\.568\s+285\.000\s+VPUST/.test(txt));
+  const dxf = exportPoints(pts, 'dxf').split('\r\n');
+  const i = dxf.indexOf('POINT');
+  check('DXF: bod v CAD osách (x = −Y, y = −X), vrstva podle kódu', i > 0 && dxf[i + 2] === 'VPUST' && dxf[i + 4] === '-742400.123' && dxf[i + 6] === '-1046300.568' && dxf[dxf.length - 2] === 'EOF');
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');
