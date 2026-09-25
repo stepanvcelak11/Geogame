@@ -138,6 +138,10 @@ export const MANUAL: ManualChapter[] = [
         do: 'Kontrola: podívej se na kontrolní body a vyřaď měření, která jsou jen FLOAT nebo mimo toleranci přesnosti.',
         why: 'Objednatel dostane souřadnice na centimetry; jeden decimetrový bod ve výkresu znamená reklamaci. Když ale vyřadíš jediné měření prvku, prvek bude chybět – pak ho musíš přeměřit.',
       },
+      {
+        do: 'Geometrický plán: k souřadnicím rohů budovy patří oměrné míry pásmem. S prázdnýma rukama zamiř na roh a přilož pásmo, u sousedního rohu odečti.',
+        why: 'Oměrné míry jsou nezávislá kontrola: když nesedí se souřadnicemi (FLOAT, nakloněná výtyčka, špatný roh), katastr plán nepřijme.',
+      },
       { do: 'Výstup: vyber, co objednatel čeká – protokol o vytyčení, výkres DXF, nivelační zápisník, nebo záznam o rekognoskaci.' },
       { do: 'Odeslat: přijde kontrolní zaměření, protokol a faktura.' },
     ],

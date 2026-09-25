@@ -146,10 +146,11 @@ interface JobRun {
   mapping?: MappingTask;
   level?: LevelLine;
   result?: { ok: boolean; text: string };
-  check?: { mark: string; dPos: number; dH: number }; // kontrolní měření GNSS na bodu bodového pole
+  check?: { mark: string; dPos: number; dH: number; fix?: boolean }; // kontrolní měření GNSS na bodu bodového pole
   firstPoint?: number; // index v zápisníku, od kterého jsou body této zakázky
   deadline?: { day: number; min: number }; // do kdy je výkop otevřený
   buried?: boolean; // bagr výkop zasypal dřív, než bylo zaměřeno
+  tape?: Map<string, number>; // oměrné míry pásmem: „a|b“ → délka [m]
 }
 
 const CHECK_TOL = { xy: 0.03, h: 0.05 };
@@ -859,7 +860,62 @@ export class Game {
       return { ...focus.prompt(), run: () => focus.use() };
     }
     if (active) return this.planUseItem(active);
-    return null;
+    return this.planTape();
+  }
+
+  // ================================================================ pásmo (oměrné míry)
+
+  private tapeStart: string | null = null; // roh, kde Pepa drží nulu pásma
+
+  private tapeKey(a: string, b: string): string {
+    return [a, b].sort().join('|');
+  }
+
+  private tapeDone(run: JobRun): boolean {
+    const pairs = run.spec.tape;
+    if (!pairs?.length) return true;
+    return pairs.every(([a, b]) => run.tape?.has(this.tapeKey(a, b)));
+  }
+
+  /** S prázdnýma rukama na rohu budovy: přiložit pásmo, u sousedního rohu odečíst. */
+  private planTape(): ActionPlan | null {
+    const run = this.activeRun();
+    const pairs = run?.spec.tape;
+    const f = this.aim?.feature;
+    if (!run || !pairs?.length || run.spec.location !== this.world.location || !f) return null;
+    const ids = new Set(pairs.flat());
+    if (!ids.has(f.id)) return null;
+    const label = (id: string): string => lowerFirst(this.world.features.find((q) => q.id === id)?.label ?? id);
+    const start = this.tapeStart;
+    if (!start || start === f.id)
+      return {
+        verb: 'Pásmo',
+        target: `přiložit na ${label(f.id)}`,
+        available: true,
+        run: () => {
+          this.tapeStart = f.id;
+          this.sfx.click();
+          this.bus.emit('toast', { text: `Pepa drží nulu pásma na: ${label(f.id)}. Dojdi k sousednímu rohu a odečti.` });
+        },
+      };
+    if (!pairs.some(([a, b]) => this.tapeKey(a, b) === this.tapeKey(start, f.id)))
+      return { verb: 'Pásmo', target: `odečíst na ${label(f.id)}`, available: false, reason: 'Oměrné míry se měří po stranách – k sousednímu rohu' };
+    return {
+      verb: 'Pásmo',
+      target: `odečíst na ${label(f.id)}`,
+      available: true,
+      run: () => {
+        const a = this.world.features.find((q) => q.id === start);
+        if (!a) return;
+        // Pásmo: průhyb a napnutí rukou, čte se na centimetry.
+        const d = Math.hypot(f.pos.x - a.pos.x, f.pos.z - a.pos.z) + this.rng.gaussian() * 0.004;
+        const read = Math.round(d * 100) / 100;
+        (run.tape ??= new Map()).set(this.tapeKey(start, f.id), read);
+        this.tapeStart = f.id;
+        this.sfx.success();
+        this.bus.emit('toast', { text: `Oměrná míra ${label(start)} – ${label(f.id)}: ${read.toFixed(2).replace('.', ',')} m. Pepa drží nulu na dalším rohu.` });
+      },
+    };
   }
 
   private planUseItem(item: WorldItem): ActionPlan {
@@ -1913,7 +1969,11 @@ export class Game {
 
     const run = this.activeRun();
     if (!run || helper) return c;
-    if (mark && dev) run.check = { mark: mark.number, dPos: Math.hypot(dev.dY, dev.dX), dH: dev.dH };
+    if (mark && dev) {
+      run.check = { mark: mark.number, dPos: Math.hypot(dev.dY, dev.dX), dH: dev.dH, fix: g.solution === 'fix' };
+      if (g.solution !== 'fix')
+        setTimeout(() => this.bus.emit('toast', { text: `Kontrola na ${mark.number} je jen ${SOLUTION_LABEL[g.solution]} – nic neprokáže. Počkej na FIX a změř ji znovu.`, tone: 'warn' }), 2400);
+    }
     if (mark && run.recon?.markFound(mark.id)) {
       setTimeout(() => this.bus.emit('toast', { text: `Bod ${mark.number} ověřen měřením` }), 1800);
     }
@@ -2145,6 +2205,10 @@ export class Game {
           steps.push(...this.gnssSetupSteps(f > 0));
           steps.push({ text: 'Vyber správný kód (kontroler: Měřit body, nebo růžové tlačítko)', done: f > 0 });
           steps.push({ text: `Změř všechny prvky${cnt}`, done: f === n && n > 0 });
+          if (spec.tape?.length) {
+            const have = spec.tape.filter(([a, b]) => run.tape?.has(this.tapeKey(a, b))).length;
+            steps.push({ text: `S prázdnýma rukama změř pásmem oměrné míry stran (${have} z ${spec.tape.length})`, done: have === spec.tape.length });
+          }
           if (run.deadline) steps.push({ text: `Stihni to do ${clockText(run.deadline.min)} – pak bagr výkop zasype`, done: f === n && n > 0 });
         }
         break;
@@ -2174,7 +2238,7 @@ export class Game {
     return [
       { text: 'Polož kufr GNSS, vezmi výtyčku a sestav rover (výška, přijímač, kontroler, zapnout)', done: built || started },
       ...(['job', 'bluetooth', 'antenna', 'ntrip'] as const).map((k) => ({ text: SETUP_STEP_TEXT[k], done: (built && !miss.includes(k)) || started })),
-      { text: 'Změř kontrolu na bodu bodového pole (ověření připojení)', done: !!run?.check },
+      { text: 'Změř kontrolu na bodu bodového pole s FIXem (ověření připojení)', done: !!run?.check?.fix },
     ];
   }
 
@@ -2316,6 +2380,10 @@ export class Game {
             return `Bod pořadu ${ph.stabilize}: s výtyčkou s hranolem jdi na doporučené místo (šipka) – odkud je vidět dál do lesa – a dej Stabilizovat. Stanice bod změří a zatlučeš hřeb.`;
           return spec.stationTask ? `${spec.stationTask}.` : 'Měř prvky: výtyčku s hranolem na prvek, nebo bez hranolu dalekohledem.';
         }
+        if (run.mapping?.complete && !this.tapeDone(run)) {
+          const hands = this.hands.heldIds().length > 0;
+          return `${hands ? 'Odlož věci z rukou (G). ' : ''}Oměrné míry: zamiř na roh, přilož pásmo, dojdi k sousednímu rohu a odečti. Máš ${run.tape?.size ?? 0} z ${run.spec.tape?.length ?? 0}.`;
+        }
         {
           const g = this.gnssGoal(run);
           if (g) return g;
@@ -2362,6 +2430,7 @@ export class Game {
     const miss = this.ctrl.missing();
     if (miss.length) return `${SETUP_STEP_TEXT[miss[0]]} (tlačítko Kontroler, klávesa K).`;
     if (!run.check) return 'Nejdřív změř kontrolu na bodu bodového pole (hrot na znak, Změřit) a porovnej odchylky.';
+    if (!run.check.fix) return `Kontrola na ${run.check.mark} byla jen FLOAT. Počkej na FIX a změř ji znovu.`;
     return null;
   }
 
@@ -2570,7 +2639,7 @@ export class Game {
   ];
 
   private correctOutput(run: JobRun): string {
-    return { rekognoskace: 'rek', vytyceni: 'vyt', polohopis: 'dxf', nivelace: 'niv' }[run.spec.type];
+    return run.spec.output ?? { rekognoskace: 'rek', vytyceni: 'vyt', polohopis: 'dxf', nivelace: 'niv' }[run.spec.type];
   }
 
   /** Body zakázky ze zápisníku (od převzetí, v její lokalitě). */
@@ -2600,7 +2669,7 @@ export class Game {
       run.stake
         ? `Vytyčeno ${run.stake.doneCount} z ${run.stake.targets.length} bodů, ověřené znaky se počítají.`
         : run.mapping
-          ? `Zaměřeno ${run.mapping.found.size} z ${run.mapping.required.length} požadovaných prvků.`
+          ? `Zaměřeno ${run.mapping.found.size} z ${run.mapping.required.length} požadovaných prvků.${run.tape?.size ? ` Oměrné míry: ${[...run.tape.values()].map((v) => v.toFixed(2).replace('.', ',')).join(', ')} m.` : ''}`
           : run.level
             ? `Nivelační pořad: ${run.level.sets.length} sestav, uzávěr ${run.level.closure !== null ? `${mmTxt(run.level.closure)} mm` : '—'}.`
             : `Rekognoskace: vyřízeno ${run.recon?.resolvedCount ?? 0} bodů.`;
@@ -2995,7 +3064,7 @@ export class Game {
     if (miss.includes('antenna')) return { page: 'antenna', text: 'Zadej typ antény a výšku, kterou jsi odečetl na výtyčce.' };
     if (miss.includes('ntrip')) return { page: 'ntrip', text: 'Připoj korekce CZEPOS: načti tabulku zdrojů a vyber VRS3-GG.' };
     if (this.gnss.solution !== 'fix') return { page: 'ntrip', text: 'Čekej na FIX (zelený stav nahoře). U zdí a pod stromy nepřijde – popojdi na volno.' };
-    if (run && run.spec.kit.includes('gnssRover') && run.spec.type !== 'rekognoskace' && !run.check)
+    if (run && run.spec.kit.includes('gnssRover') && run.spec.type !== 'rekognoskace' && !run.check?.fix)
       return { page: 'measure', text: 'Nejdřív změř kontrolu: hrot na bod bodového pole, Měřit. Odchylky do 2–3 cm jsou v pořádku.' };
     if (run?.spec.stake && !job.imported.includes(`stake-${run.spec.id}`)) return { page: 'import', text: 'Nahraj souřadnice bodů k vytyčení (soubor zakázky).' };
     if (run?.spec.stake) return { page: 'stake', text: 'Vyber bod k vytyčení a jdi podle navigace.' };
@@ -3739,6 +3808,7 @@ export class Game {
 
   private jobComplete(run: JobRun): boolean {
     if (run.level) return run.level.closure !== null && run.level.heights.points.has(run.spec.levelTo ?? '');
+    if (run.mapping?.complete && !this.tapeDone(run)) return !!run.buried;
     return !!(run.recon?.complete || run.stake?.complete || run.mapping?.complete || run.buried);
   }
 
@@ -3756,6 +3826,29 @@ export class Game {
       });
     }
     this.trench?.setBuried([...this.jobs.values()].some((r) => r.buried && r.spec.location === this.world.location && !!r.spec.deadlineMin));
+  }
+
+  /** Oměrné míry proti délkám ze souřadnic změřených rohů. */
+  private tapeCheck(run: JobRun): { ok: boolean; text: string } | null {
+    const pairs = run.spec.tape;
+    if (!pairs?.length || !run.mapping) return null;
+    const pts = new Map(this.log.points.map((p) => [p.id, p]));
+    const lab = (id: string): string => run.mapping?.required.find((f) => f.id === id)?.label.replace(/^Roh kůlny /, '') ?? id;
+    let ok = true;
+    const parts = pairs.map(([a, b]) => {
+      const t = run.tape?.get(this.tapeKey(a, b));
+      const pa = pts.get(run.mapping?.found.get(a) ?? '');
+      const pb = pts.get(run.mapping?.found.get(b) ?? '');
+      if (t === undefined || !pa || !pb) {
+        ok = false;
+        return `${lab(a)}–${lab(b)} chybí`;
+      }
+      const dc = Math.hypot(pa.Y - pb.Y, pa.X - pb.X);
+      const diff = t - dc;
+      if (Math.abs(diff) > run.spec.tolerance.xy) ok = false;
+      return `${lab(a)}–${lab(b)} ${t.toFixed(2).replace('.', ',')} m (${diff >= 0 ? '+' : '−'}${Math.abs(diff * 100).toFixed(1).replace('.', ',')} cm)`;
+    });
+    return { ok, text: `Oměrné míry: ${parts.join(', ')}.${ok ? ' Sedí se souřadnicemi.' : ` Některá míra nesedí nad ${Math.round(run.spec.tolerance.xy * 100)} cm – katastr plán nepřijme.`}` };
   }
 
   private buriedToast(): void {
@@ -3878,7 +3971,9 @@ export class Game {
       text = `Výkop byl zasypán dřív, než se potrubí zaměřilo: zaměřeno ${run.mapping.found.size} z ${run.mapping.required.length} bodů. Skutečné provedení přípojky nejde doložit.`;
     } else if (run.mapping) {
       ok = run.mapping.wrongCode === 0;
-      text = `Zaměřeno ${run.mapping.found.size} ${run.mapping.found.size === 1 ? "prvek" : run.mapping.found.size <= 4 && run.mapping.found.size > 0 ? "prvky" : "prvků"}.${run.mapping.wrongCode ? ` Chybně kódovaná měření: ${run.mapping.wrongCode}.` : ' Kódy v pořádku.'}`;
+      const tapeTxt = this.tapeCheck(run);
+      if (tapeTxt && !tapeTxt.ok) ok = false;
+      text = (tapeTxt ? `${tapeTxt.text} ` : '') + `Zaměřeno ${run.mapping.found.size} ${run.mapping.found.size === 1 ? "prvek" : run.mapping.found.size <= 4 && run.mapping.found.size > 0 ? "prvky" : "prvků"}.${run.mapping.wrongCode ? ` Chybně kódovaná měření: ${run.mapping.wrongCode}.` : ' Kódy v pořádku.'}`;
     }
     // Měření GNSS musí být ověřené připojením na bod bodového pole.
     if (run.spec.kit.includes('gnssRover') && run.spec.type !== 'rekognoskace') {
@@ -3886,6 +3981,9 @@ export class Game {
       if (!c) {
         ok = false;
         text += ' Chybí kontrolní měření na bodu bodového pole: připojení do S-JTSK není ověřené.';
+      } else if (c.fix === false) {
+        ok = false;
+        text += ` Kontrolní měření na bodu ${c.mark} bylo jen FLOAT: připojení do S-JTSK není ověřené.`;
       } else if (c.dPos > CHECK_TOL.xy * 2 || Math.abs(c.dH) > CHECK_TOL.h * 2) {
         ok = false;
         text += ` Kontrolní měření na bodu ${c.mark} nesedí (poloha ${(c.dPos * 100).toFixed(1).replace('.', ',')} cm, výška ${(c.dH * 100).toFixed(1).replace('.', ',')} cm): chyba v nastavení kontroleru.`;
