@@ -844,5 +844,28 @@ const world = generateWorld('stavba');
   check('40 dní objednávek: prvky i body existují, dům je na parcele', okAll);
 }
 
+// --- Baterie
+{
+  const { freshBatteries, drain, chargeSpare, canSwap, swap, RUNTIME_MIN } = await import('../src/jobs/Battery');
+  const b = freshBatteries();
+  let ev = null as string | null;
+  let low = 0;
+  for (let m = 0; m < RUNTIME_MIN.ts + 5; m++) {
+    const e = drain(b.ts, 'ts', 1, 20);
+    if (e === 'low') low++;
+    if (e) ev = e;
+  }
+  check('stanice vydrží 5 h, cestou jednou hlásí slabou baterii', low === 1 && ev === 'empty' && b.ts.main === 0);
+  const c = freshBatteries();
+  for (let m = 0; m < 240; m++) drain(c.ts, 'ts', 1, -3);
+  check('v mrazu vydrží stanice méně než 4 h', c.ts.main === 0);
+  check('vybitou jde vyměnit za náhradní', canSwap(b.ts));
+  swap(b.ts);
+  check('po výměně je v přístroji plná, vybitá v kufru', b.ts.main === 100 && b.ts.spare === 0 && !canSwap(b.ts));
+  chargeSpare(b.ts, 90);
+  check('autonabíječka za 1,5 h nabije polovinu', Math.abs(b.ts.spare - 50) < 1e-9);
+  check('vybitá baterie už nehlásí nic dalšího', drain(c.ts, 'ts', 10, 20) === null);
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

@@ -38,6 +38,7 @@ import {
   WEAR_PER_JOB,
   type EquipId,
 } from './jobs/Equipment';
+import { canSwap, chargeSpare, drain, freshBatteries, LOW, PACK_NAME, swap, type Batteries, type DrainEvent, type PackId } from './jobs/Battery';
 import { HelpScreen } from './ui/HelpScreen';
 import { coachSeen, showCoach } from './ui/Coach';
 import { StationDialog } from './ui/StationDialog';
@@ -45,7 +46,7 @@ import { ProcessingScreen, type ProcRow } from './ui/ProcessingScreen';
 import { Input } from './input/Input';
 import { TouchControls } from './input/TouchControls';
 import { InteractionSystem, type InteractionPrompt } from './interaction/InteractionSystem';
-import { ITEM_DEFS, type Hand, type WorldItem } from './items/items';
+import { ITEM_DEFS, type Hand, type ItemKind, type WorldItem } from './items/items';
 import { designTargets } from './jobs/designTargets';
 import { JOB_TYPE_NAME, JOBS, type JobSpec } from './jobs/JobCatalog';
 import { ordersForDay } from './jobs/Generator';
@@ -650,6 +651,7 @@ export class Game {
     const from = LOCATIONS[this.world.location];
     this.travelScreen.play(from, LOCATIONS[dest], this.clockMin, minutes, () => {
       this.clockMin += minutes;
+      this.batteryTick(minutes);
       this.career.stats.km += Math.round(minutes * 0.9);
       this.loadLocation(dest, 'van');
       this.traveling = false;
@@ -797,6 +799,8 @@ export class Game {
           },
         };
       if (item.mounted) {
+        const swapPlan = this.batterySwapPlan('ts');
+        if (swapPlan && (this.tsDead || (this.bat.ts.main <= LOW && swapPlan.available))) return swapPlan;
         if (active?.kind === 'tsCase') return { verb: 'Sundat', target: 'stanici do kufru', available: true, run: () => this.openTsBench(item, active, false) };
         if (this.stations.has(item.id)) return { verb: 'Měřit', target: 'totální stanicí', available: true, run: () => this.openScope(item) };
         return { verb: 'Ustavit', target: 'přístroj', available: true, run: () => this.openSetup(item) };
@@ -810,6 +814,10 @@ export class Game {
       return { verb: 'Nivelovat', target: 'přístrojem', available: true, run: () => this.openLevel(item) };
     }
     if (item.kind === 'gnssCase' && item.state === 'ground' && active?.kind === 'gnssRover' && active.rig) {
+      for (const id of ['gnss', 'ctrl'] as const) {
+        const sp = this.batterySwapPlan(id);
+        if (sp && this.bat[id].main <= LOW && (id === 'gnss' ? active.rig.receiver : active.rig.controller)) return sp;
+      }
       if (!active.rig.receiver || !active.rig.controller || !active.rig.receiverOn || !active.rig.controllerOn)
         return { verb: 'Sestavit', target: 'GNSS rover z kufru', available: true, run: () => this.openRig(item, active, 'assemble') };
       return { verb: 'Rozebrat', target: 'rover do kufru', available: true, run: () => this.openRig(item, active, 'pack') };
@@ -1061,7 +1069,7 @@ export class Game {
 
   private openSetup(tripod: WorldItem): void {
     const s = this.setups.get(tripod.id);
-    if (!s) return;
+    if (!s || this.tsDeadToast()) return;
     const mark = tripod.overMarkId ? this.world.marks.find((m) => m.id === tripod.overMarkId) : undefined;
     const kind = !mark ? null : mark.type === 'PBPP' ? 'nail' : mark.type === 'HZ' && !mark.stabilization.startsWith('Kamenný') ? 'cap' : 'stone';
     if (this.input.pointerLocked) document.exitPointerLock();
@@ -1171,7 +1179,7 @@ export class Game {
   }
 
   private openScope(tripod: WorldItem): void {
-    if (!this.stations.has(tripod.id)) return;
+    if (!this.stations.has(tripod.id) || this.tsDeadToast()) return;
     if (this.input.pointerLocked) document.exitPointerLock();
     this.sfx.click();
     this.scope = { kind: 'ts', itemId: tripod.id, yaw: this.player.yaw, pitch: 0, finder: true, mode: 'prism', last: null, shot: null };
@@ -1459,7 +1467,7 @@ export class Game {
     for (const [id, ts] of this.stations) {
       const tripod = this.items.find((i) => i.id === id);
       const link = this.links.get(id);
-      if (tripod && link && tripod.state === 'deployed' && tripod.location === this.world.location) return { tripod, ts, link };
+      if (tripod && link && tripod.state === 'deployed' && tripod.location === this.world.location && !this.tsDead) return { tripod, ts, link };
     }
     return null;
   }
@@ -1587,7 +1595,7 @@ export class Game {
     const tripod = this.items.find((i) => i.id === sc.itemId);
     const stMark = tripod?.overMarkId ? this.world.marks.find((m) => m.id === tripod.overMarkId) : undefined;
     return {
-      head: stMark ? `Stan. ${stMark.number}, v_p ${ts.instrumentHeight.toFixed(3).replace('.', ',')}` : `Volné st.${ts.station ? ', přijato' : `, bodů ${this.resections.get(sc.itemId)?.length ?? 0}`}`,
+      head: `▮${Math.round(this.bat.ts.main)} % · ` + (stMark ? `Stan. ${stMark.number}, v_p ${ts.instrumentHeight.toFixed(3).replace('.', ',')}` : `Volné st.${ts.station ? ', přijato' : `, bodů ${this.resections.get(sc.itemId)?.length ?? 0}`}`),
       rows: [
         ['Hz', g4(r.hz)],
         ['V', g4(r.zen)],
@@ -2257,8 +2265,8 @@ export class Game {
     const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
     if (!rig?.receiver) return 'Výtyčka je holá: polož kufr GNSS na zem a u něj sestav rover';
     if (!rig.controller) return 'Chybí kontroler: nasaď ho v kufru do držáku';
-    if (!rig.receiverOn) return 'Přijímač je vypnutý';
-    if (!rig.controllerOn) return 'Kontroler je vypnutý';
+    if (!rig.receiverOn) return this.bat.gnss.main <= 0 ? 'Vybitá baterie přijímače – u kufru GNSS ji vyměň' : 'Přijímač je vypnutý';
+    if (!rig.controllerOn) return this.bat.ctrl.main <= 0 ? 'Vybitá baterie kontroleru – u kufru GNSS ji vyměň' : 'Kontroler je vypnutý';
     const miss = this.ctrl.missing();
     if (miss.length) return SETUP_STEP_TEXT[miss[0]];
     return null;
@@ -2287,6 +2295,10 @@ export class Game {
     this.bench.openGnss(pole.rig, mode === 'pack' ? 'gnss-pack' : 'gnss-assemble', {
       onRig: (ev) => this.rigChanged(ev === 'click' ? 'screw' : ev),
       onTsMounted: () => {},
+      powerBlock: (what) => {
+        const id = what === 'rx' ? 'gnss' : 'ctrl';
+        return this.bat[id].main > 0 ? null : `Baterie ${PACK_NAME[id]} je vybitá. Zavři montáž a u kufru dej Vyměnit baterii.`;
+      },
       onClose: () => this.closeBench(),
     });
   }
@@ -2452,6 +2464,121 @@ export class Game {
   }
 
   // ================================================================ stav vybavení
+
+  // ================================================================ baterie
+
+  private get bat(): Batteries {
+    return (this.career.batteries ??= freshBatteries());
+  }
+
+  /** Stanice je nasazená na stativu (a tedy zapnutá), dokud nedojde baterie. */
+  private get tsOn(): boolean {
+    return this.bat.ts.main > 0 && this.items.some((i) => i.kind === 'tripod' && i.state === 'deployed' && i.mounted);
+  }
+
+  private get tsDead(): boolean {
+    return this.bat.ts.main <= 0;
+  }
+
+  private tsDeadToast(): boolean {
+    if (!this.tsDead) return false;
+    this.sfx.click();
+    this.bus.emit('toast', {
+      text: canSwap(this.bat.ts)
+        ? 'Stanice je vypnutá – vybitá baterie. Náhradní je v kufru stanice: přines kufr ke stativu a dej Vyměnit baterii.'
+        : 'Stanice je vypnutá a i náhradní baterie je vybitá. Nabij ji v dodávce (kufr naložený v autě) nebo přes noc v kanceláři.',
+      tone: 'warn',
+    });
+    return true;
+  }
+
+  /** Vybíjení zapnutých přístrojů a nabíjení náhradních baterií v autonabíječce dodávky. */
+  private batteryTick(min: number): void {
+    const b = this.bat;
+    const t = this.weather.temp;
+    const rover = this.items.find((i) => i.kind === 'gnssRover');
+    const rig = rover?.rig;
+    if (rig?.receiver && rig.receiverOn && rover?.state !== 'stored') this.batteryEvent('gnss', drain(b.gnss, 'gnss', min, t));
+    if (rig?.controller && rig.controllerOn && rover?.state !== 'stored') this.batteryEvent('ctrl', drain(b.ctrl, 'ctrl', min, t));
+    if (this.tsOn) this.batteryEvent('ts', drain(b.ts, 'ts', min, t));
+    const stored = (kind: ItemKind): boolean => this.items.some((i) => i.kind === kind && i.state === 'stored');
+    if (stored('gnssCase')) {
+      chargeSpare(b.gnss, min);
+      chargeSpare(b.ctrl, min);
+    }
+    if (stored('tsCase')) chargeSpare(b.ts, min);
+  }
+
+  private batteryEvent(id: PackId, ev: DrainEvent): void {
+    if (!ev) return;
+    const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+    if (ev === 'low') {
+      this.sfx.click();
+      navigator.vibrate?.([60, 60, 60]);
+      this.bus.emit('toast', { text: `Slabá baterie ${PACK_NAME[id]} (${LOW} %). Náhradní je v kufru – vyměň ji, než přístroj zhasne.`, tone: 'warn' });
+      return;
+    }
+    if (id === 'gnss' && rig) {
+      rig.receiverOn = false;
+      this.rigChanged('screw');
+    }
+    if (id === 'ctrl' && rig) {
+      rig.controllerOn = false;
+      this.ctrlScreen.hide();
+    }
+    if (id === 'ts') {
+      if (this.scope?.kind === 'ts') this.scopeScreen.hide();
+      this.links.forEach((l) => (l.state = 'off'));
+    }
+    this.sfx.lost();
+    this.bus.emit('toast', {
+      text:
+        id === 'ts'
+          ? 'Stanice zhasla – vybitá baterie. Ustavení i orientace zůstaly v paměti; vyměň baterii (náhradní v kufru stanice).'
+          : `${id === 'gnss' ? 'Přijímač' : 'Kontroler'} se vypnul – vybitá baterie. U kufru GNSS dej Vyměnit baterii a přístroj znovu zapni.`,
+      tone: 'warn',
+    });
+  }
+
+  /** Výměna baterie: náhradní je v kufru, kufr musí být u ruky (v ruce nebo do 3 m). */
+  private batterySwapPlan(id: PackId): ActionPlan | null {
+    const p = this.bat[id];
+    if (!canSwap(p)) return null;
+    const kind: ItemKind = id === 'ts' ? 'tsCase' : 'gnssCase';
+    const kase = this.items.find((i) => i.kind === kind);
+    const near =
+      !!kase &&
+      (kase.state === 'held' || (kase.state === 'ground' && kase.location === this.world.location && Math.hypot(kase.pos.x - this.player.pos.x, kase.pos.z - this.player.pos.z) < 3));
+    const target = `baterii ${PACK_NAME[id]} (${Math.round(p.main)} → ${Math.round(p.spare)} %)`;
+    if (!near) return { verb: 'Vyměnit', target, available: false, reason: `Náhradní baterie je v kufru ${id === 'ts' ? 'stanice' : 'GNSS'} – přines ho sem` };
+    return {
+      verb: 'Vyměnit',
+      target,
+      available: true,
+      run: () => {
+        swap(p);
+        this.sfx.click();
+        navigator.vibrate?.(30);
+        this.bus.emit('toast', {
+          text: `Baterie ${PACK_NAME[id]} vyměněná: v přístroji ${Math.round(p.main)} %, vybitá (${Math.round(p.spare)} %) jde do kufru – v dodávce se nabije.${id === 'ts' ? '' : ' Přístroj zase zapni.'}`,
+        });
+        if (id === 'ts') this.bus.emit('toast', { text: 'Stanice naběhla. Zkontroluj urovnání – kompenzátor hlídá sklon, orientace platí, pokud se stativ nepohnul.' });
+      },
+    };
+  }
+
+  /** V noci se v kanceláři nabije všechno, co v ní je (nebo v dodávce); co zůstalo v terénu, ne. */
+  private chargeOvernight(): void {
+    const b = this.bat;
+    const home = (kind: ItemKind): boolean => this.items.some((i) => i.kind === kind && (i.state === 'stored' || i.state === 'held' || i.location === 'kancelar'));
+    const left: string[] = [];
+    if (home('gnssCase') && home('gnssRover')) (b.gnss = { main: 100, spare: 100 }), (b.ctrl = { main: 100, spare: 100 });
+    else left.push('GNSS');
+    const tsHome = home('tsCase') && !this.items.some((i) => i.kind === 'tripod' && i.mounted && i.location !== 'kancelar' && i.state === 'deployed');
+    if (tsHome) b.ts = { main: 100, spare: 100 };
+    else left.push('stanice');
+    if (left.length) setTimeout(() => this.bus.emit('toast', { text: `Baterie ${left.join(' a ')} se přes noc nenabily – vybavení nebylo v kanceláři.`, tone: 'warn' }), 3000);
+  }
 
   private cond(id: EquipId): number {
     return this.career.equipment?.[id]?.condition ?? 1;
@@ -2637,7 +2764,8 @@ export class Game {
         sats: c.bt ? g.sats : 0,
         pdop: c.bt && g.solution !== 'none' ? g.pdop.toFixed(1).replace('.', ',') : '–',
         prec: c.bt && g.solution !== 'none' ? `H ${g.sigmaH < 1 ? f3(g.sigmaH) : g.sigmaH.toFixed(1)} V ${g.sigmaV < 1 ? f3(g.sigmaV) : g.sigmaV.toFixed(1)}` : 'H – V –',
-        battery: clamp(100 - (this.clockMin - (7 * 60 + 30)) / 5.5, 5, 100),
+        battery: this.bat.ctrl.main,
+        rxBattery: c.bt ? this.bat.gnss.main : null,
       },
       job: job ? { name: job.name, crs: CRS_OPTIONS.find((o) => o.id === job.crs)?.label ?? job.crs } : null,
       next: this.controllerNext(),
@@ -3224,7 +3352,9 @@ export class Game {
         return {
           id,
           name: EQUIP_NAME[id],
-          state: away ? `v servisu, zpátky den ${st.repairReady}` : `${stateLabel(st.condition)} · ${Math.round(st.condition * 100)} %`,
+          state:
+            (away ? `v servisu, zpátky den ${st.repairReady}` : `${stateLabel(st.condition)} · ${Math.round(st.condition * 100)} %`) +
+            (id === 'ts' || id === 'gnss' ? ` · baterie ${Math.round(this.bat[id].main)} + ${Math.round(this.bat[id].spare)} %` : ''),
           tone: away ? 'away' : st.condition < BROKEN ? 'bad' : st.condition < 0.85 ? 'worn' : 'ok',
           cost: kc(cost),
           canRepair: !away && st.condition < 0.99 && this.career.money >= cost,
@@ -3298,6 +3428,7 @@ export class Game {
     this.career.day++;
     this.weather = weatherForDay(this.career.day);
     this.syncRepairs();
+    this.chargeOvernight();
     this.refreshOrders();
     this.dayEarned = 0;
     this.clockMin = 7 * 60 + 30;
@@ -3742,7 +3873,7 @@ export class Game {
         day: `Den ${this.career.day}, ${this.weather.label} ${this.weather.temp} °C`,
         money: kc(this.career.money),
         gnss: this.gnss.on ? `${SOLUTION_LABEL[this.gnss.solution]} ${this.gnss.sats}` : null,
-        radio: c ? { off: 'vyp.', search: 'hledá', locked: 'zámek', lost: 'ztráta' }[c.link.state] : null,
+        radio: c ? `${{ off: 'vyp.', search: 'hledá', locked: 'zámek', lost: 'ztráta' }[c.link.state]} · stanice ▮${Math.round(this.bat.ts.main)} %` : null,
         battery: clamp(100 - (this.clockMin - (7 * 60 + 30)) / 6.5, 3, 100), // tablet vydrží zhruba celou směnu
       },
       job: this.jobPanel(),
@@ -4056,6 +4187,7 @@ export class Game {
 
   private step(dt: number): void {
     if (!this.traveling) this.clockMin += dt * GAME_MIN_PER_SEC;
+    if (this.started && !this.traveling) this.batteryTick(dt * GAME_MIN_PER_SEC);
     if (this.started && !this.traveling) this.windCheck(dt);
     if (this.started && !this.traveling && !this.helper.inVan) {
       const ev = this.helper.update(dt, this.world, this.player.pos);

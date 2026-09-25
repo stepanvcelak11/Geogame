@@ -16,6 +16,7 @@ export interface ControllerView {
     pdop: string;
     prec: string; // „H 0,012 V 0,019“
     battery: number;
+    rxBattery: number | null; // baterie přijímače (hlásí se přes Bluetooth)
   };
   job: { name: string; crs: string } | null;
   next: { page: string; text: string } | null; // co udělat teď (zvýrazní dlaždici)
@@ -191,7 +192,8 @@ export class ControllerScreen {
       <span class="cs-sat">🛰 ${s.sats}</span>
       <span class="cs-pdop">PDOP ${esc(s.pdop)}</span>
       <span class="cs-prec">${esc(s.prec)}</span>
-      <span class="cs-bat">▮ ${Math.round(s.battery)} %</span>`;
+      ${s.rxBattery !== null ? `<span class="cs-bat${s.rxBattery < 15 ? ' is-low' : ''}" title="Baterie přijímače">R-7 ▮ ${Math.round(s.rxBattery)} %</span>` : ''}
+      <span class="cs-bat${s.battery < 15 ? ' is-low' : ''}" title="Baterie kontroleru">▮ ${Math.round(s.battery)} %</span>`;
     const key = JSON.stringify({ p: this.page, v: { ...v, status: undefined, measure: { ...v.measure } }, bt: this.btSearch, m: this.mountsLoad });
     if (key === this.key) return;
     this.key = key;

@@ -143,6 +143,8 @@ function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, name = ''): THREE.
 export interface BenchCallbacks {
   onRig: (event: 'height' | 'receiver' | 'controller' | 'power' | 'screw' | 'click') => void;
   onTsMounted: (mounted: boolean) => void;
+  /** Proč nejde přístroj zapnout (vybitá baterie), jinak null. */
+  powerBlock?: (what: 'rx' | 'ct') => string | null;
   onClose: (completed: boolean) => void;
   /** Stativ rozložen: výška hlavy nad terénem, délka nohou a zda jsou ostruhy sešlápnuté. */
   onTripod?: (head: number, len: number, secured: boolean) => void;
@@ -861,7 +863,10 @@ export class Bench {
     // Podržení tlačítka napájení.
     if (this.power && r) {
       if (performance.now() - this.power.t0 >= HOLD_MS) {
-        if (this.power.what === 'rx') {
+        const what = this.power.what;
+        const block = (what === 'rx' ? !r.receiverOn : !r.controllerOn) ? this.cb?.powerBlock?.(what) : null;
+        if (block) this.flash(block, 3);
+        else if (what === 'rx') {
           if (!this.rxThread.tight) this.flash('Přijímač není na výtyčce.', 2);
           else r.receiverOn = !r.receiverOn;
         } else if (!this.ctSeated) this.flash('Kontroler není v držáku.', 2);

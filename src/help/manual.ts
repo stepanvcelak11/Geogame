@@ -137,6 +137,10 @@ export const MANUAL: ManualChapter[] = [
     steps: [
       { do: 'Zakázka odevzdaná bez vady se počítá do postupu (Pomocník → Měřič → Samostatný geodet → ÚOZI).' },
       { do: 'Spěšná zakázka dne má příplatek, když ji odevzdáš ještě týž den.' },
+      {
+        do: 'Baterie: přijímač vydrží asi 7 h, kontroler 9 h, stanice 5 h provozu (v mrazu o třetinu méně). Při 15 % přístroj varuje; náhradní baterie je v kufru – u kufru (stanice: s kufrem u stativu) dej Vyměnit.',
+        why: 'Vybitá baterie jde do kufru a nabíjí se v autonabíječce, když je kufr naložený v dodávce. Přes noc se v kanceláři nabije všechno, co v ní je – vybavení nechané v terénu ne.',
+      },
       { do: 'Přístroje se opotřebují a pádem poškodí. Poškozený přístroj měří hůř – oprav ho v servisu v kanceláři.', why: 'Stativ se stanicí ve větru může spadnout, když nemá roztažené a sešlápnuté nohy.' },
     ],
   },
