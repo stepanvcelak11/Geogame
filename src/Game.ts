@@ -41,6 +41,7 @@ import {
 import { HelpScreen } from './ui/HelpScreen';
 import { coachSeen, showCoach } from './ui/Coach';
 import { StationDialog } from './ui/StationDialog';
+import { ProcessingScreen, type ProcRow } from './ui/ProcessingScreen';
 import { Input } from './input/Input';
 import { TouchControls } from './input/TouchControls';
 import { InteractionSystem, type InteractionPrompt } from './interaction/InteractionSystem';
@@ -143,6 +144,7 @@ interface JobRun {
   level?: LevelLine;
   result?: { ok: boolean; text: string };
   check?: { mark: string; dPos: number; dH: number }; // kontrolní měření GNSS na bodu bodového pole
+  firstPoint?: number; // index v zápisníku, od kterého jsou body této zakázky
 }
 
 const CHECK_TOL = { xy: 0.03, h: 0.05 };
@@ -189,6 +191,8 @@ export class Game {
   private readonly bench: Bench;
   private readonly help: HelpScreen;
   private readonly stationDialog: StationDialog;
+  private readonly proc: ProcessingScreen;
+  private procJob: string | null = null;
   private readonly ctrlScreen: ControllerScreen;
   private rigCase: WorldItem | null = null; // kufr, u kterého se rover skládá
   /** Probíhající observace bodu GNSS (měří se po epochách, hráč musí stát). */
@@ -372,6 +376,9 @@ export class Game {
       this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     };
     this.bench = new Bench(root, this.gfx.camera, this.gfx.renderer.domElement);
+    this.proc = new ProcessingScreen(root);
+    this.proc.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    this.proc.onSend = (ex, out) => this.processSend(ex, out);
     this.stationDialog = new StationDialog(root);
     this.stationDialog.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     this.help = new HelpScreen(root);
@@ -664,6 +671,7 @@ export class Game {
       this.help.isOpen ||
       this.coachOpen ||
       this.stationDialog.isOpen ||
+      this.proc.isOpen ||
       this.ctrlScreen.isOpen ||
       this.traveling
     );
@@ -1983,7 +1991,7 @@ export class Game {
         break;
       }
     }
-    steps.push({ text: 'Odevzdej zakázku (tlačítko níže)', done: run.status === 'odevzdana' });
+    steps.push({ text: 'V kanceláři zpracuj data (dispečink → Zpracovat data) a odevzdej', done: run.status === 'odevzdana' });
     return steps;
   }
 
@@ -2009,6 +2017,7 @@ export class Game {
     const board = this.world.scenery.find((s) => s.kind === 'board');
     if (!run) return board ? { x: board.x, y: board.groundY, z: board.z + 0.8 } : null;
     const spec = run.spec;
+    if (this.jobComplete(run)) return here === 'kancelar' ? (board ? { x: board.x, y: board.groundY, z: board.z + 0.8 } : null) : vanLocal(v, -1.3, 0, 1.7);
     if (spec.location !== here) {
       if (here === 'kancelar') {
         const miss = spec.kit.map((k) => this.items.find((i) => i.kind === k)).find((i) => i && i.state === 'ground' && i.location === here);
@@ -2065,6 +2074,10 @@ export class Game {
     }
     const spec = run.spec;
     const where = LOCATIONS[spec.location].short;
+    if (this.jobComplete(run)) {
+      if (here === 'kancelar') return this.driving ? 'Zastav a vystup, jsi u kanceláře.' : 'Otevři dispečink u vchodu a dej Zpracovat data a odevzdat.';
+      return this.driving ? 'Odjeď do kanceláře (tablet → Odjet: Kancelář).' : 'Hotovo v terénu! Sbal vybavení do dodávky a jeď do kanceláře zpracovat data.';
+    }
     if (spec.location !== here) {
       const missing = this.kitRows(spec).filter((k) => !k.ok);
       if (missing.length && here === 'kancelar') {
@@ -2077,7 +2090,7 @@ export class Game {
       return `Nastup do dodávky a odjeď na místo: ${where}.`;
     }
     if (this.driving) return 'Zastav a vystup, jsi na místě.';
-    if (this.jobComplete(run)) return 'Hotovo! Odevzdej zakázku v tabletu (Mapa → Zakázka).';
+    if (this.jobComplete(run)) return 'Hotovo v terénu! Sbal vybavení a jeď do kanceláře zpracovat data.';
     const stored = spec.kit.map((k) => this.items.find((i) => i.kind === k)).find((i) => i?.state === 'stored');
     if (stored) return `Vyndej z dodávky ${ITEM_DEFS[stored.kind].nameAcc} (zadní dveře).`;
     const active = this.activeItem()?.kind;
@@ -2111,7 +2124,7 @@ export class Game {
         const t = this.currentTarget();
         return t
           ? `Jdi po šipce k bodu ${t.id}${t.existingMarkId ? ' a změř dochovaný znak' : '. U něj se zpomalíš, opři výtyčku o dvojnožku a zatluč kolík'}.`
-          : 'Všechny body máš. Odevzdej zakázku v tabletu.';
+          : 'Všechny body máš. Jeď do kanceláře zpracovat data.';
       }
       case 'nivelace': {
         const line = run.level;
@@ -2335,6 +2348,71 @@ export class Game {
     this.bus.emit('toast', { text: `Hra se sekala, tak jsem ${what}. Vrátíš to v Nastavení (⚙).` });
   }
 
+  // ================================================================ zpracování v kanceláři
+
+  private static readonly OUTPUTS: { id: string; label: string }[] = [
+    { id: 'rek', label: 'Záznam o rekognoskaci bodového pole' },
+    { id: 'vyt', label: 'Protokol o vytyčení (odchylky od projektu)' },
+    { id: 'dxf', label: 'Výkres DXF a seznam souřadnic zaměřených prvků' },
+    { id: 'niv', label: 'Nivelační zápisník a výpočet výšky' },
+    { id: 'gp', label: 'Geometrický plán' },
+  ];
+
+  private correctOutput(run: JobRun): string {
+    return { rekognoskace: 'rek', vytyceni: 'vyt', polohopis: 'dxf', nivelace: 'niv' }[run.spec.type];
+  }
+
+  /** Body zakázky ze zápisníku (od převzetí, v její lokalitě). */
+  private jobPoints(run: JobRun): MeasuredPoint[] {
+    return this.log.points.slice(run.firstPoint ?? 0).filter((p) => p.location === run.spec.location);
+  }
+
+  private openProcessing(id: string): void {
+    const run = this.jobs.get(id);
+    if (!run || this.world.location !== 'kancelar') return;
+    this.procJob = id;
+    const rows: ProcRow[] = this.jobPoints(run).map((p) => {
+      const devBad = p.dev && (Math.hypot(p.dev.dY, p.dev.dX) > CHECK_TOL.xy * 2 || Math.abs(p.dev.dH) > CHECK_TOL.h * 2);
+      const weak = p.method === 'gnss_rtk' && p.solution !== SOLUTION_LABEL.fix;
+      const flag: ProcRow['flag'] = p.dev ? (devBad ? 'checkBad' : 'check') : weak ? 'float' : p.note ? 'tol' : 'ok';
+      return {
+        id: p.id,
+        code: CODES.find((c) => c.code === p.code)?.label ?? (p.code === 'PEVNY_BOD' ? 'Pevný bod' : p.code),
+        coords: `${p.Y.toFixed(3)} / ${p.X.toFixed(3)} / ${p.Z.toFixed(3)}`,
+        sol: p.solution,
+        sigma: `${(p.sigmaXY * 1000).toFixed(0)} mm`,
+        flag,
+        note: p.dev ? `${p.markNumber}: ΔY ${mm(p.dev.dY)} ΔX ${mm(p.dev.dX)} ΔH ${mm(p.dev.dH)} mm` : undefined,
+      };
+    });
+    const summary =
+      run.stake
+        ? `Vytyčeno ${run.stake.doneCount} z ${run.stake.targets.length} bodů, ověřené znaky se počítají.`
+        : run.mapping
+          ? `Zaměřeno ${run.mapping.found.size} z ${run.mapping.required.length} požadovaných prvků.`
+          : run.level
+            ? `Nivelační pořad: ${run.level.sets.length} sestav, uzávěr ${run.level.closure !== null ? `${mmTxt(run.level.closure)} mm` : '—'}.`
+            : `Rekognoskace: vyřízeno ${run.recon?.resolvedCount ?? 0} bodů.`;
+    this.officeScreen.hide();
+    this.sfx.click();
+    this.proc.show({ job: run.spec.title, client: run.spec.client, rows, outputs: Game.OUTPUTS, summary });
+  }
+
+  /** Odeslání zpracované zakázky: podezřelá měření ve výsledku, vyřazené prvky a špatný výstup se reklamují. */
+  private processSend(excluded: Set<string>, output: string | null): void {
+    const run = this.procJob ? this.jobs.get(this.procJob) : undefined;
+    this.procJob = null;
+    if (!run) return;
+    const pts = this.jobPoints(run).filter((p) => !excluded.has(p.id));
+    const badIncluded = pts.filter((p) => (p.method === 'gnss_rtk' && p.solution !== SOLUTION_LABEL.fix && !p.dev) || (p.note && !p.dev)).length;
+    const missing: string[] = [];
+    if (run.mapping) for (const [fid, pid] of run.mapping.found) if (excluded.has(pid)) missing.push(run.mapping.required.find((f) => f.id === fid)?.label ?? fid);
+    const wrongOutput = output !== this.correctOutput(run);
+    this.clockMin += 40;
+    this.activeJobId = run.spec.id;
+    this.submitJob({ badIncluded, missing, wrongOutput, outputLabel: Game.OUTPUTS.find((o) => o.id === output)?.label ?? '' });
+  }
+
   // ================================================================ stav vybavení
 
   private cond(id: EquipId): number {
@@ -2452,6 +2530,7 @@ export class Game {
     if (active?.kind === 'prismPole' || this.connected()) return 'ts-measure';
     if (active?.kind === 'level' || active?.kind === 'rod' || run?.spec.type === 'nivelace') return 'level';
     if (!run) return this.world.location === 'kancelar' ? 'start' : 'career';
+    if (this.jobComplete(run)) return 'office';
     return run.spec.kit.includes('gnssRover') ? 'gnss-rig' : run.spec.requireStation ? 'tripod' : 'start';
   }
 
@@ -3048,6 +3127,7 @@ export class Game {
       if (locked) {
         /* zamčená zakázka: jen popis */
       } else if (r.status === 'nova') actions.push({ id: `accept:${spec.id}`, label: 'Převzít zakázku', primary: true });
+      else if (r.status === 'aktivni' && this.jobComplete(r)) actions.push({ id: `process:${spec.id}`, label: 'Zpracovat data a odevzdat', primary: true });
       else if (r.status === 'aktivni' && this.activeJobId !== spec.id) actions.push({ id: `open:${spec.id}`, label: 'Nastavit jako aktivní', primary: true });
       else if (r.status === 'odevzdana') actions.push({ id: `redo:${spec.id}`, label: 'Přijmout novou objednávku' });
       detail = {
@@ -3121,6 +3201,7 @@ export class Game {
     }
     if (cmd === 'endDay') return this.endDay();
     if (cmd === 'repair') return this.sendToRepair(arg as EquipId);
+    if (cmd === 'process') return this.openProcessing(arg);
     if (cmd === 'insure') {
       if (this.career.insured) return;
       if (this.career.money < INSURANCE) return void this.bus.emit('toast', { text: `Pojištění stojí ${kc(INSURANCE)}.`, tone: 'warn' });
@@ -3251,6 +3332,7 @@ export class Game {
   private startJob(run: JobRun): void {
     if (run.status !== 'nova') return;
     run.status = 'aktivni';
+    run.firstPoint = this.log.points.length;
     const w = this.worldOf(run.spec.location);
     if (run.spec.type === 'rekognoskace') run.recon = new ReconTask(run.spec.reconMarks ?? []);
     if (run.spec.type === 'vytyceni') run.stake = new StakeoutTask(designTargets(run.spec, w), run.spec.tolerance.xy);
@@ -3347,7 +3429,7 @@ export class Game {
     };
   }
 
-  private submitJob(): void {
+  private submitJob(office?: { badIncluded: number; missing: string[]; wrongOutput: boolean; outputLabel: string }): void {
     const run = this.activeJobId ? this.jobs.get(this.activeJobId) : undefined;
     if (!run || !this.jobComplete(run)) return;
     const w = this.worldOf(run.spec.location);
@@ -3373,7 +3455,7 @@ export class Game {
       text = `${(run.spec.levelTo ?? '').toUpperCase()} ${h.toFixed(3).replace('.', ',')} m (kontrola ${f(err)} mm), uzávěr ${f(cl)} mm při mezi ${f(lim)} mm.${cont ? '' : ' Pořad nenavazuje: lať se mezi záměrami přesunula.'}${ok ? ' V pořádku.' : ' Nevyhovuje.'}`;
     } else if (run.mapping) {
       ok = run.mapping.wrongCode === 0;
-      text = `Zaměřeno ${run.mapping.found.size} prvků.${run.mapping.wrongCode ? ` Chybně kódovaná měření: ${run.mapping.wrongCode}.` : ' Kódy v pořádku.'}`;
+      text = `Zaměřeno ${run.mapping.found.size} ${run.mapping.found.size === 1 ? "prvek" : run.mapping.found.size <= 4 && run.mapping.found.size > 0 ? "prvky" : "prvků"}.${run.mapping.wrongCode ? ` Chybně kódovaná měření: ${run.mapping.wrongCode}.` : ' Kódy v pořádku.'}`;
     }
     // Měření GNSS musí být ověřené připojením na bod bodového pole.
     if (run.spec.kit.includes('gnssRover') && run.spec.type !== 'rekognoskace') {
@@ -3385,6 +3467,21 @@ export class Game {
         ok = false;
         text += ` Kontrolní měření na bodu ${c.mark} nesedí (poloha ${(c.dPos * 100).toFixed(1).replace('.', ',')} cm, výška ${(c.dH * 100).toFixed(1).replace('.', ',')} cm): chyba v nastavení kontroleru.`;
       } else text += ` Kontrola na bodu ${c.mark}: ${(c.dPos * 100).toFixed(1).replace('.', ',')} cm.`;
+    }
+    // Kancelářské zpracování: co objednatel dostal.
+    if (office) {
+      if (office.missing.length) {
+        ok = false;
+        text += ` Chybí prvky (měření vyřazeno): ${office.missing.join(', ')}.`;
+      }
+      if (office.badIncluded) {
+        ok = false;
+        text += ` Ve výsledku ${office.badIncluded === 1 ? 'je 1 nespolehlivé měření' : `je ${office.badIncluded} nespolehlivých měření`} (FLOAT nebo mimo toleranci) – objednatel reklamuje.`;
+      }
+      if (office.wrongOutput) {
+        ok = false;
+        text += ` Objednatel dostal „${office.outputLabel}“, ale čekal jiný výstup.`;
+      }
     }
     run.status = 'odevzdana';
     run.result = { ok, text };
@@ -3547,7 +3644,7 @@ export class Game {
     }
     if (elsewhere) footer = `Zakázka je v lokalitě ${LOCATIONS[spec.location].name}. Naložte vybavení do dodávky a jeďte. ${footer}`;
     const actions: JobPanel['actions'] = [];
-    if (this.jobComplete(run) && !elsewhere) actions.push({ id: 'submit', label: 'Odevzdat zakázku', primary: true });
+    if (this.jobComplete(run) && !elsewhere) footer = `Hotovo v terénu! Sbal vybavení, jeď do kanceláře a data zpracuj na počítači (dispečink → Zpracovat data). ${footer}`;
     if (run.level && run.level.sets.length) actions.push({ id: 'lv-reset', label: 'Začít pořad znovu' });
     actions.push({ id: 'board', label: 'Všechny zakázky' });
     actions.push(...departActions());
