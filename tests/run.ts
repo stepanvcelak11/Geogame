@@ -867,5 +867,30 @@ const world = generateWorld('stavba');
   check('vybitá baterie už nehlásí nic dalšího', drain(c.ts, 'ts', 10, 20) === null);
 }
 
+// --- Stanice ve dvou polohách dalekohledu
+{
+  const { TotalStation } = await import('../src/survey/TotalStation');
+  const { Rng } = await import('../src/core/Rng');
+  const w = generateWorld('stavba');
+  const center = { x: 0, y: 120, z: 0 };
+  const prism = { id: 'p', center: { x: 6, y: 128, z: 8 }, foot: { x: 6, y: 126, z: 8 }, height: 2 };
+  const d = { x: 6, y: 8, z: 8 };
+  const l = Math.hypot(d.x, d.y, d.z);
+  const dir = { x: d.x / l, y: d.y / l, z: d.z / l };
+  const ts = new TotalStation(center, null, 1.5, new Rng(9));
+  ts.wear = 0;
+  const c = (40 * Math.PI) / (180 * 3600);
+  ts.bias = c;
+  const truth = ts.reading(dir);
+  const one = ts.shoot(dir, w, [prism], 'prism');
+  const both = ts.shootBoth(dir, w, [prism], 'prism');
+  const arc = (r: number): number => (r * 180 * 3600) / Math.PI;
+  if (one.ok && both.ok) {
+    check('v jedné poloze je ve Hz kolimace c / sin z', Math.abs(arc(one.shot.hz - truth.hz) - 40 / Math.sin(truth.zen)) < 0.1, arc(one.shot.hz - truth.hz).toFixed(1));
+    check('průměr dvou poloh chybu vyruší (Hz i V)', Math.abs(arc(both.shot.hz - truth.hz)) < 0.1 && Math.abs(arc(both.shot.zen - truth.zen)) < 0.1);
+    check('rozdíl poloh ukáže 2c', Math.abs(arc(both.shot.faces!.dHz) - 80 / Math.sin(truth.zen)) < 0.1, arc(both.shot.faces!.dHz).toFixed(1));
+  } else check('stanice změří hranol ve vzduchu', false);
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

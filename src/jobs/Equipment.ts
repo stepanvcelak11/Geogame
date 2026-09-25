@@ -51,7 +51,7 @@ export function noiseFactor(condition: number): number {
 
 /** Soustavná chyba úhlů stanice po pádu (kolimace) [″]. */
 export function collimationArcsec(condition: number): number {
-  return condition >= 0.9 ? 0 : (0.9 - condition) * 60;
+  return condition >= 0.9 ? 0 : (0.9 - condition) * 120;
 }
 
 export function stateLabel(condition: number): string {

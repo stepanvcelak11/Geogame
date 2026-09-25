@@ -84,7 +84,7 @@ import { InstrumentSetup } from './survey/InstrumentSetup';
 import { solveResection, type ResectionObs } from './survey/FreeStation';
 import { closureLimit, LevelLine, readRod, type LevelInstrument, type LevelShot } from './survey/Leveling';
 import { RoboticLink } from './survey/RoboticLink';
-import { TotalStation, type Prism, type TsMode, type TsShot } from './survey/TotalStation';
+import { TotalStation, type Prism, type ShotResult, type TsMode, type TsShot } from './survey/TotalStation';
 import { mm, PointLog, type MeasuredPoint } from './survey/PointLog';
 import { Hud, type GnssView, type NavView } from './ui/Hud';
 import { CargoSheet } from './ui/CargoSheet';
@@ -248,6 +248,8 @@ export class Game {
   private readonly eye = vec3();
   private aim: AimPoint | null = null;
   private plan: ActionPlan | null = null;
+  private twoFaces = false; // stanice měří v I. i II. poloze dalekohledu
+  private facesWarned = new Set<string>(); // stanice, u kterých už padlo varování na chybu 2c
   private lastMeasure: string | null = null;
   private activeJobId: string | null = null;
   private showBoard = true;
@@ -1133,6 +1135,15 @@ export class Game {
     };
     sc.onMeasure = () => (this.scope?.kind === 'level' ? this.levelMeasure() : this.scopeMeasure());
     sc.onAtr = () => this.scopeAtr();
+    sc.onFaces = () => {
+      this.twoFaces = !this.twoFaces;
+      this.sfx.click();
+      this.bus.emit('toast', {
+        text: this.twoFaces
+          ? 'Měření ve dvou polohách: stanice změří, proloží dalekohled, změří znovu a výsledek zprůměruje. Chyby přístroje (kolimace, index) se vyruší – trvá to ale déle.'
+          : 'Měření jen v I. poloze: rychlejší, chyby přístroje zůstanou ve výsledku.',
+      });
+    };
     sc.onMode = () => {
       if (!this.scope) return;
       if (this.scope.kind === 'level') {
@@ -1178,6 +1189,28 @@ export class Game {
     return this.scope?.finder ? 40 : 1.6; // svislé zorné pole [°]: hledáček / dalekohled 30×
   }
 
+  /** Měření stanicí v jedné nebo obou polohách; u obou poloh ohlídá rozdíl 2c. */
+  private tsShoot(ts: TotalStation, stationId: string, dir: Vec3, prisms: Prism[], mode: TsMode): ShotResult {
+    if (!this.twoFaces) return ts.shoot(dir, this.world, prisms, mode, this.stationRanges());
+    const r = ts.shootBoth(dir, this.world, prisms, mode, this.stationRanges());
+    this.sfx.servo(1.6); // proložení dalekohledu a otočení o 200 gon
+    this.clockMin += 0.5;
+    const f = r.ok ? r.shot.faces : undefined;
+    if (f) {
+      const c2 = (f.dHz * 180 * 3600) / Math.PI;
+      const i2 = (f.dZen * 180 * 3600) / Math.PI;
+      const cc = (Math.abs(c2) * 10000) / 3240; // ″ → cc (setinné vteřiny)
+      if (Math.abs(c2) > 20 && !this.facesWarned.has(stationId)) {
+        this.facesWarned.add(stationId);
+        this.bus.emit('toast', {
+          text: `Rozdíl poloh 2c = ${Math.round(cc)} cc, 2i = ${Math.round((Math.abs(i2) * 10000) / 3240)} cc – přístroj má kolimační chybu (asi po pádu). Průměr obou poloh ji ruší; nech ho ale v servisu rektifikovat.`,
+          tone: 'warn',
+        });
+      }
+    }
+    return r;
+  }
+
   private openScope(tripod: WorldItem): void {
     if (!this.stations.has(tripod.id) || this.tsDeadToast()) return;
     if (this.input.pointerLocked) document.exitPointerLock();
@@ -1206,7 +1239,7 @@ export class Game {
       this.bus.emit('toast', { text, tone: 'warn' });
     };
     const dir = lookDirection(sc.yaw, sc.pitch);
-    const r = ts.shoot(dir, this.world, this.prisms(), sc.mode, this.stationRanges());
+    const r = this.tsShoot(ts, sc.itemId, dir, this.prisms(), sc.mode);
     if (!r.ok) return warn(r.reason);
     const shot = r.shot;
     const hd = shot.sd * Math.sin(shot.zen);
@@ -1536,7 +1569,8 @@ export class Game {
     if (!this.pole.inCircle) this.bus.emit('toast', { text: 'Bublina byla mimo kroužek, měření je zatížené náklonem.', tone: 'warn' });
     const d = { x: prism.center.x - ts.center.x, y: prism.center.y - ts.center.y, z: prism.center.z - ts.center.z };
     const l = Math.hypot(d.x, d.y, d.z);
-    const r = ts.shoot({ x: d.x / l, y: d.y / l, z: d.z / l }, this.world, [prism], 'prism', this.stationRanges());
+    const tri = [...this.stations].find(([, v]) => v === ts)?.[0] ?? '';
+    const r = this.tsShoot(ts, tri, { x: d.x / l, y: d.y / l, z: d.z / l }, [prism], 'prism');
     if (!r.ok) {
       this.bus.emit('toast', { text: r.reason, tone: 'warn' });
       return;
@@ -1607,6 +1641,7 @@ export class Game {
       measureLabel: !ts.station ? 'Připojit' : ts.orientation === null ? 'Orientovat' : 'Měřit',
       canMeasure: true,
       modeLabel: sc.mode === 'prism' ? 'Režim: hranol' : 'Režim: bez hranolu',
+      faces: this.twoFaces,
       codeLabel: CODES[this.codeIdx].label,
       setupLabel: 'Ustavení',
       finder: sc.finder,

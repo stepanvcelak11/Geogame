@@ -7,6 +7,7 @@ export interface ScopeView {
   canMeasure: boolean;
   modeLabel: string | null; // null = tlačítko skryté
   codeLabel: string | null;
+  faces?: boolean | null; // měření ve dvou polohách: null = tlačítko skryté
   setupLabel: string; // „Ustavení“ / „Složit“
   finder: boolean;
   last: string | null;
@@ -25,6 +26,7 @@ export class ScopeScreen {
   onLook: ((dx: number, dy: number) => void) | null = null;
   onMeasure: (() => void) | null = null;
   onMode: (() => void) | null = null;
+  onFaces: (() => void) | null = null;
   onZoom: (() => void) | null = null;
   onAtr: (() => void) | null = null;
   onCode: (() => void) | null = null;
@@ -60,7 +62,7 @@ export class ScopeScreen {
         <button class="sc-measure"></button>
         <button class="sc-atr" hidden>Cílit (ATR)</button>
         <button class="sc-mode"></button>
-        <button class="sc-zoom"></button>
+        <div class="sc-row sc-row-auto"><button class="sc-zoom"></button><button class="sc-faces" hidden title="Měřit v I. i II. poloze dalekohledu"></button></div>
         <button class="sc-code"></button>
         <div class="sc-row"><button class="sc-setup">Ustavení</button><button class="sc-close">Zavřít</button></div>
       </nav>`;
@@ -76,6 +78,7 @@ export class ScopeScreen {
     btn('.sc-zoom', () => this.onZoom?.());
     btn('.sc-atr', () => this.onAtr?.());
     btn('.sc-code', () => this.onCode?.());
+    btn('.sc-faces', () => this.onFaces?.());
     btn('.sc-setup', () => this.onSetup?.());
     btn('.sc-close', () => this.hide());
 
@@ -154,6 +157,10 @@ export class ScopeScreen {
     q('.sc-zoom').textContent = v.finder ? 'Dalekohled 30×' : 'Hledáček';
     q('.sc-code').hidden = !v.codeLabel;
     q('.sc-code').textContent = v.codeLabel ? `Kód: ${v.codeLabel}` : '';
+    const fb = q('.sc-faces');
+    fb.hidden = v.faces === null || v.faces === undefined;
+    fb.textContent = v.faces ? 'I+II ✓' : 'I+II';
+    fb.classList.toggle('is-on', !!v.faces);
     q('.sc-setup').textContent = v.setupLabel;
     q('.scope-finder-mark').hidden = !v.finder;
     this.el.classList.toggle('is-finder', v.finder);
