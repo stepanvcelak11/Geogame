@@ -51,8 +51,15 @@ export class MapRenderer {
 
   private readonly frame: SjtskFrame;
 
+  /** Rozlišení podkladu [px/m] a krok stínovaného reliéfu [m/px]: velká krajina hruběji. */
+  private readonly ppm: number;
+  private readonly mpp: number;
+
   constructor(private readonly world: World) {
     this.frame = world.frame;
+    const big = world.heightmap.size > 600;
+    this.ppm = big ? 0.6 : PPM;
+    this.mpp = big ? 3 : 1;
   }
 
   get ready(): boolean {
@@ -63,30 +70,31 @@ export class MapRenderer {
     if (this.base) return;
     const hm = this.world.heightmap;
     const half = hm.half;
-    const size = hm.size * PPM;
-    const toPx = (v: number): number => (v + half) * PPM;
+    const size = hm.size * this.ppm;
+    const toPx = (v: number): number => (v + half) * this.ppm;
 
     // 1) Stínovaný reliéf v 1 px/m, pak zvětšit s vyhlazením.
     const lo = document.createElement('canvas');
-    lo.width = hm.size;
-    lo.height = hm.size;
+    const R = Math.ceil(hm.size / this.mpp);
+    lo.width = R;
+    lo.height = R;
     const lctx = lo.getContext('2d');
     if (!lctx) return;
-    const img = lctx.createImageData(hm.size, hm.size);
+    const img = lctx.createImageData(R, R);
     const L = { x: -0.55, y: 0.72, z: -0.42 }; // světlo od severozápadu
     const plotR = this.world.flatRadius;
     const paint = { flatRadius: plotR, gravelYard: this.world.location === 'kancelar', fields: this.world.fields, water: this.world.water };
-    for (let py = 0; py < hm.size; py++) {
-      for (let px = 0; px < hm.size; px++) {
-        const x = -half + px + 0.5;
-        const z = -half + py + 0.5;
+    for (let py = 0; py < R; py++) {
+      for (let px = 0; px < R; px++) {
+        const x = -half + (px + 0.5) * this.mpp;
+        const z = -half + (py + 0.5) * this.mpp;
         const dx = (hm.heightAt(x + 1, z) - hm.heightAt(x - 1, z)) / 2;
         const dz = (hm.heightAt(x, z + 1) - hm.heightAt(x, z - 1)) / 2;
         const inv = 1 / Math.hypot(dx, 1, dz);
         const lit = (-dx * L.x + L.y - dz * L.z) * inv;
         const shade = clamp(0.93 + (lit - L.y) * 1.15, 0.74, 1.05);
         const site = plotR > 0 && Math.hypot(x, z) < plotR * 0.9 ? 1 : 0;
-        const i = (py * hm.size + px) * 4;
+        const i = (py * R + px) * 4;
         if (this.layers.ortofoto) {
           // Ortofoto: stejné barvy jako 3D terén (lineární → sRGB), se stínováním.
           const c = terrainColor(x, z, hm.heightAt(x, z), Math.atan(Math.hypot(dx, dz)), paint);
@@ -116,8 +124,8 @@ export class MapRenderer {
     g.fillStyle = this.layers.ortofoto ? 'rgba(38, 66, 30, 0.78)' : 'rgba(176, 208, 150, 0.62)';
     g.beginPath();
     for (const t of this.world.trees) {
-      g.moveTo(toPx(t.x) + t.crownR * PPM, toPx(t.z));
-      g.arc(toPx(t.x), toPx(t.z), t.crownR * PPM, 0, Math.PI * 2);
+      g.moveTo(toPx(t.x) + t.crownR * this.ppm, toPx(t.z));
+      g.arc(toPx(t.x), toPx(t.z), t.crownR * this.ppm, 0, Math.PI * 2);
     }
     g.fill();
     g.fillStyle = 'rgba(62, 100, 52, 0.55)';
@@ -142,7 +150,7 @@ export class MapRenderer {
       g.strokeStyle = 'rgba(40, 90, 140, 0.9)';
       g.lineWidth = 1.5;
       g.beginPath();
-      g.ellipse(toPx(wt.x), toPx(wt.z), wt.rx * PPM, wt.rz * PPM, 0, 0, Math.PI * 2);
+      g.ellipse(toPx(wt.x), toPx(wt.z), wt.rx * this.ppm, wt.rz * this.ppm, 0, 0, Math.PI * 2);
       g.fill();
       g.stroke();
     }
@@ -151,8 +159,8 @@ export class MapRenderer {
       g.fillStyle = this.layers.ortofoto ? (sc.kind === 'house' ? '#9a4630' : '#7d8286') : '#8d8a84';
       g.strokeStyle = INK;
       g.lineWidth = 1;
-      g.fillRect(toPx(sc.x - sc.w / 2), toPx(sc.z - sc.d / 2), sc.w * PPM, sc.d * PPM);
-      g.strokeRect(toPx(sc.x - sc.w / 2), toPx(sc.z - sc.d / 2), sc.w * PPM, sc.d * PPM);
+      g.fillRect(toPx(sc.x - sc.w / 2), toPx(sc.z - sc.d / 2), sc.w * this.ppm, sc.d * this.ppm);
+      g.strokeRect(toPx(sc.x - sc.w / 2), toPx(sc.z - sc.d / 2), sc.w * this.ppm, sc.d * this.ppm);
     }
 
     // 3) Vrstevnice (marching squares na mříži heightmapy).
@@ -200,10 +208,29 @@ export class MapRenderer {
 
     }
 
+    // Silnice krajiny.
+    for (const l of this.world.lanes ?? []) {
+      g.strokeStyle = INK;
+      g.lineWidth = Math.max(3, l.halfWidth * 2 * this.ppm + 2);
+      g.lineJoin = 'round';
+      g.beginPath();
+      l.pts.forEach((p, i) => (i ? g.lineTo(toPx(p.x), toPx(p.z)) : g.moveTo(toPx(p.x), toPx(p.z))));
+      g.stroke();
+      g.strokeStyle = '#f2d98a';
+      g.lineWidth = Math.max(1.5, l.halfWidth * 2 * this.ppm);
+      g.stroke();
+    }
+    for (const e of this.world.exits ?? []) {
+      g.fillStyle = INK;
+      g.font = `600 14px ${FONT}`;
+      g.textAlign = 'center';
+      g.fillText(e.label, toPx(e.x), toPx(e.z) + (e.z > 0 ? -14 : 22));
+    }
+
     // 4) Ulice s obrubníky a vpustmi / polní cesta čárkovaně.
     const r = this.world.road;
     g.fillStyle = r.surface === 'dirt' ? '#e7dcc0' : '#dcd6c8';
-    g.fillRect(toPx(r.xMin), toPx(r.z - r.halfWidth), (r.xMax - r.xMin) * PPM, r.halfWidth * 2 * PPM);
+    g.fillRect(toPx(r.xMin), toPx(r.z - r.halfWidth), (r.xMax - r.xMin) * this.ppm, r.halfWidth * 2 * this.ppm);
     g.strokeStyle = INK;
     g.lineWidth = 1.2;
     if (r.surface === 'dirt') g.setLineDash([6, 4]);
@@ -223,8 +250,8 @@ export class MapRenderer {
     g.fillStyle = '#6d6a64';
     g.strokeStyle = INK;
     g.lineWidth = 1.2;
-    g.fillRect(toPx(bld.x - bld.sizeX / 2), toPx(bld.z - bld.sizeZ / 2), bld.sizeX * PPM, bld.sizeZ * PPM);
-    g.strokeRect(toPx(bld.x - bld.sizeX / 2), toPx(bld.z - bld.sizeZ / 2), bld.sizeX * PPM, bld.sizeZ * PPM);
+    g.fillRect(toPx(bld.x - bld.sizeX / 2), toPx(bld.z - bld.sizeZ / 2), bld.sizeX * this.ppm, bld.sizeZ * this.ppm);
+    g.strokeRect(toPx(bld.x - bld.sizeX / 2), toPx(bld.z - bld.sizeZ / 2), bld.sizeX * this.ppm, bld.sizeZ * this.ppm);
     }
 
     // 6) Plot: linie s příčnými značkami na sloupcích.
@@ -274,9 +301,9 @@ export class MapRenderer {
     ctx.fillRect(0, 0, w, h);
     if (this.base) {
       ctx.save();
-      ctx.imageSmoothingEnabled = s < PPM * 2;
+      ctx.imageSmoothingEnabled = s < this.ppm * 2;
       ctx.translate(sx(-half), sy(-half));
-      ctx.scale(s / PPM, s / PPM);
+      ctx.scale(s / this.ppm, s / this.ppm);
       ctx.drawImage(this.base, 0, 0);
       ctx.restore();
     }

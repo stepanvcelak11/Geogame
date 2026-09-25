@@ -97,7 +97,7 @@ export class Sfx {
     if (this.out) this.out.gain.value = 0.7 * v;
   }
 
-  ambience(dt: number, place: 'kancelar' | 'stavba' | 'louka' | 'les', night: number, inside: boolean, weather = { wind: 0.25, rain: 0 }): void {
+  ambience(dt: number, place: 'kancelar' | 'stavba' | 'louka' | 'les' | 'kraj', night: number, inside: boolean, weather = { wind: 0.25, rain: 0 }): void {
     const c = this.ctx;
     if (!c || !this.out || !this.noise || c.state !== 'running') return;
     if (!this.ambienceOn) {

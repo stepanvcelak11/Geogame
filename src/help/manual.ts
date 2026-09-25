@@ -19,7 +19,7 @@ export const MANUAL: ManualChapter[] = [
       { do: 'U vchodu kanceláře otevři nástěnku (dispečink) a převezmi zakázku.', why: 'Zakázka určuje, co měřit, s jakou přesností a jaké vybavení budeš potřebovat.' },
       { do: 'Ve skladu (garáž vedle) vezmi vybavení ze seznamu zakázky. Do každé ruky jednu věc.', why: 'Kufry a stativ jsou těžké – víc věcí najednou neuneseš.' },
       { do: 'Věci ulož do dodávky zadními dveřmi, pak nastup dveřmi řidiče.', why: 'Do kabiny se s plnýma rukama nevejdeš.' },
-      { do: 'V tabletu (Mapa) dej Odjet a vyber lokalitu.' },
+      { do: 'V tabletu (Zakázka) vyber Jet sám a dojeď dodávkou po silnici: na křižovatce se drž směrovky, šipka nahoře ukazuje cíl. Rychlý přesun tě tam dopraví rovnou.', why: 'Cesta trvá herní čas – zhruba čtvrt hodiny až dvacet minut podle vzdálenosti.' },
       { do: 'Na místě vyndej vybavení zadními dveřmi a pusť se do práce.' },
     ],
     tips: ['Řádek „Co dál?“ nahoře vždy radí další krok a šipka ukazuje směr.', 'Pepa (oranžové tlačítko) ti podrží výtyčku nebo lať, přečte přístroj, donese věci z auta i je tam odnese, přiveze dodávku a poradí, co dál a proč.', 'U stanice stačí povel „Postav hranol na … (orientace)“ – Pepa si vezme tvou výtyčku a dojde s ní na orientační bod.'],

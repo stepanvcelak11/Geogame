@@ -1,3 +1,4 @@
+import type { LocationId } from '../world/World';
 import type { Vec3 } from '../core/math';
 
 export type ItemKind = 'tripod' | 'tsCase' | 'prismPole' | 'gnssCase' | 'gnssRover' | 'level' | 'rod';
@@ -56,7 +57,7 @@ export interface WorldItem {
   id: string;
   kind: ItemKind;
   state: 'ground' | 'held' | 'deployed' | 'stored'; // stored = naložený v dodávce
-  location: 'kancelar' | 'stavba' | 'louka' | 'les' | 'servis'; // kde leží / stojí (u held a stored nerozhoduje); servis = na opravě
+  location: LocationId | 'servis'; // kde leží / stojí (u held a stored nerozhoduje); servis = na opravě
   home?: { x: number; y: number; z: number }; // místo ve skladu (sem se vrací ze servisu)
   secured?: boolean; // stativ: nohy sešlápnuté do země
   legLen?: number; // stativ: vysunutí nohou [m] (výška hlavy)

@@ -6,6 +6,8 @@ export interface LocationDef {
   short: string;
   seed: number;
   sjtsk: { originY: number; originX: number; originH: number };
+  /** Průjezdná krajina (silnice mezi lokalitami), ne cíl zakázek. */
+  transit?: boolean;
   /** Poloha na přehledové mapě kraje (0…1) pro animaci cesty. */
   region: { x: number; y: number };
 }
@@ -42,6 +44,15 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     seed: 430_117,
     sjtsk: { originY: 739_600, originX: 1_049_900, originH: 402 },
     region: { x: 0.18, y: 0.3 },
+  },
+  kraj: {
+    id: 'kraj',
+    name: 'Silnice přes Kněžívku',
+    short: 'Cesta',
+    seed: 612_009,
+    sjtsk: { originY: 745_000, originX: 1_042_000, originH: 300 },
+    region: { x: 0.45, y: 0.45 },
+    transit: true,
   },
 };
 

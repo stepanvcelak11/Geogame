@@ -17,6 +17,8 @@ import {
   type WaterInfo,
   type FenceInfo,
   type ItemSpawn,
+  type Lane,
+  type RegionExit,
   type LocationId,
   type MarkCondition,
   type MarkType,
@@ -95,6 +97,7 @@ export function frameFor(location: LocationId): SjtskFrame {
 
 /** Deterministicky vygeneruje lokalitu. */
 export function generateWorld(location: LocationId): World {
+  if (location === 'kraj') return generateRegion();
   return location === 'louka' ? generateMeadow() : location === 'kancelar' ? generateOffice() : location === 'les' ? generateForest() : generateSite();
 }
 
@@ -777,6 +780,216 @@ function generateForest(): World {
     fields: [],
     spawn: { x: vehicle.x + 2, z: vehicle.z - 3, yaw: 0 },
     itemSpawns: [],
+  });
+}
+
+// ------------------------------------------------------------------ krajina se silnicemi
+
+/** Silnice krajiny: z křižovatky u Kněžívky ke kanceláři, stavbě, louce a lesu. */
+export const REGION = {
+  size: 1536,
+  cell: 4,
+  roads: [
+    { to: 'kancelar' as const, label: 'Brandýs – Geoměření', pts: [[0, 0], [-90, 20], [-220, 70], [-380, 40], [-560, 90], [-730, 60]] },
+    { to: 'stavba' as const, label: 'Nová Ves', pts: [[0, 0], [30, -120], [-40, -260], [-10, -420], [-90, -580], [-60, -730]] },
+    { to: 'louka' as const, label: 'Kněžívka – louka', pts: [[0, 0], [140, -20], [300, 40], [460, -10], [600, 30], [730, 10]] },
+    { to: 'les' as const, label: 'Hrušov – lesy', pts: [[0, 0], [-30, 150], [40, 300], [-20, 460], [60, 600], [30, 730]] },
+  ],
+  halfWidth: 3.1,
+};
+
+/** Hladká křivka (Catmull-Rom) přes řídicí body, vzorkovaná po `step` metrech. */
+function smoothPath(ctrl: readonly (readonly number[])[], step: number): { x: number; z: number }[] {
+  const P = ctrl.map(([x, z]) => ({ x, z }));
+  const out: { x: number; z: number }[] = [];
+  for (let i = 0; i + 1 < P.length; i++) {
+    const p0 = P[Math.max(0, i - 1)];
+    const p1 = P[i];
+    const p2 = P[i + 1];
+    const p3 = P[Math.min(P.length - 1, i + 2)];
+    const len = Math.hypot(p2.x - p1.x, p2.z - p1.z);
+    const n = Math.max(2, Math.ceil(len / step));
+    for (let k = 0; k < n; k++) {
+      const t = k / n;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const f = (a: number, b: number, c: number, d: number): number => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+      out.push({ x: f(p0.x, p1.x, p2.x, p3.x), z: f(p0.z, p1.z, p2.z, p3.z) });
+    }
+  }
+  out.push({ ...P[P.length - 1] });
+  return out;
+}
+
+function generateRegion(): World {
+  const loc = LOCATIONS.kraj;
+  const frame = frameFor('kraj');
+  const rng = new Rng(loc.seed);
+  const terrainNoise = new Noise2D(rng);
+  const forestNoise = new Noise2D(rng);
+  const { size, cell } = REGION;
+  const half = size / 2;
+  const n = Math.round(size / cell) + 1;
+  const raw = (x: number, z: number): number => terrainNoise.fbm(x / 420, z / 420, 5) * 34 + terrainNoise.fbm(x / 60 + 3.3, z / 60 - 1.1, 3) * 1.4;
+
+  // Osy silnic a výška vozovky: terén pod osou vyhlazený klouzavým průměrem (mírné stoupání).
+  const lanes: Lane[] = REGION.roads.map((r) => {
+    const pts = smoothPath(r.pts, 4);
+    const h = pts.map((p) => raw(p.x, p.z));
+    const win = 30;
+    const ys = h.map((_, i) => {
+      let sum = 0;
+      let cnt = 0;
+      for (let k = Math.max(0, i - win); k <= Math.min(h.length - 1, i + win); k++) {
+        sum += h[k];
+        cnt++;
+      }
+      return sum / cnt;
+    });
+    return { pts: pts.map((p, i) => ({ x: p.x, z: p.z, y: ys[i] })), halfWidth: REGION.halfWidth };
+  });
+  // Křižovatka: všechny větve začínají ve stejné výšce.
+  const y0 = lanes.reduce((a, l) => a + l.pts[0].y, 0) / lanes.length;
+  for (const l of lanes) {
+    const pts = l.pts as { x: number; z: number; y: number }[];
+    for (let i = 0; i < Math.min(40, pts.length); i++) pts[i].y = y0 + (pts[i].y - y0) * (i / 40);
+  }
+
+  // Terén: surový, u silnic srovnaný na výšku vozovky (razítko vzdálenosti po buňkách).
+  const heights = new Float32Array(n * n);
+  const dist = new Float32Array(n * n).fill(1e9);
+  const roadY = new Float32Array(n * n);
+  for (let iz = 0; iz < n; iz++) for (let ix = 0; ix < n; ix++) heights[iz * n + ix] = raw(-half + ix * cell, -half + iz * cell);
+  const R = 20;
+  for (const l of lanes)
+    for (let k = 0; k + 1 < l.pts.length; k++) {
+      const a = l.pts[k];
+      const b = l.pts[k + 1];
+      const i0 = Math.max(0, Math.floor((Math.min(a.x, b.x) - R + half) / cell));
+      const i1 = Math.min(n - 1, Math.ceil((Math.max(a.x, b.x) + R + half) / cell));
+      const j0 = Math.max(0, Math.floor((Math.min(a.z, b.z) - R + half) / cell));
+      const j1 = Math.min(n - 1, Math.ceil((Math.max(a.z, b.z) + R + half) / cell));
+      const vx = b.x - a.x;
+      const vz = b.z - a.z;
+      const vv = vx * vx + vz * vz || 1;
+      for (let j = j0; j <= j1; j++)
+        for (let i = i0; i <= i1; i++) {
+          const x = -half + i * cell;
+          const z = -half + j * cell;
+          const t = Math.max(0, Math.min(1, ((x - a.x) * vx + (z - a.z) * vz) / vv));
+          const d = Math.hypot(x - a.x - vx * t, z - a.z - vz * t);
+          const q = j * n + i;
+          if (d < dist[q]) {
+            dist[q] = d;
+            roadY[q] = a.y + (b.y - a.y) * t;
+          }
+        }
+    }
+  for (let q = 0; q < n * n; q++) {
+    const w = 1 - smoothstep(REGION.halfWidth + 2, REGION.halfWidth + 17, dist[q]);
+    const ix = q % n;
+    const iz = Math.floor(q / n);
+    const e = smoothstep(half * 0.9, half, Math.max(Math.abs(-half + ix * cell), Math.abs(-half + iz * cell)));
+    heights[q] += e * e * 30; // val na okraji mapy (u silnice ho srovná vozovka níž)
+    if (w > 0) heights[q] = lerp(heights[q], roadY[q] - 0.05, w);
+  }
+  const heightmap = new Heightmap(size, cell, heights);
+
+  const c: Ctx = { rng, heightmap, frame, colliders: new ColliderSet(16), marks: [], clear: [] };
+  const scenery: SceneryItem[] = [];
+  const nearRoad = (x: number, z: number, m: number): boolean => {
+    const i = Math.round((x + half) / cell);
+    const j = Math.round((z + half) / cell);
+    return i >= 0 && j >= 0 && i < n && j < n && dist[j * n + i] < m;
+  };
+
+  // Výjezdy do lokalit na koncích silnic + cedule obce.
+  const exits: RegionExit[] = REGION.roads.map((r, k) => {
+    const pts = lanes[k].pts;
+    const end = pts[pts.length - 1];
+    const prev = pts[pts.length - 6];
+    return { location: r.to, x: end.x, z: end.z, yaw: Math.atan2(end.x - prev.x, end.z - prev.z), r: 24, label: r.label };
+  });
+  REGION.roads.forEach((r, k) => {
+    const pts = lanes[k].pts;
+    // Směrovka u křižovatky a cedule před výjezdem.
+    for (const [idx, text] of [
+      [12, `→ ${r.label}`],
+      [pts.length - 14, r.label.toUpperCase()],
+    ] as const) {
+      const p = pts[idx];
+      const q = pts[idx + 1];
+      const nx = -(q.z - p.z);
+      const nz = q.x - p.x;
+      const l = Math.hypot(nx, nz) || 1;
+      const x = p.x + (nx / l) * (REGION.halfWidth + 2.2);
+      const z = p.z + (nz / l) * (REGION.halfWidth + 2.2);
+      place(c, scenery, 'sign', x, z, 1.8, 0.1, 2.3, { color: 0x1f4e79, text, clear: 1, yaw: Math.round(Math.atan2(q.x - p.x, q.z - p.z) / (Math.PI / 2)) * (Math.PI / 2) });
+    }
+  });
+  // Vesnička u křižovatky.
+  for (let k = 0; k < 9; k++) {
+    const a = rng.range(0, Math.PI * 2);
+    const d = rng.range(28, 70);
+    const x = Math.cos(a) * d;
+    const z = Math.sin(a) * d;
+    if (nearRoad(x, z, 13)) continue;
+    place(c, scenery, 'house', x, z, rng.range(8, 11), rng.range(7.5, 9.5), rng.range(3.2, 5.6), {
+      yaw: rng.next() < 0.5 ? 0 : Math.PI / 2,
+      color: [0xe6e0d0, 0xd7c9ad, 0xefe8da, 0xcfd5d8][k % 4],
+      variant: k % 3,
+    });
+  }
+  // Sloupy vedení podél silnice ke kanceláři.
+  {
+    const pts = lanes[0].pts;
+    for (let i = 10; i < pts.length - 5; i += 10) {
+      const p = pts[i];
+      const q = pts[i + 1];
+      const nx = -(q.z - p.z);
+      const nz = q.x - p.x;
+      const l = Math.hypot(nx, nz) || 1;
+      const x = p.x - (nx / l) * (REGION.halfWidth + 5);
+      const z = p.z - (nz / l) * (REGION.halfWidth + 5);
+      const gy = heightmap.heightAt(x, z);
+      scenery.push({ kind: 'powerPole', x, z, yaw: 0, w: 0.3, d: 0.3, h: 9, groundY: gy });
+      c.colliders.add({ kind: 'circle', x, z, r: 0.15, yMin: gy - 1, yMax: gy + 9, tag: 'trunk' });
+    }
+  }
+  const fields: FieldInfo[] = [
+    { crop: 'wheat', corners: [ { x: -600, z: -300 }, { x: -260, z: -320 }, { x: -240, z: -60 }, { x: -620, z: -40 } ] },
+    { crop: 'rapeseed', corners: [ { x: 160, z: -380 }, { x: 520, z: -400 }, { x: 540, z: -120 }, { x: 180, z: -100 } ] },
+    { crop: 'plowed', corners: [ { x: 140, z: 160 }, { x: 560, z: 180 }, { x: 540, z: 460 }, { x: 160, z: 440 } ] },
+    { crop: 'wheat', corners: [ { x: -560, z: 240 }, { x: -220, z: 220 }, { x: -200, z: 540 }, { x: -600, z: 560 } ] },
+  ];
+  const first = exits[0];
+  const vehicle = vehicleAt(first.x + Math.sin(first.yaw + Math.PI) * 30, first.z + Math.cos(first.yaw + Math.PI) * 30, first.yaw, heightmap);
+  const blocked = (x: number, z: number): boolean =>
+    nearRoad(x, z, 11) || c.clear.some((q) => (x - q.x) ** 2 + (z - q.z) ** 2 < q.r * q.r) || fields.some((f) => inPolygon(x, z, f.corners)) || Math.hypot(x, z) < 90;
+  const trees = scatterTrees(c, forestNoise, blocked, (_x, _z, forest) => 0.03 + 0.9 * forest * forest, [], 2200);
+
+  return new World({
+    location: 'kraj',
+    name: loc.name,
+    frame,
+    heightmap,
+    colliders: c.colliders,
+    trees,
+    marks: [],
+    vehicle,
+    road: { surface: 'asphalt', z: 1e6, halfWidth: 0, xMin: 0, xMax: 0, curbHeight: 0, curbWidth: 0, inlets: [] },
+    building: null,
+    fence: null,
+    parcels: [],
+    features: [],
+    flatRadius: 0,
+    scenery,
+    water: [],
+    fields,
+    spawn: { x: vehicle.x + 3, z: vehicle.z, yaw: 0 },
+    itemSpawns: [],
+    lanes,
+    exits,
   });
 }
 

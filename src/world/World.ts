@@ -5,7 +5,7 @@ import type { ItemKind } from '../items/items';
 import { rayObb, resolveCircleObb, type ColliderSet, type ColliderTag, type Obb } from './Colliders';
 import type { Heightmap } from './Heightmap';
 
-export type LocationId = 'kancelar' | 'stavba' | 'louka' | 'les';
+export type LocationId = 'kancelar' | 'stavba' | 'louka' | 'les' | 'kraj';
 
 export interface TreeInstance {
   x: number;
@@ -190,6 +190,24 @@ export interface WorldSpec {
   spawn: { x: number; z: number; yaw: number };
   itemSpawns: readonly ItemSpawn[];
   trench?: readonly { x: number; z: number }[]; // výkop vodovodní přípojky (lomená čára)
+  lanes?: readonly Lane[]; // silnice krajiny (lomené čáry, vzorkované po pár metrech)
+  exits?: readonly RegionExit[]; // výjezdy z krajiny do lokalit
+}
+
+/** Silnice v krajině: body osy (s výškou vozovky) a poloviční šířka. */
+export interface Lane {
+  pts: readonly { x: number; z: number; y: number }[];
+  halfWidth: number;
+}
+
+/** Konec silnice, kde se z krajiny přijede do lokality. */
+export interface RegionExit {
+  location: LocationId;
+  x: number;
+  z: number;
+  yaw: number; // směr jízdy DO krajiny (od výjezdu)
+  r: number;
+  label: string;
 }
 
 /** Čistá data jedné lokality + dotazy. Nic z toho neví o vykreslování. */
@@ -214,6 +232,50 @@ export class World implements WorldSpec {
   readonly spawn!: { x: number; z: number; yaw: number };
   readonly itemSpawns!: readonly ItemSpawn[];
   readonly trench?: readonly { x: number; z: number }[];
+  readonly lanes?: readonly Lane[];
+  readonly exits?: readonly RegionExit[];
+  private laneGrid: Map<number, [number, number][]> | null = null;
+
+  /** Vzdálenost k ose nejbližší silnice krajiny (mřížka úseků po 16 m). */
+  laneDistance(x: number, z: number): { d: number; lane: Lane | null } {
+    const lanes = this.lanes;
+    if (!lanes?.length) return { d: Infinity, lane: null };
+    const C = 16;
+    const key = (i: number, j: number): number => (i + 4096) * 8192 + (j + 4096);
+    if (!this.laneGrid) {
+      const g = new Map<number, [number, number][]>();
+      lanes.forEach((l, li) => {
+        for (let k = 0; k + 1 < l.pts.length; k++) {
+          const a = l.pts[k];
+          const b = l.pts[k + 1];
+          for (let i = Math.floor((Math.min(a.x, b.x) - 8) / C); i <= Math.floor((Math.max(a.x, b.x) + 8) / C); i++)
+            for (let j = Math.floor((Math.min(a.z, b.z) - 8) / C); j <= Math.floor((Math.max(a.z, b.z) + 8) / C); j++) {
+              const kk = key(i, j);
+              const list = g.get(kk);
+              if (list) list.push([li, k]);
+              else g.set(kk, [[li, k]]);
+            }
+        }
+      });
+      this.laneGrid = g;
+    }
+    let best = Infinity;
+    let bl: Lane | null = null;
+    for (const [li, k] of this.laneGrid.get(key(Math.floor(x / C), Math.floor(z / C))) ?? []) {
+      const l = lanes[li];
+      const a = l.pts[k];
+      const b = l.pts[k + 1];
+      const vx = b.x - a.x;
+      const vz = b.z - a.z;
+      const t = Math.max(0, Math.min(1, ((x - a.x) * vx + (z - a.z) * vz) / (vx * vx + vz * vz || 1)));
+      const d = Math.hypot(x - a.x - vx * t, z - a.z - vz * t);
+      if (d < best) {
+        best = d;
+        bl = l;
+      }
+    }
+    return { d: best, lane: bl };
+  }
 
   constructor(spec: WorldSpec) {
     Object.assign(this, spec);
@@ -221,6 +283,11 @@ export class World implements WorldSpec {
 
   /** Povrch pod nohama / pod koly. */
   surfaceAt(x: number, z: number): Surface {
+    if (this.lanes) {
+      const q = this.laneDistance(x, z);
+      if (q.lane && q.d <= q.lane.halfWidth + 0.3) return 'road';
+      if (q.lane && q.d <= q.lane.halfWidth + 1.2) return 'dirt'; // krajnice
+    }
     const r = this.road;
     if (Math.abs(z - r.z) <= r.halfWidth + r.curbWidth && x >= r.xMin && x <= r.xMax) return r.surface === 'asphalt' ? 'road' : 'dirt';
     return this.flatRadius > 0 && Math.hypot(x, z) < this.flatRadius * 0.85 ? 'site' : 'grass';
