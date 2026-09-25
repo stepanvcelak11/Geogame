@@ -50,6 +50,7 @@ export class Hud {
   onHandTap: ((hand: Hand) => void) | null = null;
   onInspectClose: (() => void) | null = null;
   onOpenTablet: (() => void) | null = null;
+  onOpenController: (() => void) | null = null;
   onCodeTap: (() => void) | null = null;
   onHelper: (() => void) | null = null;
   onSettings: (() => void) | null = null;
@@ -65,7 +66,7 @@ export class Hud {
       <div class="reticle">${RETICLE}</div>
       <div class="prompt" hidden><kbd>E</kbd><span class="prompt-text"></span></div>
       <nav class="topbtns" aria-label="Nabídka">
-        <button class="map-btn" aria-label="Otevřít tablet s mapou">Tablet<kbd>M</kbd></button><button class="helper-btn" aria-label="Vysílačka: pomocník Pepa">Pepa</button><button class="gear-btn" aria-label="Nastavení">⚙</button>
+        <button class="map-btn" aria-label="Otevřít tablet s mapou">Tablet<kbd>M</kbd></button><button class="ctrl-btn" aria-label="Kontroler GNSS" hidden>Kontroler<kbd>K</kbd></button><button class="helper-btn" aria-label="Vysílačka: pomocník Pepa">Pepa</button><button class="gear-btn" aria-label="Nastavení">⚙</button>
       </nav>
       <section class="panel pos" aria-label="Přibližná poloha">
         <h2><span class="pos-title">Poloha</span> <span class="pos-acc muted">±5 m</span><span class="gnss-badge" hidden></span></h2>
@@ -170,6 +171,11 @@ export class Hud {
       e.stopPropagation();
       this.onHelper?.();
     });
+    this.q('.ctrl-btn').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.onOpenController?.();
+    });
     this.q('.map-btn').addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -186,6 +192,14 @@ export class Hud {
     this.touchMode = on;
     this.el.classList.toggle('is-touch', on);
     this.promptKey = '';
+  }
+
+  /** Tlačítko kontroleru: jen když je rover sestavený a kontroler zapnutý. */
+  setControllerButton(visible: boolean): void {
+    const b = this.q('.ctrl-btn');
+    if (b.hidden === !visible) return;
+    b.hidden = !visible;
+    this.el.classList.toggle('has-ctrl', visible); // řádek „Co dál“ uhne pod tlačítka
   }
 
   /** decimals = 0 pro orientační polohu, 2 pro polohu hrotu z GNSS. */

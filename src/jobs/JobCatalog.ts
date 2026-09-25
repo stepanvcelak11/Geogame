@@ -42,7 +42,7 @@ export const JOBS: JobSpec[] = [
     tolerance: { xy: 0.03 },
     reconMarks: ['PBPP-4001', 'PBPP-4002', 'ZhB-4021', 'TB-0321-014', 'NZ-Ab7-12'],
     pay: 3200,
-    kit: ['gnssRover'],
+    kit: ['gnssCase', 'gnssRover'],
     difficulty: 1,
   },
   {
@@ -55,7 +55,7 @@ export const JOBS: JobSpec[] = [
     tolerance: { xy: 0.02 },
     stake: 'dum',
     pay: 5800,
-    kit: ['gnssRover'],
+    kit: ['gnssCase', 'gnssRover'],
     difficulty: 2,
   },
   {
@@ -68,7 +68,7 @@ export const JOBS: JobSpec[] = [
     tolerance: { xy: 0.1 },
     featureCodes: ['VPUST', 'ROH_BUDOVY'],
     pay: 4200,
-    kit: ['gnssRover'],
+    kit: ['gnssCase', 'gnssRover'],
     difficulty: 1,
   },
   {
@@ -97,7 +97,7 @@ export const JOBS: JobSpec[] = [
     tolerance: { xy: 0.03 },
     stake: 'parcela',
     pay: 6200,
-    kit: ['gnssRover'],
+    kit: ['gnssCase', 'gnssRover'],
     difficulty: 2,
   },
   {
@@ -141,7 +141,7 @@ export const JOBS: JobSpec[] = [
     tolerance: { xy: 0.1 },
     featureIds: ['kulna-SZ', 'kulna-SV', 'kulna-JV', 'kulna-JZ'],
     pay: 3600,
-    kit: ['gnssRover'],
+    kit: ['gnssCase', 'gnssRover'],
     difficulty: 1,
   },
   {
@@ -154,7 +154,7 @@ export const JOBS: JobSpec[] = [
     tolerance: { xy: 0.03 },
     stake: 'hranice',
     pay: 7400,
-    kit: ['gnssRover'],
+    kit: ['gnssCase', 'gnssRover'],
     difficulty: 2,
   },
 ];

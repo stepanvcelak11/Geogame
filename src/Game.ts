@@ -9,6 +9,22 @@ import type { GameEvents } from './events';
 import { radToGon } from './geodesy/CoordinateSystem';
 import type { FeatureCode } from './geodesy/types';
 import { GnssReceiver, SOLUTION_LABEL } from './gnss/GnssReceiver';
+import {
+  ANTENNA_TYPES,
+  BT_DEVICES,
+  CRS_OPTIONS,
+  EPOCH_OPTIONS,
+  FieldController,
+  MOUNTPOINTS,
+  NTRIP_CASTER,
+  RECEIVER_SERIAL,
+  reportCoords,
+  SETUP_STEP_TEXT,
+  type CrsId,
+  type ImportFile,
+} from './gnss/FieldController';
+import { ControllerScreen, type ControllerView } from './ui/ControllerScreen';
+import { RigScreen, type RigMode } from './ui/RigScreen';
 import { Input } from './input/Input';
 import { TouchControls } from './input/TouchControls';
 import { InteractionSystem, type InteractionPrompt } from './interaction/InteractionSystem';
@@ -109,6 +125,7 @@ interface JobRun {
   mapping?: MappingTask;
   level?: LevelLine;
   result?: { ok: boolean; text: string };
+  check?: { mark: string; dPos: number; dH: number }; // kontrolní měření GNSS na bodu bodového pole
 }
 
 const CHECK_TOL = { xy: 0.03, h: 0.05 };
@@ -150,6 +167,13 @@ export class Game {
   private readonly items: WorldItem[];
   private readonly itemIds: Set<string>;
   private readonly gnss = new GnssReceiver(new Rng(CONFIG.seed ^ 0x9e3779b9));
+  private readonly ctrl = new FieldController();
+  private readonly rigScreen: RigScreen;
+  private readonly ctrlScreen: ControllerScreen;
+  private rigCase: WorldItem | null = null; // kufr, u kterého se rover skládá
+  /** Probíhající observace bodu GNSS (měří se po epochách, hráč musí stát). */
+  private obs: { t: number; need: number; aim: AimPoint } | null = null;
+  private ctrlLast: string[] = [];
   private readonly rng = new Rng(CONFIG.seed ^ 0x51ed27);
   private readonly log = new PointLog();
   private readonly pole = new PoleBalance(new Rng(CONFIG.seed ^ 0x7a11));
@@ -235,6 +259,7 @@ export class Game {
   private readonly clouds: Clouds;
   private daylightT = 0;
   private poleHintShown = false;
+  private gnssCaseHintShown = false;
   private lastBonus = 0;
   private lastExtra = { rank: 0, urgent: 0, rankName: '' };
   private precise = false;
@@ -270,6 +295,9 @@ export class Game {
       hand: null,
     }));
     this.itemIds = new Set(this.items.map((i) => i.id));
+    // Výtyčka pro GNSS: kolega ji nechal vysunutou na 1,80 m, přijímač a kontroler jsou v kufru.
+    for (const it of this.items)
+      if (it.kind === 'gnssRover') it.rig = { height: 1.8, receiver: false, controller: false, receiverOn: false, controllerOn: false };
 
     // --- Render (trvalé části)
     const quality = detectQuality();
@@ -318,6 +346,16 @@ export class Game {
       this.departConfirm = null;
       this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     };
+    this.rigScreen = new RigScreen(root);
+    this.rigScreen.onChange = (ev) => this.rigChanged(ev);
+    this.rigScreen.onClose = () => {
+      this.rigCase = null;
+      this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    };
+    this.ctrlScreen = new ControllerScreen(root);
+    this.ctrlScreen.onAction = (id, v) => this.controllerAction(id, v);
+    this.ctrlScreen.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    this.hud.onOpenController = () => this.openController();
     this.setupScreen.onDone = () => this.setupDone();
     this.setupScreen.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     this.input.onPointerLockChange = (locked) => this.hud.setLockHint(this.started && !locked && !this.touchMode && !this.modalOpen);
@@ -587,6 +625,8 @@ export class Game {
       this.settingsScreen.isOpen ||
       this.protocolScreen.isOpen ||
       this.helperSheet.isOpen ||
+      this.rigScreen.isOpen ||
+      this.ctrlScreen.isOpen ||
       this.traveling
     );
   }
@@ -707,8 +747,12 @@ export class Game {
     if (item.state === 'deployed' && item.kind === 'level') {
       return { verb: 'Nivelovat', target: 'přístrojem', available: true, run: () => this.openLevel(item) };
     }
+    if (item.kind === 'gnssCase' && item.state === 'ground' && active?.kind === 'gnssRover' && active.rig) {
+      if (!item.empty && !active.rig.receiver) return { verb: 'Sestavit', target: 'GNSS rover z kufru', available: true, run: () => this.openRig(item, active, 'assemble') };
+      if (item.empty) return { verb: 'Rozebrat', target: 'rover do kufru', available: true, run: () => this.openRig(item, active, 'pack') };
+    }
     if (item.state === 'deployed') return take('Vzít', def.nameAcc);
-    return take('Zvednout', item.kind === 'tsCase' && item.empty ? 'prázdný kufr' : def.nameAcc);
+    return take('Zvednout', (item.kind === 'tsCase' || item.kind === 'gnssCase') && item.empty ? 'prázdný kufr' : def.nameAcc);
   }
 
   private planAction(): ActionPlan | null {
@@ -773,6 +817,15 @@ export class Game {
   /** Rover: u vytyčovaného bodu „Zatlouct kolík“, jinak „Změřit“. */
   private planRover(): ActionPlan {
     const aim = this.aim;
+    const rig = this.activeItem()?.rig;
+    const notReady = this.roverBlocked();
+    if (notReady) {
+      if (!rig?.receiver) return { verb: 'Sestavit', target: 'rover', available: false, reason: notReady };
+      if (rig.controllerOn && this.ctrl.missing().length)
+        return { verb: 'Kontroler', target: 'nastavit', available: true, run: () => this.openController() };
+      return { verb: 'Změřit', target: 'bod', available: false, reason: notReady };
+    }
+    if (this.obs) return { verb: 'Měřím', target: `${Math.floor(this.obs.t)} / ${this.obs.need} s`, available: false, reason: 'Stůj a drž bublinu v kroužku' };
     const stake = this.activeRun()?.stake;
     const target = this.currentTarget();
     if (stake && target && !target.existingMarkId && this.navReading && aim) {
@@ -787,7 +840,7 @@ export class Game {
     if (!aim) return { ...base, available: false, reason: 'Před tebou je překážka' };
     if (this.gnss.solution === 'none') return { ...base, available: false, reason: 'Přijímač hledá satelity…' };
     if (Math.hypot(this.player.vel.x, this.player.vel.z) > 0.3) return { ...base, available: false, reason: 'Při měření stůj na místě' };
-    return { ...base, available: true, run: () => this.measure(aim) };
+    return { ...base, available: true, run: () => this.startObservation(aim) };
   }
 
   /** Bod na zemi pod křížem (do 3 m); přichytí se ke značce nebo prvku do 30 cm. Jinak 0,8 m před hráčem. */
@@ -1527,17 +1580,18 @@ export class Game {
   }
 
   private currentTarget(): StakeTarget | null {
-    const st = this.activeRun()?.stake;
-    if (!st) return null;
+    const run = this.activeRun();
+    const st = run?.stake;
+    if (!st || !run) return null;
+    // S GNSS roverem zná kontroler jen body, které se do zakázky nahrály.
+    if (this.activeItem()?.kind === 'gnssRover' && !this.ctrl.job?.imported.includes(`stake-${run.spec.id}`)) return null;
     const sel = this.selectedTarget ? st.targets.find((t) => t.id === this.selectedTarget && st.status(t.id) === 'pending') : undefined;
     return sel ?? st.nextPending(this.player.pos);
   }
 
-  private measure(aim: AimPoint): void {
+  private measure(aim: AimPoint, r: { pos: Vec3; sigmaH: number; sigmaV: number }): void {
     const g = this.gnss;
-    const off = this.hasUpgrade('imu') ? { x: 0, z: 0 } : this.pole.offset();
-    const r = g.measure({ x: aim.x + off.x, y: aim.y, z: aim.z + off.z });
-    const c = this.world.frame.toSjtsk(r.pos);
+    const c = this.reportedSjtsk(r.pos);
     if (!this.pole.inCircle && !this.hasUpgrade('imu') && !this.bipodTip)
       setTimeout(() => this.bus.emit('toast', { text: 'Bublina byla mimo kroužek, bod je zatížený náklonem výtyčky.', tone: 'warn' }), 900);
     const mark = aim.mark;
@@ -1553,6 +1607,7 @@ export class Game {
       method: 'gnss_rtk',
       timestamp: Date.now(),
       solution: SOLUTION_LABEL[g.solution],
+      note: r.sigmaH > this.ctrl.tolH || r.sigmaV > this.ctrl.tolV ? 'mimo toleranci přesnosti' : undefined,
       markId: mark?.id,
       markNumber: mark?.number,
       dev,
@@ -1563,10 +1618,27 @@ export class Game {
     this.lastMeasure = dev
       ? `${p.id} na ${mark?.number}: ΔY ${mm(dev.dY)}, ΔX ${mm(dev.dX)}, ΔH ${mm(dev.dH)} mm`
       : `${p.id} (${CODES[this.codeIdx].label}), σ ${(r.sigmaH * 100).toFixed(1).replace('.', ',')} cm`;
-    this.bus.emit('toast', { text: `Bod ${p.id} uložen (${p.solution})`, tone: g.solution === 'fix' ? 'info' : 'warn' });
+    this.bus.emit('toast', {
+      text: `Bod ${p.id} uložen (${p.solution})${p.note ? ` – ${p.note}, σH ${(r.sigmaH * 100).toFixed(1).replace('.', ',')} cm` : ''}`,
+      tone: g.solution === 'fix' && !p.note ? 'info' : 'warn',
+    });
+    this.ctrlLast = [
+      `${p.id} · ${CODES[this.codeIdx].label} · ${p.solution}`,
+      `Y ${c.Y.toFixed(3)}  X ${c.X.toFixed(3)}  H ${c.H.toFixed(3)}`,
+      `σH ${(r.sigmaH * 1000).toFixed(0)} mm, σV ${(r.sigmaV * 1000).toFixed(0)} mm`,
+    ];
+    if (mark && dev) {
+      const known = this.ctrl.job?.imported.includes(`bp-${this.world.location}`);
+      this.ctrlLast.push(
+        known
+          ? `Kontrola na ${mark.number}: ΔY ${mm(dev.dY)}, ΔX ${mm(dev.dX)}, ΔH ${mm(dev.dH)} mm`
+          : `Bod ${mark.number} není v zakázce – nahraj bodové pole, ať kontroler ukáže odchylky`,
+      );
+    }
 
     const run = this.activeRun();
     if (!run) return;
+    if (mark && dev) run.check = { mark: mark.number, dPos: Math.hypot(dev.dY, dev.dX), dH: dev.dH };
     if (mark && run.recon?.markFound(mark.id)) {
       setTimeout(() => this.bus.emit('toast', { text: `Bod ${mark.number} ověřen měřením` }), 1800);
     }
@@ -1580,7 +1652,8 @@ export class Game {
     if (run.mapping && run.spec.requireStation) {
       setTimeout(() => this.bus.emit('toast', { text: 'Tuhle zakázku měř totální stanicí.', tone: 'warn' }), 1800);
     } else if (run.mapping) {
-      const f = run.mapping.onMeasured(p.id, code, { x: aim.x, y: aim.y, z: aim.z });
+      // Prvek se pozná podle odevzdaných souřadnic, ne podle toho, kde hráč stál.
+      const f = run.mapping.onMeasured(p.id, code, this.world.frame.toWorld(c));
       if (f) setTimeout(() => this.bus.emit('toast', { text: `${f.label} zaměřena` }), 1800);
       else if (aim.feature && aim.feature.code !== code)
         setTimeout(() => this.bus.emit('toast', { text: `Kód nesedí: tohle je ${lowerFirst(aim.feature?.label ?? "")}`, tone: 'warn' }), 1800);
@@ -1704,7 +1777,6 @@ export class Game {
       { text: `Nalož vybavení: ${spec.kit.map((k) => ITEM_DEFS[k].short).join(', ')}`, done: kitOk },
       { text: `Dojeď na místo: ${where}`, done: onSite },
     ];
-    const has = (k: string): boolean => this.items.some((i) => i.kind === k && (i.state === 'held' || i.state === 'deployed'));
     switch (spec.type) {
       case 'rekognoskace': {
         const r = run.recon;
@@ -1719,7 +1791,8 @@ export class Game {
         const d = st?.doneCount ?? 0;
         const n = st?.targets.length ?? 0;
         const cnt = n > 0 ? ` (${d} z ${n})` : '';
-        steps.push({ text: 'Vezmi do ruky GNSS rover', done: has('gnssRover') || d > 0 });
+        steps.push(...this.gnssSetupSteps(d > 0));
+        steps.push({ text: 'V kontroleru nahraj body k vytyčení (Import) a vyber bod (Vytyčit)', done: !!this.ctrl.job?.imported.includes(`stake-${spec.id}`) || d > 0 });
         steps.push({ text: 'Jdi po šipce k bodu. U bodu se sám zpomalíš, dole uvidíš Vpřed / Vpravo v cm', done: d > 0 });
         steps.push({
           text: `${this.hasUpgrade('imu') ? 'Až bude navigace do 2 cm' : 'Opři výtyčku o Dvojnožku (tlačítko nad libelou)'}, pak Zatlouct kolík${cnt}`,
@@ -1738,8 +1811,8 @@ export class Game {
           steps.push({ text: 'Orientuj stanici: výtyčku s hranolem postav na 4021', done: !!c && c.ts.orientation !== null });
           steps.push({ text: `Změř rohy trafostanice, SZ z volného stanoviska${cnt}`, done: f === n && n > 0 });
         } else {
-          steps.push({ text: 'Vezmi do ruky GNSS rover', done: has('gnssRover') || f > 0 });
-          steps.push({ text: 'Vyber správný kód (růžové tlačítko vlevo)', done: f > 0 });
+          steps.push(...this.gnssSetupSteps(f > 0));
+          steps.push({ text: 'Vyber správný kód (kontroler: Měřit body, nebo růžové tlačítko)', done: f > 0 });
           steps.push({ text: `Změř všechny prvky${cnt}`, done: f === n && n > 0 });
         }
         break;
@@ -1758,6 +1831,19 @@ export class Game {
     }
     steps.push({ text: 'Odevzdej zakázku (tlačítko níže)', done: run.status === 'odevzdana' });
     return steps;
+  }
+
+  /** Příprava GNSS: sestavení roveru, nastavení kontroleru a kontrola na známém bodě. */
+  private gnssSetupSteps(started: boolean): { text: string; done: boolean }[] {
+    const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+    const run = this.activeRun();
+    const built = !!rig?.receiver && !!rig.controller && rig.receiverOn && rig.controllerOn;
+    const miss = this.ctrl.missing();
+    return [
+      { text: 'Polož kufr GNSS, vezmi výtyčku a sestav rover (výška, přijímač, kontroler, zapnout)', done: built || started },
+      ...(['job', 'bluetooth', 'antenna', 'ntrip'] as const).map((k) => ({ text: SETUP_STEP_TEXT[k], done: (built && !miss.includes(k)) || started })),
+      { text: 'Změř kontrolu na bodu bodového pole (ověření připojení)', done: !!run?.check },
+    ];
   }
 
   /** Kam má hráč teď jít (pro šipku a světelný sloup). */
@@ -1852,11 +1938,18 @@ export class Game {
           if (c.ts.orientation === null) return 'Orientuj stanici: výtyčku s hranolem postav na 4021 a dej Orientovat.';
           return 'Měř rohy trafostanice: výtyčku na roh (kód Roh budovy), nebo bez hranolu dalekohledem.';
         }
-        if (active !== 'gnssRover') return 'Vezmi do ruky GNSS rover.';
+        {
+          const g = this.gnssGoal(run);
+          if (g) return g;
+        }
         return `Vyber kód (růžové tlačítko) a změř prvky. Máš ${run.mapping?.found.size ?? 0} z ${run.mapping?.required.length ?? 0}.`;
       }
       case 'vytyceni': {
-        if (active !== 'gnssRover' && active !== 'prismPole') return 'Vezmi do ruky GNSS rover.';
+        if (active !== 'prismPole') {
+          const g = this.gnssGoal(run);
+          if (g) return g;
+          if (!this.ctrl.job?.imported.includes(`stake-${spec.id}`)) return 'V kontroleru nahraj body k vytyčení: Import → soubor zakázky.';
+        }
         const t = this.currentTarget();
         return t
           ? `Jdi po šipce k bodu ${t.id}${t.existingMarkId ? ' a změř dochovaný znak' : '. U něj se zpomalíš, opři výtyčku o dvojnožku a zatluč kolík'}.`
@@ -1873,6 +1966,24 @@ export class Game {
         return `Přestav nivelák a veď pořad zpátky na ${from}.`;
       }
     }
+    return null;
+  }
+
+  /** Další krok přípravy GNSS pro průvodce, nebo null, když je všechno hotové. */
+  private gnssGoal(run: JobRun): string | null {
+    const rover = this.items.find((i) => i.kind === 'gnssRover');
+    const rig = rover?.rig;
+    const kase = this.items.find((i) => i.kind === 'gnssCase');
+    if (!rig?.receiver || !rig.controller) {
+      if (kase?.state === 'held') return 'Polož kufr GNSS na zem (G), vezmi výtyčku a zamiř na kufr: Sestavit rover.';
+      if (rover?.state !== 'held') return 'Vezmi výtyčku pro GNSS a zamiř s ní na položený kufr GNSS: Sestavit rover.';
+      return 'Zamiř výtyčkou na položený kufr GNSS a sestav rover.';
+    }
+    if (!rig.receiverOn || !rig.controllerOn) return 'Zapni přijímač i kontroler (u kufru: Sestavit, tlačítka ⏻ podržet).';
+    if (rover?.state !== 'held') return 'Vezmi rover do ruky.';
+    const miss = this.ctrl.missing();
+    if (miss.length) return `${SETUP_STEP_TEXT[miss[0]]} (tlačítko Kontroler, klávesa K).`;
+    if (!run.check) return 'Nejdřív změř kontrolu na bodu bodového pole (hrot na znak, Změřit) a porovnej odchylky.';
     return null;
   }
 
@@ -1927,6 +2038,297 @@ export class Game {
     };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, fallback);
     else fallback();
+  }
+
+
+  // ================================================================ GNSS rover a kontroler
+
+  /** Proč rover v ruce teď neměří (null = měří). */
+  private roverBlocked(): string | null {
+    const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+    if (!rig?.receiver) return 'Výtyčka je holá: polož kufr GNSS na zem a u něj sestav rover';
+    if (!rig.controller) return 'Chybí kontroler: nasaď ho v kufru do držáku';
+    if (!rig.receiverOn) return 'Přijímač je vypnutý';
+    if (!rig.controllerOn) return 'Kontroler je vypnutý';
+    const miss = this.ctrl.missing();
+    if (miss.length) return SETUP_STEP_TEXT[miss[0]];
+    return null;
+  }
+
+  /** Souřadnice, které kontroler zobrazí a uloží (se zvoleným systémem a zadanou výškou antény). */
+  private reportedSjtsk(p: Vec3): { Y: number; X: number; H: number } {
+    const c = this.world.frame.toSjtsk(p);
+    const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+    const crs: CrsId = this.ctrl.job?.crs ?? 'sjtsk';
+    return reportCoords(c, crs, this.ctrl.heightError(rig?.height ?? 2));
+  }
+
+  /** Kam by bod padl v terénu, kdyby zobrazené souřadnice byly S-JTSK. */
+  private reportedWorld(p: Vec3): Vec3 {
+    return this.world.frame.toWorld(this.reportedSjtsk(p));
+  }
+
+  private openRig(kase: WorldItem, pole: WorldItem, mode: RigMode): void {
+    if (!pole.rig) return;
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.rigCase = kase;
+    this.sfx.click();
+    this.rigScreen.show(pole.rig, mode);
+  }
+
+  private rigChanged(ev: 'height' | 'screw' | 'receiver' | 'controller' | 'power'): void {
+    const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+    if (!rig) return;
+    if (this.rigCase) this.rigCase.empty = rig.receiver || rig.controller;
+    if (!rig.receiverOn) {
+      // Vypnutý přijímač = ztracené spojení Bluetooth i korekce.
+      this.ctrl.bt = null;
+      this.ctrl.ntripOn = false;
+    }
+    if (!rig.controllerOn) this.ctrlScreen.hide();
+    if (ev === 'screw' || ev === 'height') this.sfx.click();
+    else if (ev === 'power') {
+      this.sfx.success();
+      this.bus.emit('toast', {
+        text: `Přijímač ${rig.receiverOn ? 'zapnutý: LED bliká, hledá družice' : 'vypnutý'}, kontroler ${rig.controllerOn ? 'nabíhá do polního softwaru' : 'vypnutý'}.`,
+      });
+    } else this.sfx.drop();
+    this.refreshHands();
+  }
+
+  private openController(): void {
+    const rover = this.items.find((i) => i.kind === 'gnssRover');
+    if (!rover?.rig?.controller || !rover.rig.controllerOn || rover.state !== 'held') {
+      this.bus.emit('toast', { text: 'Kontroler je na výtyčce roveru. Vezmi rover do ruky a kontroler zapni.', tone: 'warn' });
+      return;
+    }
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.sfx.click();
+    this.ctrlScreen.show();
+    this.ctrlScreen.update(this.controllerView());
+  }
+
+  /** Soubory souřadnic dostupné v kanceláři pro tuto lokalitu (bodové pole a data k převzatým zakázkám). */
+  private importFiles(): ImportFile[] {
+    const loc = this.world.location;
+    const files: ImportFile[] = [
+      {
+        id: `bp-${loc}`,
+        name: `bodove_pole_${loc}.csv`,
+        desc: 'Body bodového pole z databáze ČÚZK (S-JTSK, Bpv)',
+        location: loc,
+        points: this.world.marks.map((m) => ({ id: m.number, Y: m.catalog.Y, X: m.catalog.X, H: m.catalog.H, label: m.stabilization })),
+      },
+    ];
+    const names: Record<string, [string, string]> = {
+      'stavba-rd': ['RD_Novak_vytycovaci_vykres.csv', 'Projektant: hlavní body domu'],
+      'stavba-hranice': ['hranice_1254-3_SGI.csv', 'Katastr: souřadnice lomových bodů parcely 1254/3'],
+      'louka-hranice': ['hranice_812-5_SGI.csv', 'Katastr: souřadnice lomových bodů pozemku 812/5'],
+    };
+    for (const run of this.jobs.values()) {
+      if (run.spec.location !== loc || run.status === 'nova' || !run.spec.stake) continue;
+      const [name, desc] = names[run.spec.id] ?? [`vytyceni_${run.spec.id}.csv`, run.spec.title];
+      const targets = run.stake?.targets ?? designTargets(run.spec, this.world);
+      files.push({
+        id: `stake-${run.spec.id}`,
+        name,
+        desc,
+        location: loc,
+        points: targets.map((t) => ({ id: t.id, Y: t.design.Y, X: t.design.X, label: t.label })),
+      });
+    }
+    return files;
+  }
+
+  private controllerView(): ControllerView {
+    const g = this.gnss;
+    const c = this.ctrl;
+    const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+    const job = c.job;
+    const files = this.importFiles();
+    const run = this.activeRun();
+    const st = run?.stake;
+    const imported = !!run && !!job?.imported.includes(`stake-${run.spec.id}`);
+    const f3 = (v: number): string => v.toFixed(3);
+    return {
+      status: {
+        clock: clockText(this.clockMin),
+        bt: c.bt === RECEIVER_SERIAL,
+        corr: !c.ntripOn ? 'off' : c.correctionsOk ? 'ok' : 'late',
+        age: !c.ntripOn ? 'bez korekcí' : c.correctionAge > 60 ? 'výpadek' : `${Math.round(c.correctionAge)} s`,
+        solution: c.bt ? SOLUTION_LABEL[g.solution] : 'Nepřipojeno',
+        tone: !c.bt ? 'bad' : g.solution === 'fix' ? 'fix' : g.solution === 'float' ? 'float' : 'bad',
+        sats: c.bt ? g.sats : 0,
+        pdop: c.bt && g.solution !== 'none' ? g.pdop.toFixed(1).replace('.', ',') : '–',
+        prec: c.bt && g.solution !== 'none' ? `H ${g.sigmaH < 1 ? f3(g.sigmaH) : g.sigmaH.toFixed(1)} V ${g.sigmaV < 1 ? f3(g.sigmaV) : g.sigmaV.toFixed(1)}` : 'H – V –',
+        battery: clamp(100 - (this.clockMin - (7 * 60 + 30)) / 5.5, 5, 100),
+      },
+      job: job ? { name: job.name, crs: CRS_OPTIONS.find((o) => o.id === job.crs)?.label ?? job.crs } : null,
+      jobs: c.jobs.filter((j) => j.location === this.world.location).map((j) => j.name),
+      suggestedName: `${LOCATIONS[this.world.location].short.replace(/\s+/g, '')}_den${this.career.day}`,
+      crs: CRS_OPTIONS,
+      files: files.map((fl) => ({ id: fl.id, name: fl.name, desc: fl.desc, count: fl.points.length, imported: !!job?.imported.includes(fl.id) })),
+      bt: {
+        // Najde jen zapnutá zařízení.
+        devices: BT_DEVICES.filter((d) => !d.ours || rig?.receiverOn).map((d) => ({ id: d.id, label: d.label })),
+        connected: c.bt,
+      },
+      ntrip: {
+        caster: NTRIP_CASTER.name,
+        host: NTRIP_CASTER.host,
+        port: NTRIP_CASTER.port,
+        user: 'geomereni_brandys',
+        mounts: MOUNTPOINTS.map((m) => ({ id: m.id, label: m.label })),
+        mount: c.mountpoint,
+        on: c.ntripOn,
+      },
+      antenna: { types: ANTENNA_TYPES.map((a) => ({ id: a.id, label: a.label })), type: c.antennaType, height: c.antennaHeight },
+      measure: {
+        nextId: String(1001 + this.log.points.length),
+        codes: CODES.map((x) => x.label),
+        code: this.codeIdx,
+        epochs: EPOCH_OPTIONS,
+        epoch: c.epochs,
+        tol: `H ${(c.tolH * 100).toFixed(0)} cm, V ${(c.tolV * 100).toFixed(0)} cm`,
+        obs: this.obs ? { t: this.obs.t, need: this.obs.need } : null,
+        last: this.ctrlLast,
+        blocked: this.roverBlocked() ?? (g.solution === 'none' ? 'Přijímač hledá družice…' : null),
+      },
+      stake: {
+        targets: imported && st ? st.targets.map((t) => ({ id: t.id, label: t.label, state: st.status(t.id) === 'pending' ? ('pending' as const) : ('done' as const) })) : [],
+        selected: this.selectedTarget,
+        note: !run?.spec.stake
+          ? 'Aktivní zakázka nic nevytyčuje.'
+          : imported
+            ? 'Vyber bod. Kontroler tě navede (Vpřed / Vpravo), u bodu zatluč kolík.'
+            : 'Body k vytyčení nejsou v zakázce. Nahraj je v Importu.',
+      },
+      points: this.log.points
+        .filter((p) => p.method === 'gnss_rtk' && p.location === this.world.location)
+        .slice(-40)
+        .reverse()
+        .map((p) => ({
+          id: p.id,
+          code: CODES.find((x) => x.code === p.code)?.label ?? (p.code === 'PEVNY_BOD' ? 'Pevný bod' : p.code === 'HRANICE' ? 'Hranice' : p.code),
+          coords: `${f3(p.Y)} / ${f3(p.X)} / ${f3(p.Z)}`,
+          prec: `${(p.sigmaXY * 1000).toFixed(0)} mm${p.note ? ' !' : ''}`,
+          check: p.dev && job?.imported.includes(`bp-${this.world.location}`) ? `kontrola ${p.markNumber}: ΔY ${mm(p.dev.dY)} ΔX ${mm(p.dev.dX)} ΔH ${mm(p.dev.dH)} mm` : undefined,
+        })),
+    };
+  }
+
+  private controllerAction(id: string, value?: string): void {
+    const c = this.ctrl;
+    const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+    const toast = (text: string, tone: 'info' | 'warn' = 'info'): void => this.bus.emit('toast', { text, tone });
+    this.sfx.click();
+    switch (id) {
+      case 'job:create': {
+        const [rawName, crs] = (value ?? '').split('|');
+        const name = rawName.replace(/[^\p{L}\p{N}_.-]+/gu, '_').slice(0, 32) || 'Zakazka';
+        if (c.jobs.some((j) => j.name === name)) return toast(`Zakázka ${name} už existuje, otevři ji nebo zvol jiný název.`, 'warn');
+        c.createJob(name, crs as CrsId, this.world.location);
+        toast(`Zakázka ${name} založena.`);
+        break;
+      }
+      case 'job:open':
+        c.openJob(value ?? '');
+        break;
+      case 'import:toggle': {
+        const job = c.job;
+        if (!job || !value) return;
+        const f = this.importFiles().find((x) => x.id === value);
+        if (job.imported.includes(value)) job.imported = job.imported.filter((x) => x !== value);
+        else {
+          job.imported.push(value);
+          toast(`Nahráno ${f?.points.length ?? 0} bodů ze souboru ${f?.name ?? value}.`);
+        }
+        break;
+      }
+      case 'bt:connect': {
+        const d = BT_DEVICES.find((x) => x.id === value);
+        if (!d) return;
+        if (!d.ours) return toast(`${d.label}: tohle není přijímač GNSS.`, 'warn');
+        if (!rig?.receiverOn) return toast('Přijímač se nehlásí. Je zapnutý?', 'warn');
+        c.bt = d.id;
+        toast(`Připojeno k přijímači SN ${d.id}.`);
+        break;
+      }
+      case 'bt:disconnect':
+        c.bt = null;
+        c.ntripOn = false;
+        break;
+      case 'ntrip:mount':
+        c.mountpoint = value ?? null;
+        c.ntripOn = false;
+        break;
+      case 'ntrip:connect':
+        if (c.bt !== RECEIVER_SERIAL) return toast('Korekce se posílají do přijímače: nejdřív ho připoj.', 'warn');
+        if (!c.mountpoint) return;
+        c.ntripOn = true;
+        c.correctionAge = 99;
+        toast(`Připojeno k ${NTRIP_CASTER.name}, zdroj ${c.mountpoint}. Přijímač čeká na FIX.`);
+        break;
+      case 'ntrip:disconnect':
+        c.ntripOn = false;
+        break;
+      case 'ant:type':
+        c.antennaType = value ?? null;
+        break;
+      case 'ant:height': {
+        const v = Number((value ?? '').replace(',', '.'));
+        if (!Number.isFinite(v) || v <= 0 || v > 5) return toast('Zadej výšku antény v metrech, třeba 2.000.', 'warn');
+        c.antennaHeight = Math.round(v * 1000) / 1000;
+        toast(`Výška antény ${c.antennaHeight.toFixed(3).replace('.', ',')} m.`);
+        break;
+      }
+      case 'meas:code':
+        this.codeIdx = clamp(Number(value) || 0, 0, CODES.length - 1);
+        break;
+      case 'meas:epochs':
+        c.epochs = EPOCH_OPTIONS.includes(Number(value)) ? Number(value) : 5;
+        break;
+      case 'meas:start':
+        if (this.aim && !this.roverBlocked() && this.gnss.solution !== 'none') this.startObservation(this.aim);
+        break;
+      case 'stake:select':
+        this.selectedTarget = value ?? null;
+        break;
+    }
+  }
+
+  /** Začne observaci bodu: kontroler sbírá epochy, hráč musí stát a držet výtyčku svisle. */
+  private startObservation(aim: AimPoint): void {
+    if (this.obs) return;
+    this.obs = { t: 0, need: this.ctrl.epochs, aim: { ...aim } };
+    this.sfx.click();
+    this.bus.emit('toast', { text: `Měřím bod ${1001 + this.log.points.length}: ${this.ctrl.epochs} s, stůj a drž bublinu v kroužku.` });
+  }
+
+  private updateObservation(dt: number): void {
+    const o = this.obs;
+    if (!o) return;
+    const abort = (why: string): void => {
+      this.obs = null;
+      this.bus.emit('toast', { text: `Observace přerušena: ${why}`, tone: 'warn' });
+    };
+    const rover = this.items.find((i) => i.kind === 'gnssRover');
+    if (!rover || rover.state !== 'held') return abort('rover není v ruce.');
+    if (this.gnss.solution === 'none') return abort('přijímač ztratil družice.');
+    const tip = this.aim;
+    if (!tip || Math.hypot(tip.x - o.aim.x, tip.z - o.aim.z) > 0.03 || Math.hypot(this.player.vel.x, this.player.vel.z) > 0.2)
+      return abort('výtyčka se pohnula.');
+    if (!this.pole.inCircle && !this.hasUpgrade('imu') && !this.bipodTip) return abort('bublina utekla z kroužku.');
+    o.t += dt;
+    if (o.t < o.need) return;
+    this.obs = null;
+    // Víc epoch zprůměruje šum, ale jen zčásti (chyby RTK jsou v čase korelované).
+    const off = this.hasUpgrade('imu') ? { x: 0, z: 0 } : this.pole.offset();
+    const truth = { x: o.aim.x + off.x, y: o.aim.y, z: o.aim.z + off.z };
+    const r = this.gnss.measure(truth);
+    const k = 1 / Math.sqrt(1 + o.need / 10);
+    const pos = { x: truth.x + (r.pos.x - truth.x) * k, y: truth.y + (r.pos.y - truth.y) * k, z: truth.z + (r.pos.z - truth.z) * k };
+    this.measure(o.aim, { pos, sigmaH: r.sigmaH * k, sigmaV: r.sigmaV * k });
   }
 
   // ================================================================ pomocník Pepa
@@ -2565,6 +2967,17 @@ export class Game {
       ok = run.mapping.wrongCode === 0;
       text = `Zaměřeno ${run.mapping.found.size} prvků.${run.mapping.wrongCode ? ` Chybně kódovaná měření: ${run.mapping.wrongCode}.` : ' Kódy v pořádku.'}`;
     }
+    // Měření GNSS musí být ověřené připojením na bod bodového pole.
+    if (run.spec.kit.includes('gnssRover') && run.spec.type !== 'rekognoskace') {
+      const c = run.check;
+      if (!c) {
+        ok = false;
+        text += ' Chybí kontrolní měření na bodu bodového pole: připojení do S-JTSK není ověřené.';
+      } else if (c.dPos > CHECK_TOL.xy * 2 || Math.abs(c.dH) > CHECK_TOL.h * 2) {
+        ok = false;
+        text += ` Kontrolní měření na bodu ${c.mark} nesedí (poloha ${(c.dPos * 100).toFixed(1).replace('.', ',')} cm, výška ${(c.dH * 100).toFixed(1).replace('.', ',')} cm): chyba v nastavení kontroleru.`;
+      } else text += ` Kontrola na bodu ${c.mark}: ${(c.dPos * 100).toFixed(1).replace('.', ',')} cm.`;
+    }
     run.status = 'odevzdana';
     run.result = { ok, text };
     const pay = payFor(run.spec.pay, ok);
@@ -2827,6 +3240,16 @@ export class Game {
         1600,
       );
     }
+    if (item.kind === 'gnssCase' && !this.gnssCaseHintShown) {
+      this.gnssCaseHintShown = true;
+      setTimeout(
+        () =>
+          this.bus.emit('toast', {
+            text: 'V kufru je přijímač GNSS a kontroler. Výtyčku nes zvlášť. Na místě kufr polož, vezmi výtyčku, zamiř na kufr a sestav rover.',
+          }),
+        1600,
+      );
+    }
     item.overMarkId = undefined;
     navigator.vibrate?.(15);
     this.sfx.pickup();
@@ -2856,7 +3279,8 @@ export class Game {
   }
 
   private itemName(item: WorldItem): string {
-    return item.kind === 'tsCase' && item.empty ? 'Prázdný kufr' : ITEM_DEFS[item.kind].name;
+    if (item.kind === 'gnssRover' && item.rig?.receiver) return 'GNSS rover';
+    return (item.kind === 'tsCase' || item.kind === 'gnssCase') && item.empty ? 'Prázdný kufr' : ITEM_DEFS[item.kind].name;
   }
 
   private refreshHands(): void {
@@ -2864,18 +3288,27 @@ export class Game {
     const name = (id: string | null): string | null => {
       const it = byId(id);
       if (!it) return null;
-      return it.kind === 'tsCase' && it.empty ? 'Prázdný kufr' : ITEM_DEFS[it.kind].short;
+      if (it.kind === 'gnssRover' && it.rig?.receiver) return 'Rover';
+      return (it.kind === 'tsCase' || it.kind === 'gnssCase') && it.empty ? 'Prázdný kufr' : ITEM_DEFS[it.kind].short;
+    };
+    const massOf = (it: WorldItem): number => {
+      if (it.kind === 'tsCase' && it.empty) return 3;
+      if (it.kind === 'gnssCase' && it.empty) return 2.3;
+      if (it.kind === 'gnssRover') return ITEM_DEFS.gnssRover.massKg + (it.rig?.receiver ? 1.2 : 0) + (it.rig?.controller ? 0.7 : 0);
+      return ITEM_DEFS[it.kind].massKg;
     };
     const mass = this.hands.heldIds().reduce((s, id) => {
       const it = byId(id);
-      return it ? s + (it.kind === 'tsCase' && it.empty ? 3 : ITEM_DEFS[it.kind].massKg) : s;
+      return it ? s + massOf(it) : s;
     }, 0);
     const P = CONFIG.player;
     this.player.loadFactor = clamp(1 - mass * P.massSlowdownPerKg, P.minLoadFactor, 1);
     this.hud.setHands({ left: name(this.hands.get('left')), right: name(this.hands.get('right')), active: this.hands.active, massKg: mass });
+    // Přijímač běží, dokud je zapnutý a není zavřený v autě.
     const rover = this.items.find((i) => i.kind === 'gnssRover');
-    if (rover && (rover.state === 'held' || rover.state === 'deployed')) this.gnss.powerOn();
+    if (rover?.rig?.receiverOn && rover.state !== 'stored') this.gnss.powerOn();
     else this.gnss.powerOff();
+    this.hud.setControllerButton(!!rover && rover.state === 'held' && !!rover.rig?.controller && rover.rig.controllerOn);
   }
 
   // ================================================================ smyčka
@@ -2904,6 +3337,10 @@ export class Game {
     if (!this.started || this.traveling) return;
     const a = f.actions;
     if (a.has('debug')) this.hud.toggleFps();
+    if (a.has('controller')) {
+      if (this.ctrlScreen.isOpen) this.ctrlScreen.hide();
+      else if (!this.modalOpen) this.openController();
+    }
     if (a.has('map')) {
       if (this.tablet.isOpen) this.tablet.close();
       else if (!this.setupScreen.isOpen) this.openTablet();
@@ -2982,7 +3419,7 @@ export class Game {
     const kind = this.activeItem()?.kind;
     const c = this.connected();
     const robot = kind === 'prismPole' && c?.link.state === 'locked' && c.ts.orientation !== null;
-    const rover = kind === 'gnssRover' && this.gnss.solution !== 'none';
+    const rover = kind === 'gnssRover' && this.gnss.solution !== 'none' && !this.roverBlocked();
     if ((!robot && !rover) || !this.aim || !this.currentTarget()) {
       this.navReading = null;
       return;
@@ -2992,7 +3429,9 @@ export class Game {
       if (rover) {
         const off = this.hasUpgrade('imu') ? { x: 0, z: 0 } : this.pole.offset();
         const r = this.gnss.measure({ x: this.aim.x + off.x, y: this.aim.y, z: this.aim.z + off.z });
-        this.navReading = this.smoothNav({ x: r.pos.x, z: r.pos.z });
+        // Kontroler porovnává zobrazené souřadnice s projektem – chybný systém = navigace jinam.
+        const w = this.reportedWorld(r.pos);
+        this.navReading = this.smoothNav({ x: w.x, z: w.z });
       } else if (c) {
         // Sledovací režim: stanice měří hranol (výtyčka se v ruce kývá ~3 mm) a počítá polohu hrotu.
         const off = this.pole.offset();
@@ -3011,11 +3450,19 @@ export class Game {
   }
 
   private updateGnss(dt: number): void {
-    if (!this.gnss.on) return;
     const rover = this.items.find((i) => i.kind === 'gnssRover');
-    if (!rover) return;
-    const base = rover.state === 'deployed' ? rover.pos : this.player.pos;
-    this.gnss.update(dt, { x: base.x, y: base.y + 2.0, z: base.z }, this.world);
+    if (!rover || !this.gnss.on) {
+      this.ctrl.correctionAge = 99;
+      return;
+    }
+    if (rover.location !== this.world.location && rover.state !== 'held') return;
+    this.ctrl.updateCorrections(dt, this.world.location, () => this.rng.next());
+    this.gnss.corrections = this.ctrl.correctionsOk ? { baseKm: this.ctrl.baseKm(this.world.location) } : null;
+    const h = rover.rig?.height ?? 2;
+    const base = rover.state === 'held' ? this.player.pos : rover.pos;
+    const lift = rover.state === 'ground' ? 0.15 : h; // položená výtyčka: anténa u země
+    this.gnss.update(dt, { x: base.x, y: base.y + lift, z: base.z }, this.world);
+    this.updateObservation(dt);
   }
 
   private step(dt: number): void {
@@ -3119,6 +3566,7 @@ export class Game {
     else this.touch.setAction(plan?.verb ?? null, plan?.available ?? false);
     if (this.tablet.isOpen) this.tablet.update(this.tabletState());
     if (this.officeScreen.isOpen) this.officeScreen.update(this.officeView());
+    if (this.ctrlScreen.isOpen) this.ctrlScreen.update(this.controllerView());
     this.setupScreen.render();
 
     this.updateBubble(); // libela každý snímek – jinak by se nedala plynule srovnávat
@@ -3229,7 +3677,9 @@ export class Game {
       this.updateTabletPanel(bearing);
       return;
     }
-    if (active?.kind !== 'gnssRover') {
+    const rig = active?.kind === 'gnssRover' ? active.rig : undefined;
+    // Údaje z přijímače ukazuje jen kontroler, který je s ním spojený.
+    if (active?.kind !== 'gnssRover' || !rig?.controllerOn || this.ctrl.bt !== RECEIVER_SERIAL || !this.ctrl.job) {
       this.hud.setGnss(null);
       this.hud.setCode(null);
       this.hud.setPosition(this.world.frame.toSjtsk(this.player.pos), bearing);
@@ -3238,15 +3688,17 @@ export class Game {
     const g = this.gnss;
     const tip = this.aim ? { x: this.aim.x, y: this.aim.y, z: this.aim.z } : this.player.pos;
     const decimals = g.solution === 'fix' ? 2 : g.solution === 'float' ? 1 : 0;
-    this.hud.setPosition(this.world.frame.toSjtsk(tip), bearing, decimals);
+    this.hud.setPosition(this.reportedSjtsk(tip), bearing, decimals);
     this.hud.setCode(CODES[this.codeIdx].label);
+    const c = this.ctrl;
+    const corr = !c.ntripOn ? 'bez korekcí' : c.correctionsOk ? `korekce ${Math.round(c.correctionAge)} s` : 'výpadek korekcí';
     const view: GnssView = {
-      solution: SOLUTION_LABEL[g.solution],
+      solution: this.obs ? `Měřím ${Math.floor(this.obs.t)}/${this.obs.need} s` : SOLUTION_LABEL[g.solution],
       tone: g.solution === 'fix' ? 'fix' : g.solution === 'float' ? 'float' : 'bad',
       detail:
         g.solution === 'none'
           ? `Hledám satelity (${g.sats})`
-          : `Satelity ${g.sats}, PDOP ${g.pdop.toFixed(1).replace('.', ',')}, σ ${g.sigmaH < 0.1 ? `${Math.round(g.sigmaH * 1000)} mm` : `${g.sigmaH.toFixed(2).replace('.', ',')} m`}`,
+          : `Satelity ${g.sats}, PDOP ${g.pdop.toFixed(1).replace('.', ',')}, σ ${g.sigmaH < 0.1 ? `${Math.round(g.sigmaH * 1000)} mm` : `${g.sigmaH.toFixed(2).replace('.', ',')} m`}, ${corr}`,
       last: this.lastMeasure,
     };
     this.hud.setGnss(view);

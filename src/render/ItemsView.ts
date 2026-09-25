@@ -12,6 +12,7 @@ interface Pose {
 const GROUND_POSE: Record<ItemKind, Pose> = {
   tripod: { pos: [0.53, 0.06, 0], rot: [0, 0, Math.PI / 2] },
   tsCase: { pos: [0, 0, 0], rot: [0, 0, 0] },
+  gnssCase: { pos: [0, 0, 0], rot: [0, 0, 0] },
   prismPole: { pos: [1.0, 0.03, 0], rot: [0, 0, Math.PI / 2] },
   gnssRover: { pos: [1.0, 0.05, 0], rot: [0, 0, Math.PI / 2] },
   level: { pos: [0.6, 0.08, 0], rot: [0, 0, Math.PI / 2] },
@@ -22,6 +23,7 @@ const GROUND_POSE: Record<ItemKind, Pose> = {
 const HELD_POSE: Record<ItemKind, Pose> = {
   tripod: { pos: [0.36, -1.32, -0.52], rot: [-0.12, 0, -0.1] },
   tsCase: { pos: [0.4, -0.82, -0.3], rot: [0, 0.25, 0] },
+  gnssCase: { pos: [0.4, -0.8, -0.3], rot: [0, 0.25, 0] },
   prismPole: { pos: [0.3, -1.5, -0.62], rot: [-0.08, 0, -0.07] },
   gnssRover: { pos: [0.3, -1.45, -0.62], rot: [-0.08, 0, -0.07] },
   level: { pos: [0.36, -1.3, -0.52], rot: [-0.12, 0, -0.1] },
@@ -115,6 +117,17 @@ function buildModel(kind: ItemKind): THREE.Group {
       g.add(body, seam, handle);
       break;
     }
+    case 'gnssCase': {
+      // Tvrdý kufr: přijímač, kontroler, držák a baterie ve výlisku.
+      const body = mesh(new THREE.BoxGeometry(0.46, 0.3, 0.3), 0x2f3a44);
+      body.position.y = 0.15;
+      const seam = mesh(new THREE.BoxGeometry(0.47, 0.02, 0.31), PALETTE.surveyYellow);
+      seam.position.y = 0.2;
+      const handle = mesh(new THREE.BoxGeometry(0.14, 0.03, 0.03), PALETTE.darkMetal);
+      handle.position.y = 0.315;
+      g.add(body, seam, handle);
+      break;
+    }
     case 'level': {
       // Nivelační přístroj na lehkém stativu; záměrná přímka ve výšce 1,45 m.
       const legs = new THREE.Group();
@@ -176,14 +189,24 @@ function buildModel(kind: ItemKind): THREE.Group {
         glass.position.set(0, 2.0, 0);
         g.add(housing, glass);
       } else {
+        // Přijímač sedí na vrcholu výtyčky (výška podle vysunutí), kontroler v držáku.
+        const receiver = new THREE.Group();
         const antenna = mesh(new THREE.SphereGeometry(0.1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0xe9ebe6);
-        antenna.position.y = 1.99;
+        antenna.position.y = 0.015;
         antenna.scale.y = 0.55;
         const base = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.035, 16), PALETTE.darkMetal);
-        base.position.y = 1.975;
-        const controller = mesh(new THREE.BoxGeometry(0.09, 0.16, 0.03), PALETTE.darkMetal);
-        controller.position.set(0, 1.18, 0.04);
-        g.add(antenna, base, controller);
+        receiver.add(antenna, base);
+        const controller = new THREE.Group();
+        const bracket = mesh(new THREE.BoxGeometry(0.03, 0.04, 0.05), PALETTE.darkMetal);
+        bracket.position.set(0, 0, 0.02);
+        const body = mesh(new THREE.BoxGeometry(0.09, 0.16, 0.03), PALETTE.darkMetal);
+        body.position.set(0, 0.02, 0.05);
+        const screen = mesh(new THREE.BoxGeometry(0.075, 0.1, 0.002), 0x7fb0c9);
+        screen.position.set(0, 0.04, 0.066);
+        controller.add(bracket, body, screen);
+        controller.position.y = 1.18;
+        g.add(receiver, controller);
+        g.userData = { pole, receiver, controller };
       }
       break;
     }
@@ -266,6 +289,15 @@ export class ItemsView {
         const station = (e.model.userData as { station: THREE.Object3D }).station;
         station.visible = it.state === 'deployed' && !!it.mounted;
         (station.userData as { alidade: THREE.Object3D }).alidade.rotation.y = (it.stationYaw ?? it.yaw) - it.yaw;
+      }
+      if (it.kind === 'gnssRover') {
+        const u = e.model.userData as { pole: THREE.Object3D; receiver: THREE.Object3D; controller: THREE.Object3D };
+        const h = it.rig?.height ?? 2;
+        u.pole.scale.y = h / 1.96;
+        u.pole.position.y = h / 2;
+        u.receiver.position.y = h - 0.02;
+        u.receiver.visible = !!it.rig?.receiver;
+        u.controller.visible = !!it.rig?.controller;
       }
       if (it.kind === 'level') {
         const u = e.model.userData as { tilts: THREE.Object3D[]; body: THREE.Object3D };

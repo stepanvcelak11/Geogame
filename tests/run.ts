@@ -565,7 +565,7 @@ const world = generateWorld('stavba');
   };
   check('kancelář: start u nástěnky je volný', probe(w.spawn.x, w.spawn.z, CONFIG.player.radius));
   check('kancelář: vybavení ve skladu neleží ve zdi', w.itemSpawns.every((i) => probe(i.x, i.z, 0.2)));
-  check('kancelář: 6 kusů vybavení ve skladu', w.itemSpawns.length === 6);
+  check('kancelář: 7 kusů vybavení ve skladu (i kufr GNSS)', w.itemSpawns.length === 7 && w.itemSpawns.some((s) => s.kind === 'gnssCase'));
   const { VehicleController } = await import('../src/vehicle/VehicleController');
   const vc = new VehicleController(w.vehicle);
   const x0 = w.vehicle.x;
@@ -709,6 +709,60 @@ const world = generateWorld('stavba');
   const days = new Set(Array.from({ length: 20 }, (_, i) => urgentJob(i + 1, ids)));
   check('spěšná zakázka je stejná pro stejný den a střídá se', urgentJob(5, ids) === urgentJob(5, ids) && days.size >= 3, [...days].join());
   check('příplatky jen za zakázku v pořádku', extraPay(5000, false, RANKS[3], true).urgent === 0 && extraPay(5000, true, RANKS[3], true).urgent === 1500 && extraPay(5000, true, RANKS[3], false).rank === 500);
+}
+
+// --- Kontroler GNSS
+{
+  const { FieldController, reportCoords, HEIGHT_ANOMALY, RECEIVER_SERIAL } = await import('../src/gnss/FieldController');
+  const c = new FieldController();
+  check('nový kontroler: chybí zakázka, Bluetooth, anténa i korekce', c.missing().join() === 'job,bluetooth,antenna,ntrip');
+  c.createJob('Test', 'sjtsk', 'stavba');
+  c.bt = RECEIVER_SERIAL;
+  c.antennaType = 'r7-int';
+  c.antennaHeight = 2.0;
+  c.mountpoint = 'VRS3-GG';
+  c.ntripOn = true;
+  check('po nastavení nic nechybí', c.missing().length === 0);
+  const p = { Y: 742400.123, X: 1046300.456, H: 285.2 };
+  check('S-JTSK/Bpv: souřadnice beze změny', JSON.stringify(reportCoords(p, 'sjtsk', 0)) === JSON.stringify(p));
+  const en = reportCoords(p, 'sjtskEN', 0);
+  check('EPSG 5514: záporné souřadnice', en.Y === -p.Y && en.X === -p.X);
+  check('bez kvazigeoidu: výška o ~45 m výš', Math.abs(reportCoords(p, 'sjtskElips', 0).H - p.H - HEIGHT_ANOMALY) < 1e-9);
+  c.antennaHeight = 2.0;
+  check('výtyčka 1,80 m, zadáno 2,000 m → body o 20 cm níž', Math.abs(c.heightError(1.8) + 0.2) < 1e-9);
+  c.antennaType = 'r5-int';
+  check('špatný typ antény posune výšku o fázové centrum', Math.abs(c.heightError(2.0) + 0.023) < 1e-9);
+  // Korekce: na stavbě chodí, bez připojení ne.
+  let t = 0;
+  let ok = 0;
+  const rnd = (() => { let x = 1; return () => ((x = (x * 16807) % 2147483647) / 2147483647); })();
+  for (; t < 300; t += 0.5) {
+    c.updateCorrections(0.5, 'stavba', rnd);
+    if (c.correctionsOk) ok++;
+  }
+  check('stavba: korekce skoro pořád čerstvé', ok / 600 > 0.85, `${Math.round((ok / 600) * 100)} %`);
+  let lokOk = 0;
+  for (t = 0; t < 1200; t += 0.5) {
+    c.updateCorrections(0.5, 'louka', rnd);
+    if (c.correctionsOk) lokOk++;
+  }
+  check('louka: slabý signál, korekce občas vypadnou', lokOk / 2400 < 0.99 && lokOk / 2400 > 0.6, `${Math.round((lokOk / 2400) * 100)} %`);
+  c.ntripOn = false;
+  c.updateCorrections(0.5, 'stavba', rnd);
+  check('bez NTRIP žádné korekce', !c.correctionsOk);
+  const { GnssReceiver } = await import('../src/gnss/GnssReceiver');
+  const { Rng } = await import('../src/core/Rng');
+  const g = new GnssReceiver(new Rng(5));
+  g.corrections = null;
+  g.powerOn();
+  for (let i = 0; i < 600; i++) g.update(1 / 30, { x: 0, y: world.heightmap.heightAt(0, 0) + 2, z: 0 }, world);
+  check('bez korekcí jen autonomní řešení (metry)', g.solution === 'autonomous' && g.sigmaH > 1, `${g.solution} σ ${g.sigmaH.toFixed(1)} m`);
+  g.corrections = { baseKm: 38 };
+  for (let i = 0; i < 600; i++) g.update(1 / 30, { x: 0, y: world.heightmap.heightAt(0, 0) + 2, z: 0 }, world);
+  const far = g.sigmaH;
+  g.corrections = { baseKm: 3 };
+  for (let i = 0; i < 30; i++) g.update(1 / 30, { x: 0, y: world.heightmap.heightAt(0, 0) + 2, z: 0 }, world);
+  check('vzdálená báze = horší přesnost FIXu (1 ppm)', g.solution === 'fix' && far - g.sigmaH > 0.03, `${(far * 1000).toFixed(0)} vs ${(g.sigmaH * 1000).toFixed(0)} mm`);
 }
 
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
