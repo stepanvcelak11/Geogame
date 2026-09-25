@@ -692,5 +692,24 @@ const world = generateWorld('stavba');
   check('DXF: bod v CAD osách (x = −Y, y = −X), vrstva podle kódu', i > 0 && dxf[i + 2] === 'VPUST' && dxf[i + 4] === '-742400.123' && dxf[i + 6] === '-1046300.568' && dxf[dxf.length - 2] === 'EOF');
 }
 
+// --- Kariéra: stupně a spěšné zakázky
+{
+  const { newCareer, rankOf, rankFor, okJobs, urgentJob, extraPay, RANKS } = await import('../src/jobs/Career');
+  const c = newCareer();
+  check('nováček je pomocník a smí jen lehké zakázky', rankOf(c).name === RANKS[0].name && rankOf(c).maxDifficulty === 1);
+  c.stats.okJobs = 2;
+  check('po 2 zakázkách bez vady je měřič', rankOf(c).name === 'Měřič' && rankOf(c).maxDifficulty === 2);
+  c.stats.okJobs = 9;
+  check('po 9 zakázkách ÚOZI s příplatkem', rankOf(c).payBonus === 0.1);
+  const old = newCareer();
+  old.stats.jobsDone = 6;
+  check('starší uložení: stupeň z počtu odevzdaných', okJobs(old) === 6 && rankOf(old).maxDifficulty === 3);
+  check('obtížnost 3 odemyká samostatný geodet', rankFor(3).name === 'Samostatný geodet');
+  const ids = ['a', 'b', 'c', 'd'];
+  const days = new Set(Array.from({ length: 20 }, (_, i) => urgentJob(i + 1, ids)));
+  check('spěšná zakázka je stejná pro stejný den a střídá se', urgentJob(5, ids) === urgentJob(5, ids) && days.size >= 3, [...days].join());
+  check('příplatky jen za zakázku v pořádku', extraPay(5000, false, RANKS[3], true).urgent === 0 && extraPay(5000, true, RANKS[3], true).urgent === 1500 && extraPay(5000, true, RANKS[3], false).rank === 500);
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

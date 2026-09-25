@@ -5,7 +5,8 @@ export interface OfficeCard {
   pay: string;
   difficulty: number;
   status: string;
-  tone: 'new' | 'active' | 'done' | 'bad';
+  tone: 'new' | 'active' | 'done' | 'bad' | 'locked';
+  badge?: string; // „Spěchá +30 %“ nebo „od stupně …“
 }
 
 export interface KitRow {
@@ -16,6 +17,7 @@ export interface KitRow {
 
 export interface OfficeView {
   day: string;
+  rank: { name: string; progress: string; frac: number };
   clock: string;
   money: string;
   cards: OfficeCard[];
@@ -25,6 +27,7 @@ export interface OfficeView {
     client: string;
     place: string;
     brief: string;
+    notice?: string;
     steps: string[];
     pay: string;
     kit: KitRow[];
@@ -54,6 +57,7 @@ export class OfficeScreen {
           <span class="office-meta"></span>
           <button class="office-close" aria-label="Zavřít">Zavřít</button>
         </header>
+        <div class="office-rank"><strong class="or-name"></strong><span class="or-bar"><i></i></span><span class="or-next"></span></div>
         <div class="office-main">
           <ul class="office-cards"></ul>
           <section class="office-detail"></section>
@@ -92,12 +96,16 @@ export class OfficeScreen {
     const q = (s: string): HTMLElement => this.el.querySelector(s) as HTMLElement;
     q('.office-meta').textContent = `${v.day} · ${v.clock} · účet ${v.money}`;
     q('.office-note').textContent = v.note;
+    q('.or-name').textContent = v.rank.name;
+    q('.or-next').textContent = v.rank.progress;
+    q('.or-bar i').style.width = `${Math.round(Math.max(0, Math.min(1, v.rank.frac)) * 100)}%`;
     const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
     q('.office-cards').innerHTML = v.cards
       .map(
         (c) => `<li><button class="office-card is-${c.tone}${c.id === v.selected ? ' is-sel' : ''}" data-act="pick:${c.id}">
           <span class="oc-title">${esc(c.title)}</span>
           <span class="oc-place">${esc(c.place)}</span>
+          ${c.badge ? `<span class="oc-badge">${esc(c.badge)}</span>` : ''}
           <span class="oc-row"><span class="oc-pay">${esc(c.pay)}</span><span class="oc-diff">${'●'.repeat(c.difficulty)}${'○'.repeat(3 - c.difficulty)}</span><span class="oc-status">${esc(c.status)}</span></span>
         </button></li>`,
       )
@@ -117,6 +125,7 @@ export class OfficeScreen {
       ? `<h3>${esc(d.title)}</h3>
          <p class="od-client">${esc(d.client)} · ${esc(d.place)}</p>
          <p class="od-brief">${esc(d.brief)}</p>
+         ${d.notice ? `<p class="od-notice">${esc(d.notice)}</p>` : ''}
          <p class="od-pay">Odměna <strong>${esc(d.pay)}</strong></p>
          <h4>Postup</h4>
          <ol class="od-steps">${d.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
