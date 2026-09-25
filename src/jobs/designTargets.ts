@@ -19,9 +19,11 @@ export function designTargets(spec: JobSpec, world: World): StakeTarget[] {
     // Dům 11 × 8,5 m rovnoběžně s parcelou, 2 m od severní hrany středu.
     const P = LAYOUT.parcel;
     const rot = P.rotDeg * DEG;
-    const cx = P.x + Math.sin(rot) * 2;
-    const cz = P.z - Math.cos(rot) * 2;
-    return rectCorners({ x: cx, z: cz, halfU: 5.5, halfV: 4.25, rotDeg: P.rotDeg }).map((p, i) =>
+    const h = spec.house ?? { halfU: 5.5, halfV: 4.25, du: 0, dv: -2 };
+    // Posun po osách parcely (u podél, v napříč).
+    const cx = P.x + h.du * Math.cos(rot) - h.dv * Math.sin(rot);
+    const cz = P.z + h.du * Math.sin(rot) + h.dv * Math.cos(rot);
+    return rectCorners({ x: cx, z: cz, halfU: h.halfU, halfV: h.halfV, rotDeg: P.rotDeg }).map((p, i) =>
       make(String(201 + i), `Roh domu ${201 + i}`, p.x, p.z),
     );
   }

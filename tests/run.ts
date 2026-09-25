@@ -787,5 +787,30 @@ const world = generateWorld('stavba');
   check('kufr i rover nesou stav GNSS', equipOf('gnssCase') === 'gnss' && equipOf('gnssRover') === 'gnss' && equipOf('rod') === null);
 }
 
+// --- Generované objednávky
+{
+  const { ordersForDay } = await import('../src/jobs/Generator');
+  const { designTargets } = await import('../src/jobs/designTargets');
+  const { inPolygon, rectCorners, LAYOUT } = await import('../src/world/WorldGen');
+  const a = ordersForDay(5);
+  check('každý den dvě objednávky, stejné pro stejný den', a.length === 2 && JSON.stringify(a) === JSON.stringify(ordersForDay(5)));
+  const titles = new Set(Array.from({ length: 12 }, (_, i) => ordersForDay(i + 1).map((o) => o.title).join('|')));
+  check('objednávky se den ode dne liší', titles.size >= 10, `${titles.size} různých`);
+  const sw = generateWorld('stavba');
+  const lw = generateWorld('louka');
+  let okAll = true;
+  for (let d = 1; d <= 40; d++)
+    for (const o of ordersForDay(d)) {
+      const w = o.location === 'stavba' ? sw : lw;
+      if (o.featureIds && !o.featureIds.every((id) => w.features.some((f) => f.id === id))) okAll = false;
+      if (o.reconMarks && !o.reconMarks.every((id) => w.marks.some((m) => m.id === id))) okAll = false;
+      if (o.stake === 'dum') {
+        const parcel = rectCorners(LAYOUT.parcel);
+        if (!designTargets(o, w).every((t) => inPolygon(t.world.x, t.world.z, parcel))) okAll = false;
+      }
+    }
+  check('40 dní objednávek: prvky i body existují, dům je na parcele', okAll);
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

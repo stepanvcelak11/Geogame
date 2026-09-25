@@ -22,6 +22,8 @@ export interface JobSpec {
   pay: number; // odměna [Kč]
   kit: ItemKind[]; // potřebné vybavení
   difficulty: 1 | 2 | 3;
+  house?: { halfU: number; halfV: number; du: number; dv: number }; // vytyčení domu: rozměr a posun na parcele
+  issued?: number; // generovaná objednávka: den vydání
 }
 
 export const JOB_TYPE_NAME: Record<JobType, string> = {
