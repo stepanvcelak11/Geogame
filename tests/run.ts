@@ -920,8 +920,31 @@ const world = generateWorld('stavba');
     const h = w.raycast(eye, { x: (p.x - eye.x) / d, y: (p.y - eye.y) / d, z: (p.z - eye.z) / d }, d);
     return !h || h.t > d - 0.05;
   };
-  const vis = [...w.features.map((f) => see({ x: f.pos.x, y: f.pos.y + 2, z: f.pos.z })), see({ x: h2.x, y: w.heightmap.heightAt(h2.x, h2.z) + 2, z: h2.z })];
+  const vis = [...w.features.filter((f) => job.featureIds!.includes(f.id)).map((f) => see({ x: f.pos.x, y: f.pos.y + 2, z: f.pos.z })), see({ x: h2.x, y: w.heightmap.heightAt(h2.x, h2.z) + 2, z: h2.z })];
   check('z pomocného bodu 8001 je vidět na 8002 i na všechny prvky v lese', vis.every(Boolean), vis.join(','));
+}
+
+// --- Les: polygonový pořad do průseku
+{
+  const { JOBS } = await import('../src/jobs/JobCatalog');
+  const { GnssReceiver } = await import('../src/gnss/GnssReceiver');
+  const w = generateWorld('les');
+  const job = JOBS.find((j) => j.id === 'les-studanka')!;
+  check('studánka: prvky existují', job.featureIds!.every((id) => w.features.some((f) => f.id === id)));
+  const at = (x: number, z: number, dy: number): { x: number; y: number; z: number } => ({ x, y: w.heightmap.heightAt(x, z) + dy, z });
+  const see = (a: { x: number; y: number; z: number }, p: { x: number; y: number; z: number }): boolean => {
+    const d = Math.hypot(p.x - a.x, p.y - a.y, p.z - a.z);
+    const h = w.raycast(a, { x: (p.x - a.x) / d, y: (p.y - a.y) / d, z: (p.z - a.z) / d }, d);
+    return !h || h.t > d - 0.05;
+  };
+  const [h1] = job.helperPoints!;
+  const [t1] = job.traverse!;
+  const feats = job.featureIds!.map((id) => w.features.find((f) => f.id === id)!.pos);
+  check('z 8001 na studánku vidět není (bez pořadu to nejde)', feats.every((f) => !see(at(h1.x, h1.z, 1.55), { ...f, y: f.y + 2 })));
+  check('z 8001 je vidět na bod pořadu 8101', see(at(h1.x, h1.z, 1.55), at(t1.x, t1.z, 2)));
+  check('z 8101 je vidět zpět na 8001 i na studánku a kámen', see(at(t1.x, t1.z, 1.55), at(h1.x, h1.z, 2)) && feats.every((f) => see(at(t1.x, t1.z, 1.55), { ...f, y: f.y + 2 })));
+  const sky = GnssReceiver.skyOpenness(w, { ...feats[0], y: feats[0].y + 2 });
+  check('u studánky GNSS FIX nedá', sky < 0.66, `obloha ${(sky * 100).toFixed(0)} %`);
 }
 
 if (failed) throw new Error(`Selhalo testů: ${failed}`);

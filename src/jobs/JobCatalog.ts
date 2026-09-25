@@ -21,7 +21,9 @@ export interface JobSpec {
   orientOn?: string; // orientační bod (ID bodu)
   stationTask?: string;
   /** Kolik pomocných bodů si má měřič stabilizovat GNSS (čísla 8001, 8002…) a doporučená místa. */
-  helperPoints?: { x: number; z: number }[]; // popis měření stanicí pro kroky zakázky
+  helperPoints?: { x: number; z: number }[];
+  /** Polygonový pořad: body stabilizované stanicí (8101, 8102…) a doporučená místa; poslední je konečné stanovisko. */
+  traverse?: { x: number; z: number }[]; // popis měření stanicí pro kroky zakázky
   levelFrom?: string; // nivelace: výchozí značka (ID)
   levelTo?: string; // nivelace: určovaný bod (ID prvku)
   pay: number; // odměna [Kč]
@@ -191,6 +193,29 @@ export const JOBS: JobSpec[] = [
     orientOn: 'PB-8002',
     stationTask: 'Zaměř propustek, kámen a dub (hranol na prvek, správný kód)',
     pay: 12400,
+    kit: ['gnssCase', 'gnssRover', 'tripod', 'tsCase', 'prismPole'],
+    difficulty: 3,
+  },
+  {
+    id: 'les-studanka',
+    title: 'Studánka v průseku (polygonový pořad)',
+    client: 'Obec Hrušov, odbor životního prostředí',
+    location: 'les',
+    type: 'polohopis',
+    brief:
+      'Studánka leží v průseku hluboko v lese – z louky na ni není vidět a GNSS tam nedá FIX. Pomocné body 8001 a 8002 před lesem (když ještě nejsou, stabilizuj je GNSS), stanice na 8001 s orientací na 8002. U ústí průseku stanicí stabilizuj bod pořadu 8101, stanici na něj přestav, orientuj zpět na 8001 a zaměř studánku (kód Studánka) a hraniční kámen na konci průseku.',
+    tolerance: { xy: 0.07 },
+    featureIds: ['les-studanka', 'les-hranice-2'],
+    requireStation: true,
+    helperPoints: [
+      { x: -62, z: 0 },
+      { x: -140, z: 0 },
+    ],
+    traverse: [{ x: 40, z: -1 }],
+    stationAt: 'PB-8001',
+    orientOn: 'PB-8002',
+    stationTask: 'Z bodu 8101 zaměř studánku a hraniční kámen v průseku',
+    pay: 14600,
     kit: ['gnssCase', 'gnssRover', 'tripod', 'tsCase', 'prismPole'],
     difficulty: 3,
   },

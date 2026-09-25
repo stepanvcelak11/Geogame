@@ -239,6 +239,20 @@ function culvert(s: SceneryItem): THREE.Group {
   return g;
 }
 
+/** Kamenná obruba studánky s hladinou. */
+function well(s: SceneryItem): THREE.Group {
+  const g = new THREE.Group();
+  const r = s.w / 2;
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(r, r + 0.05, s.h, 14, 1, true), lambert(0x7d786e, 'wellstone'));
+  ring.position.y = s.h / 2 - 0.1;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.07, 6, 16).rotateX(Math.PI / 2), lambert(0x8a857a, 'wellrim'));
+  rim.position.y = s.h - 0.08;
+  const water = new THREE.Mesh(new THREE.CircleGeometry(r - 0.02, 16).rotateX(-Math.PI / 2), lambert(0x1c2a2c, 'wellwater'));
+  water.position.y = 0.05;
+  g.add(ring, rim, water);
+  return g;
+}
+
 /** Cedule na dvou kůlech (text na desce). */
 function sign(s: SceneryItem): THREE.Group {
   const g = new THREE.Group();
@@ -256,6 +270,7 @@ const BUILDERS: Partial<Record<SceneryItem['kind'], (s: SceneryItem) => THREE.Gr
   post,
   culvert,
   sign,
+  well,
   house,
   office,
   garage,
