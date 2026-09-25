@@ -100,6 +100,7 @@ export const MANUAL: ManualChapter[] = [
       { do: 'Po ustavení odečti výšku přístroje na pásmu a zadej ji na displeji stanice (Stanovisko).', why: 'Výška přístroje vstupuje do všech výšek; chyba o 1 cm = všechny body o 1 cm vedle.' },
       { do: 'Orientace: namiř dalekohled zhruba na hranol na druhém známém bodě, dej Cílit (ATR) a Orientovat.', why: 'ATR (automatické cílení) dotočí stanici přesně na střed hranolu. Kontrolní délka ověří, že stojíš na správném bodě.' },
       { do: 'Volné stanovisko: stanici postav kamkoli a změř aspoň dva známé body; v tabletu (Stanice) přijmi výsledek.', why: 'Opravy vYX a σ0 ukazují kvalitu – velká oprava = špatný bod nebo špatné měření.' },
+      { do: 'Kde GNSS nedá FIX (pod korunami, u zdí), měř stanicí: stanovisko na volném místě s výhledem, orientace na jiný známý bod – klidně i hraniční znak.', why: 'Záměra stanice potřebuje jen volnou přímku, ne volnou oblohu.' },
       { do: 'Pak měř body: na hranol (přesnější, dál) nebo bez hranolu (na zeď, roh).', why: 'Koruna stromu v záměře přeruší paprsek; bez hranolu pak změříš list místo bodu.' },
     ],
   },

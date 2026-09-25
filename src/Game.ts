@@ -157,6 +157,7 @@ const CODES: { code: FeatureCode; label: string }[] = [
   { code: 'OBRUBNIK', label: 'Obrubník' },
   { code: 'PLOT', label: 'Plot' },
   { code: 'STROM', label: 'Strom' },
+  { code: 'HRANICE', label: 'Hranice' },
 ];
 const GAME_MIN_PER_SEC = 10 / 60; // herní čas běží 10× rychleji
 const INSURANCE = 12000; // jednorázové pojištění vybavení [Kč]
@@ -1888,6 +1889,11 @@ export class Game {
     return n === 1 ? 'zakázku' : n >= 2 && n <= 4 ? 'zakázky' : 'zakázek';
   }
 
+  /** Číslo bodu z katalogu (4001 z PBPP-4001). */
+  private markNo(id: string | undefined): string {
+    return (id && this.worldOf(this.activeRun()?.spec.location ?? this.world.location).marks.find((m) => m.id === id)?.number) || 'známý bod';
+  }
+
   /** Pevné zakázky + generované objednávky kariéry. */
   private allJobs(): JobSpec[] {
     return [...JOBS, ...(this.career.orders ?? [])];
@@ -1999,9 +2005,11 @@ export class Game {
         const cnt = n > 0 ? ` (${f} z ${n})` : '';
         if (spec.requireStation) {
           const c = this.connected();
-          steps.push({ text: 'Rozlož stativ nad bodem 4001, nasaď stanici a ustav ji', done: !!c });
-          steps.push({ text: 'Orientuj stanici: výtyčku s hranolem postav na 4021', done: !!c && c.ts.orientation !== null });
-          steps.push({ text: `Změř rohy trafostanice, SZ z volného stanoviska${cnt}`, done: f === n && n > 0 });
+          const at = this.markNo(spec.stationAt);
+          const on = this.markNo(spec.orientOn);
+          steps.push({ text: `Rozlož stativ nad bodem ${at}, nasaď stanici a ustav ji`, done: !!c });
+          steps.push({ text: `Orientuj stanici: výtyčku s hranolem postav na ${on}`, done: !!c && c.ts.orientation !== null });
+          steps.push({ text: `${spec.stationTask ?? 'Změř požadované prvky'}${cnt}`, done: f === n && n > 0 });
         } else {
           steps.push(...this.gnssSetupSteps(f > 0));
           steps.push({ text: 'Vyber správný kód (kontroler: Měřit body, nebo růžové tlačítko)', done: f > 0 });
@@ -2074,8 +2082,8 @@ export class Game {
       case 'polohopis': {
         if (spec.requireStation) {
           const c = this.connected();
-          if (!c) return this.world.marks.find((m) => m.id === 'PBPP-4001')?.pos ?? null;
-          if (c.ts.station && c.ts.orientation === null) return this.world.marks.find((m) => m.id === 'ZhB-4021')?.pos ?? null;
+          if (!c) return this.world.marks.find((m) => m.id === spec.stationAt)?.pos ?? null;
+          if (c.ts.station && c.ts.orientation === null) return this.world.marks.find((m) => m.id === spec.orientOn)?.pos ?? null;
         }
         return nearest((run.mapping?.required ?? []).filter((f) => !run.mapping?.found.has(f.id)).map((f) => f.pos));
       }
@@ -2133,11 +2141,11 @@ export class Game {
           if (!c) {
             const t = this.items.find((i) => i.kind === 'tripod');
             if (t?.state === 'deployed' && !t.secured) return 'Sešlápni nohy stativu (s prázdnýma rukama zamiř na stativ), pak nasaď stanici z kufru.';
-            return 'Rozlož stativ nad 4001, sešlápni nohy, nasaď stanici z kufru a ustav ji.';
+            return `Rozlož stativ nad ${this.markNo(spec.stationAt)}, sešlápni nohy, nasaď stanici z kufru a ustav ji.`;
           }
           if (!c.ts.station) return 'Volné stanovisko: připoj ho výtyčkou na dva známé body, pak ho přijmi v tabletu (Stanice).';
-          if (c.ts.orientation === null) return 'Orientuj stanici: výtyčku s hranolem postav na 4021 a dej Orientovat.';
-          return 'Měř rohy trafostanice: výtyčku na roh (kód Roh budovy), nebo bez hranolu dalekohledem.';
+          if (c.ts.orientation === null) return `Orientuj stanici: výtyčku s hranolem postav na ${this.markNo(spec.orientOn)}, namiř, Cílit (ATR) a Orientovat.`;
+          return spec.stationTask ? `${spec.stationTask}.` : 'Měř prvky: výtyčku s hranolem na prvek, nebo bez hranolu dalekohledem.';
         }
         {
           const g = this.gnssGoal(run);
