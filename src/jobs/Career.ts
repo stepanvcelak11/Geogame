@@ -1,4 +1,5 @@
 import type { EquipId, EquipState } from './Equipment';
+import type { JobSpec } from './JobCatalog';
 
 /** Postup hráče: den, účet a výsledky zakázek. Ukládá se do localStorage (když jde). */
 export interface CareerJob {
@@ -16,6 +17,7 @@ export interface CareerState {
   urgentDone?: number; // den, kdy už byla spěšná zakázka zaplacena
   equipment?: Record<EquipId, EquipState>; // stav přístrojů
   insured?: boolean; // pojištění vybavení (spoluúčast 2 000 Kč)
+  orders?: JobSpec[]; // generované objednávky (nové každý den)
 }
 
 export interface Upgrade {

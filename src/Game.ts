@@ -48,6 +48,7 @@ import { InteractionSystem, type InteractionPrompt } from './interaction/Interac
 import { ITEM_DEFS, type Hand, type WorldItem } from './items/items';
 import { designTargets } from './jobs/designTargets';
 import { JOB_TYPE_NAME, JOBS, type JobSpec } from './jobs/JobCatalog';
+import { ordersForDay } from './jobs/Generator';
 import { EXPORT_FORMATS, exportPoints, pointsCsv, type ExportFormat } from './survey/PointExport';
 import { MappingTask } from './jobs/MappingTask';
 import { ReconTask, REPORT_RADIUS } from './jobs/ReconTask';
@@ -462,6 +463,7 @@ export class Game {
       else {
         clearCareer();
         this.career = newCareer();
+        this.refreshOrders();
       }
       this.started = true;
       this.weatherTip();
@@ -1886,6 +1888,34 @@ export class Game {
     return n === 1 ? 'zakázku' : n >= 2 && n <= 4 ? 'zakázky' : 'zakázek';
   }
 
+  /** Pevné zakázky + generované objednávky kariéry. */
+  private allJobs(): JobSpec[] {
+    return [...JOBS, ...(this.career.orders ?? [])];
+  }
+
+  /**
+   * Denní objednávky: dnešní dvě nové, včerejší nepřevzaté ještě platí, starší propadnou.
+   * Převzaté a odevzdané zůstávají (kvůli výsledkům).
+   */
+  private refreshOrders(): void {
+    const day = this.career.day;
+    const keep = (this.career.orders ?? []).filter((o) => {
+      const st = this.jobs.get(o.id)?.status ?? this.career.jobs[o.id]?.status ?? 'nova';
+      return st !== 'nova' || (o.issued ?? day) >= day - 1;
+    });
+    for (const o of ordersForDay(day)) if (!keep.some((k) => k.id === o.id)) keep.push(o);
+    // Odevzdaných generovaných necháme jen posledních pár, ať seznam neroste donekonečna.
+    const done = keep.filter((o) => (this.jobs.get(o.id)?.status ?? this.career.jobs[o.id]?.status) === 'odevzdana');
+    const drop = new Set(done.slice(0, Math.max(0, done.length - 4)).map((o) => o.id));
+    this.career.orders = keep.filter((o) => !drop.has(o.id));
+    const ids = new Set(this.career.orders.map((o) => o.id));
+    for (const id of [...this.jobs.keys()]) if (id.startsWith('obj-') && !ids.has(id)) {
+      this.jobs.delete(id);
+      delete this.career.jobs[id];
+    }
+    for (const o of this.career.orders) if (!this.jobs.has(o.id)) this.jobs.set(o.id, { spec: o, status: 'nova' });
+  }
+
   /** Dispečink svěří jen zakázky do obtížnosti podle profesního stupně. */
   private jobUnlocked(spec: JobSpec): boolean {
     return spec.difficulty <= rankOf(this.career).maxDifficulty;
@@ -1896,7 +1926,7 @@ export class Game {
     if (this.career.urgentDone === this.career.day) return null; // příplatek jen jednou za den
     return urgentJob(
       this.career.day,
-      JOBS.filter((j) => this.jobUnlocked(j)).map((j) => j.id),
+      this.allJobs().filter((j) => this.jobUnlocked(j)).map((j) => j.id),
     );
   }
 
@@ -3037,6 +3067,7 @@ export class Game {
     this.career = c;
     c.equipment = { ...newEquipment(), ...(c.equipment ?? {}) };
     this.syncRepairs();
+    this.refreshOrders();
     this.applyUpgrades();
     this.weather = weatherForDay(c.day);
     for (const [id, cj] of Object.entries(c.jobs)) {
@@ -3086,13 +3117,13 @@ export class Game {
     if (this.input.pointerLocked) document.exitPointerLock();
     this.sfx.click();
     this.officeSel =
-      this.officeSel ?? this.activeJobId ?? JOBS.find((j) => this.jobs.get(j.id)?.status === 'nova' && this.jobUnlocked(j))?.id ?? null;
+      this.officeSel ?? this.activeJobId ?? this.allJobs().find((j) => this.jobs.get(j.id)?.status === 'nova' && this.jobUnlocked(j))?.id ?? null;
     this.officeScreen.show();
   }
 
   private officeView(): OfficeView {
     const urgent = this.urgentToday();
-    const cards = JOBS.map((spec) => {
+    const cards = this.allJobs().map((spec) => {
       const r = this.jobs.get(spec.id) as JobRun;
       const locked = !this.jobUnlocked(spec) && r.status !== 'aktivni';
       const status = locked
@@ -3115,10 +3146,23 @@ export class Game {
         difficulty: spec.difficulty,
         status,
         tone,
-        badge: locked ? `od stupně ${rankFor(spec.difficulty).name}` : spec.id === urgent ? 'Spěchá +30 %' : undefined,
+        badge: locked
+          ? `od stupně ${rankFor(spec.difficulty).name}`
+          : spec.id === urgent
+            ? 'Spěchá +30 %'
+            : spec.issued !== undefined && r.status === 'nova'
+              ? spec.issued === this.career.day
+                ? 'Nová objednávka dnes'
+                : 'Objednávka platí do zítřka'
+              : undefined,
       };
-    }).sort((a, b) => Number(a.tone === 'locked') - Number(b.tone === 'locked') || Number(b.id === urgent) - Number(a.id === urgent));
-    const spec = JOBS.find((j) => j.id === this.officeSel);
+    }).sort(
+      (a, b) =>
+        Number(a.tone === 'locked') - Number(b.tone === 'locked') ||
+        Number(b.id === urgent) - Number(a.id === urgent) ||
+        Number(b.id.startsWith('obj-') && b.tone === 'new') - Number(a.id.startsWith('obj-') && a.tone === 'new'),
+    );
+    const spec = this.allJobs().find((j) => j.id === this.officeSel);
     let detail: OfficeView['detail'] = null;
     if (spec) {
       const r = this.jobs.get(spec.id) as JobRun;
@@ -3246,6 +3290,7 @@ export class Game {
     this.career.day++;
     this.weather = weatherForDay(this.career.day);
     this.syncRepairs();
+    this.refreshOrders();
     this.dayEarned = 0;
     this.clockMin = 7 * 60 + 30;
     this.persist();
@@ -3513,7 +3558,7 @@ export class Game {
     const rankAfter = rankIndex(this.career);
     if (rankAfter > rankBefore) {
       const r = RANKS[rankAfter];
-      const unlocked = JOBS.filter((j) => j.difficulty <= r.maxDifficulty && j.difficulty > RANKS[rankBefore].maxDifficulty).length;
+      const unlocked = this.allJobs().filter((j) => j.difficulty <= r.maxDifficulty && j.difficulty > RANKS[rankBefore].maxDifficulty).length;
       setTimeout(
         () =>
           this.bus.emit('toast', {
@@ -3551,7 +3596,7 @@ export class Game {
       return {
         title: 'Zakázky',
         brief: this.driving ? 'Jsi v dodávce. Odjet můžeš tlačítkem dole.' : 'Převezmi zakázku. Do jiné lokality dojedeš dodávkou.',
-        rows: [...JOBS].sort((a, b) => Number(!this.jobUnlocked(a)) - Number(!this.jobUnlocked(b))).map((spec) => {
+        rows: [...this.allJobs()].sort((a, b) => Number(!this.jobUnlocked(a)) - Number(!this.jobUnlocked(b))).map((spec) => {
           const r = this.jobs.get(spec.id) as JobRun;
           const far = spec.location !== here ? `, jízda ${travelMinutes(here, spec.location)} min` : ', tady';
           const locked = !this.jobUnlocked(spec) && r.status !== 'aktivni';
