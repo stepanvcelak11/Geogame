@@ -16,3 +16,12 @@ try {
   root.innerHTML =
     '<div class="fatal">Nepodařilo se spustit 3D zobrazení (WebGL).<br>Zkus jiný prohlížeč nebo zapni hardwarovou akceleraci.</div>';
 }
+
+// Offline režim (jen v sestavené verzi, ve vývoji by mezipaměť překážela).
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      /* bez offline režimu hra jede dál */
+    });
+  });
+}
