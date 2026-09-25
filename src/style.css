@@ -701,6 +701,9 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .hs-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .hs-points button { flex-direction: row; justify-content: space-between; width: 100%; min-height: 38px; }
 .hs-points button span:last-child { color: var(--muted); font-size: 12px; }
+.ctrl-btn { pointer-events: auto; margin-left: 6px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 6px; background: #1d6fb5; color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; }
+.ctrl-btn kbd { margin-left: 6px; font-size: 11px; opacity: 0.7; }
+.is-touch .ctrl-btn kbd { display: none; }
 .helper-btn { pointer-events: auto; margin-left: 6px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 6px;
   background: #ff7a1a; color: #1f2428; font-size: 15px; font-weight: 700; cursor: pointer; }
 
@@ -752,6 +755,7 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .panel.pos .gnss-detail { font-size: 12px; margin: 2px 0 0; }
 .panel.pos .code-chip { min-height: 32px; font-size: 13px; }
 .goal { top: calc(8px + var(--inset-t)) !important; max-width: min(44vw, 440px) !important; padding: 6px 12px !important; gap: 6px !important; align-items: center !important; }
+.has-ctrl .goal { top: calc(56px + var(--inset-t)) !important; }
 .goal-t { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .goal.is-min .goal-t { display: none; }
 .goal-arrow { flex: none; display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--survey); color: var(--ink); font-weight: 900; font-size: 15px; }
@@ -870,3 +874,89 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .office-card.is-shop { border-left-color: #b0249a; }
 .office-card.is-owned { opacity: 0.6; }
 .proto-bonus { margin: 2px 0 0; font-size: 14px; color: #2f7d32; font-weight: 700; }
+
+/* ---------- Sestavení GNSS roveru ---------- */
+.rig { position: absolute; inset: 0; z-index: 9; display: grid; place-items: center; padding: calc(8px + var(--inset-t)) calc(8px + var(--inset-r)) calc(8px + var(--inset-b)) calc(8px + var(--inset-l)); background: rgba(20, 24, 26, 0.72); }
+.rig-body { width: min(760px, 100%); max-height: 100%; display: flex; flex-direction: column; border-radius: 12px; background: #262c30; border: 3px solid #121517; overflow: hidden; }
+.rig-body header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: #2f3a44; flex: none; }
+.rig-body h2 { flex: 1; margin: 0; font-size: 18px; }
+.rig-close { min-height: 38px; padding: 0 16px; border-radius: 6px; border: 0; background: var(--survey); color: var(--ink); font-weight: 700; font-size: 15px; cursor: pointer; }
+.rig-steps { list-style: none; margin: 0; padding: 10px 12px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px; }
+.rig-step { display: flex; gap: 10px; padding: 8px 10px; border-radius: 8px; background: rgba(238, 241, 234, 0.06); }
+.rig-step h3 { margin: 0 0 6px; font-size: 15px; }
+.rig-step p { margin: 6px 0 0; font-size: 13px; line-height: 1.35; color: var(--muted); }
+.rig-step p b { color: var(--paper); }
+.rig-n { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(238, 241, 234, 0.15); font-weight: 700; }
+.rig-step.is-done .rig-n { background: #4caf50; color: #fff; }
+.rig-step > div { flex: 1; min-width: 0; }
+.rig-height { display: flex; align-items: center; gap: 12px; }
+.rig-height strong { font-size: 24px; font-variant-numeric: tabular-nums; min-width: 90px; text-align: center; }
+.rig-height button, .rig-btn { min-height: 42px; min-width: 48px; padding: 0 14px; border-radius: 6px; border: 1px solid rgba(238, 241, 234, 0.35); background: transparent; color: var(--paper); font-size: 18px; font-weight: 700; cursor: pointer; }
+.rig-btn { font-size: 15px; width: 100%; }
+.rig-btn:disabled { opacity: 0.45; cursor: default; }
+.rig-screw { position: relative; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 6px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.25); touch-action: none; cursor: ew-resize; user-select: none; }
+.rig-screw.is-done { cursor: default; opacity: 0.7; }
+.rig-thread { flex: none; width: 50px; height: 50px; border-radius: 50%; background: repeating-conic-gradient(#8a949b 0 10deg, #5b646a 10deg 20deg); border: 3px solid #2f3a44; box-shadow: inset 0 0 0 10px rgba(0, 0, 0, 0.25); }
+.rig-screw em { font-style: normal; font-size: 14px; color: var(--muted); }
+.rig-powers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.rig-power { position: relative; overflow: hidden; min-height: 52px; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(238, 241, 234, 0.35); background: transparent; color: var(--paper); font-weight: 700; font-size: 14px; cursor: pointer; display: grid; touch-action: none; user-select: none; }
+.rig-power small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.rig-power i { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: var(--survey); }
+.rig-power.is-on { border-color: #4caf50; background: rgba(76, 175, 80, 0.18); }
+.rig-power:disabled { opacity: 0.4; cursor: default; }
+
+/* ---------- Kontroler GNSS (polní software) ---------- */
+.ctrl { position: absolute; inset: 0; z-index: 9; display: grid; place-items: center; padding: calc(6px + var(--inset-t)) calc(6px + var(--inset-r)) calc(6px + var(--inset-b)) calc(6px + var(--inset-l)); background: rgba(20, 24, 26, 0.72); }
+.ctrl-device { width: min(900px, 100%); height: 100%; max-height: 560px; display: flex; flex-direction: column; border-radius: 16px; border: 10px solid #15191c; background: #f3f5f2; color: #1f2428; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
+.ctrl-status { flex: none; display: flex; align-items: center; gap: 10px; padding: 4px 10px; background: #1d3b53; color: #fff; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.ctrl-status .cs-clock { font-weight: 700; }
+.ctrl-status .cs-bt { opacity: 0.35; font-weight: 700; }
+.ctrl-status .cs-bt.is-on { opacity: 1; color: #7fc8ff; }
+.cs-corr.is-off { opacity: 0.45; }
+.cs-corr.is-late { color: #ffb347; }
+.cs-sol { padding: 1px 8px; border-radius: 4px; font-weight: 700; background: #b33a2b; }
+.cs-sol.is-fix { background: #2e8b3e; }
+.cs-sol.is-float { background: #c98a12; }
+.cs-bat { margin-left: auto; }
+.ctrl-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.cp-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid #d5dad3; background: #fff; }
+.cp-head h2 { flex: 1; margin: 0; font-size: 18px; color: #1d3b53; }
+.cp-head button { min-height: 36px; padding: 0 12px; border-radius: 6px; border: 1px solid #b9c2bb; background: #fff; color: #1d3b53; font-weight: 700; cursor: pointer; }
+.cp-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+.cp-scroll h3 { margin: 6px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: #5d6a70; }
+.cp-job { margin: 8px 12px 0; font-size: 14px; }
+.cp-tiles { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px 12px 12px; }
+.cp-tiles button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 10px; border: 1px solid #c9d1ca; background: #fff; color: #1d3b53; font-weight: 700; font-size: 15px; cursor: pointer; min-height: 64px; }
+.cp-tiles button span { font-size: 24px; line-height: 1; }
+.ctrl button { font-family: inherit; }
+.cp-scroll > button, .cp-list button, .cp-chips button { min-height: 42px; padding: 4px 12px; border-radius: 6px; border: 1px solid #b9c2bb; background: #fff; color: #1f2428; font-size: 15px; text-align: left; cursor: pointer; }
+.cp-scroll > button:disabled { opacity: 0.5; cursor: default; }
+.cp-list { display: grid; gap: 4px; }
+.cp-list button { display: grid; }
+.cp-list button small, .cp-radios small { color: #5d6a70; font-size: 12px; }
+.cp-list .is-sel, .cp-chips .is-sel { border-color: #1d6fb5; background: #e2eefb; font-weight: 700; }
+.cp-list .is-done { opacity: 0.6; }
+.cp-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.cp-chips button { min-height: 38px; text-align: center; }
+.cp-scroll .cp-primary { border: 0; background: #1d6fb5; color: #fff; font-weight: 700; text-align: center; }
+.cp-field { display: grid; gap: 2px; font-size: 13px; color: #5d6a70; }
+.cp-field input { min-height: 40px; padding: 0 10px; border-radius: 6px; border: 1px solid #b9c2bb; font: inherit; font-size: 16px; color: #1f2428; background: #fff; }
+.cp-radios { display: grid; gap: 4px; }
+.cp-radios label { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border-radius: 6px; border: 1px solid #d5dad3; background: #fff; cursor: pointer; }
+.cp-radios span { display: grid; font-size: 14px; }
+.cp-radios input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.cp-note { margin: 0; font-size: 13px; color: #5d6a70; line-height: 1.35; }
+.cp-warn { margin: 0; color: #b33a2b; font-size: 14px; font-weight: 600; }
+.cp-ok { margin: 0; color: #2e8b3e; font-size: 14px; font-weight: 600; }
+.cp-dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; font-size: 14px; }
+.cp-dl dt { color: #5d6a70; }
+.cp-dl dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cp-last { margin: 0; padding-left: 18px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.cp-table { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.cp-table th, .cp-table td { padding: 3px 6px; border-bottom: 1px solid #d5dad3; text-align: left; vertical-align: top; }
+@media (max-height: 460px) {
+  .ctrl-device { border-width: 6px; border-radius: 12px; }
+  .cp-tiles { gap: 6px; padding: 6px 10px 8px; }
+  .cp-tiles button { min-height: 52px; font-size: 14px; }
+  .cp-tiles button span { font-size: 20px; }
+}

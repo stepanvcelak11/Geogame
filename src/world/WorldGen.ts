@@ -416,6 +416,7 @@ function generateSite(): World {
     { kind: 'tsCase', x: -14.6, z: 39.4, yaw: -0.2 },
     { kind: 'prismPole', x: -12.6, z: 39.0, yaw: 0.05 },
     { kind: 'gnssRover', x: -12.4, z: 38.2, yaw: -0.08 },
+    { kind: 'gnssCase', x: -13.4, z: 37.2, yaw: 0.15 },
     { kind: 'level', x: -10.6, z: 39.2, yaw: 0.2 },
     { kind: 'rod', x: -9.8, z: 38.0, yaw: 0.02 },
   ];
@@ -658,6 +659,7 @@ function generateOffice(): World {
     { kind: 'rod', x: 11.4, z: -11.9, yaw: 0 },
     { kind: 'prismPole', x: 11.8, z: -10.8, yaw: 0 },
     { kind: 'gnssRover', x: 11.8, z: -9.7, yaw: 0 },
+    { kind: 'gnssCase', x: 14.8, z: -11.6, yaw: 0 },
   ];
   return new World({
     location: 'kancelar',

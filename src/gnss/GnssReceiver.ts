@@ -21,6 +21,8 @@ export class GnssReceiver {
   solution: GnssSolution = 'none';
   openness = 0; // 0 … 1, podíl volných směrů k obloze
   antennaBoost = false; // vylepšení: anténa pro víc družicových systémů
+  /** Korekce RTK: null = žádné (jen autonomní řešení), jinak vzdálenost báze [km]. */
+  corrections: { baseKm: number } | null = { baseKm: 3 };
   sats = 0;
   pdop = 99;
   sigmaH = 99; // střední polohová chyba [m]
@@ -70,7 +72,8 @@ export class GnssReceiver {
       this.openness = GnssReceiver.skyOpenness(world, antenna);
     }
     const o = this.antennaBoost ? Math.min(1, this.openness * 1.3 + 0.06) : this.openness;
-    const target: GnssSolution = o >= 0.66 ? 'fix' : o >= 0.3 ? 'float' : 'autonomous';
+    let target: GnssSolution = o >= 0.66 ? 'fix' : o >= 0.3 ? 'float' : 'autonomous';
+    if (!this.corrections) target = 'autonomous'; // bez korekcí RTK nevyřeší ambiguity
     this.stateTime += dt;
     if (RANK[target] < RANK[this.solution]) {
       this.solution = target; // zakrytí oblohy = okamžitá ztráta řešení
@@ -89,7 +92,8 @@ export class GnssReceiver {
     this.sats = Math.round(6 + o * 22);
     switch (this.solution) {
       case 'fix':
-        this.sigmaH = 0.008 + this.pdop * 0.003;
+        // Výrobci udávají RTK 8 mm + 1 ppm vzdálenosti od báze.
+        this.sigmaH = 0.008 + this.pdop * 0.003 + (this.corrections?.baseKm ?? 0) * 0.001;
         break;
       case 'float':
         this.sigmaH = 0.12 + (1 - o) * 0.5;

@@ -1,6 +1,6 @@
 import { CONFIG } from '../config';
 
-export type Action = 'jump' | 'use' | 'drop' | 'light' | 'crouch' | 'map' | 'switch' | 'debug';
+export type Action = 'jump' | 'use' | 'drop' | 'light' | 'crouch' | 'map' | 'switch' | 'debug' | 'controller';
 
 /** Snímek vstupu – co hráč chce, bez ohledu na zařízení. */
 export interface InputFrame {
@@ -19,6 +19,7 @@ const KEY_ACTIONS: Record<string, Action> = {
   KeyF: 'light',
   KeyC: 'crouch',
   KeyM: 'map',
+  KeyK: 'controller',
   KeyQ: 'switch',
   Tab: 'map',
   F3: 'debug',
