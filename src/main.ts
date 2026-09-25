@@ -5,7 +5,7 @@ const root = document.getElementById('app');
 if (!root) throw new Error('Chybí element #app');
 
 try {
-  const flags = window as unknown as { __GEODET_START?: 'kancelar' | 'stavba' | 'louka'; __GEODET_STEADY?: boolean };
+  const flags = window as unknown as { __GEODET_START?: 'kancelar' | 'stavba' | 'louka' | 'les'; __GEODET_STEADY?: boolean };
   const game = new Game(root, { start: flags.__GEODET_START, steadyPole: flags.__GEODET_STEADY });
   game.start();
   // Háček pro automatické testy (nastavuje jen testovací harness).

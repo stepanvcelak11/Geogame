@@ -59,6 +59,15 @@ export const MEADOW = {
   ],
 } as const;
 
+/** Rozvržení lesa: louka na západě, hustý smrkový les na východě, lesní cesta podél osy x. */
+export const FOREST = {
+  road: { z: 0, halfWidth: 2.2, xMin: -210, xMax: 210 },
+  edgeX: -40, // okraj lesa
+  culvertX: 28,
+  stoneX: 61,
+  oakX: 92,
+} as const;
+
 export function rectCorners(p: { x: number; z: number; halfU: number; halfV: number; rotDeg: number }): { x: number; z: number }[] {
   const rot = p.rotDeg * DEG;
   return [
@@ -76,7 +85,7 @@ export function frameFor(location: LocationId): SjtskFrame {
 
 /** Deterministicky vygeneruje lokalitu. */
 export function generateWorld(location: LocationId): World {
-  return location === 'louka' ? generateMeadow() : location === 'kancelar' ? generateOffice() : generateSite();
+  return location === 'louka' ? generateMeadow() : location === 'kancelar' ? generateOffice() : location === 'les' ? generateForest() : generateSite();
 }
 
 /** Bod v mnohoúhelníku (paprsková metoda). */
@@ -615,6 +624,113 @@ function generateMeadow(): World {
     scenery,
     water,
     fields,
+    spawn: { x: vehicle.x + 2, z: vehicle.z - 3, yaw: 0 },
+    itemSpawns: [],
+  });
+}
+
+// ------------------------------------------------------------------ les
+
+function generateForest(): World {
+  const loc = LOCATIONS.les;
+  const frame = frameFor('les');
+  const rng = new Rng(loc.seed);
+  const terrainNoise = new Noise2D(rng);
+  const forestNoise = new Noise2D(rng);
+  const { size, cell } = CONFIG.world;
+  const half = size / 2;
+  const R = FOREST.road;
+
+  // Údolí mírně stoupá k východu; cesta má hladký podélný sklon, aby byla podél ní vidět stanicí.
+  const raw = (x: number, z: number): number => terrainNoise.fbm(x / 180, z / 180, 5) * 22 + terrainNoise.fbm(x / 29 + 7.7, z / 29 - 3.1, 3) * 0.8;
+  const roadH = (x: number): number => raw(-60, R.z) + (x + 60) * 0.018;
+  const heightmap = Heightmap.generate(size, cell, (x, z) => {
+    let h = raw(x, z) + Math.abs(z) * 0.04; // svahy údolí
+    const wRoad = 1 - smoothstep(R.halfWidth + 2, R.halfWidth + 16, Math.abs(z - R.z));
+    h = lerp(h, roadH(x) + Math.abs(z - R.z) * 0.012, wRoad);
+    const e = smoothstep(half * 0.78, half, Math.max(Math.abs(x), Math.abs(z)));
+    return h + e * e * 28;
+  });
+
+  const c: Ctx = { rng, heightmap, frame, colliders: new ColliderSet(8), marks: [], clear: [] };
+  const onGround = (x: number, z: number, lift: number): number => heightmap.heightAt(x, z) + lift;
+  const inForest = (x: number): boolean => x > FOREST.edgeX;
+
+  placeTB(c, '0311-041', (x, z) => inForest(x + 25) || Math.abs(z - R.z) < 15);
+  addMark(c, 'PBPP', '6101', -126, R.z - 5, onGround(-126, R.z - 5, 0.05), 'Plastový znak s kovovou hlavou', 'U lesní cesty na louce, 5 m severně od její osy, u závory.');
+
+  const scenery: SceneryItem[] = [];
+  const features: FeatureInfo[] = [];
+  // Propustek pod cestou: dvě betonová čela, měří se dno trouby před čelem.
+  for (const side of [-1, 1] as const) {
+    const z = R.z + side * (R.halfWidth + 1.1);
+    place(c, scenery, 'culvert', FOREST.culvertX, z, 1.6, 0.3, 0.55, { yaw: side > 0 ? 0 : Math.PI, clear: 0.2 });
+    const fz = z + side * 0.4;
+    features.push({
+      id: side < 0 ? 'propustek-vtok' : 'propustek-vytok',
+      code: 'PROPUSTEK',
+      label: side < 0 ? 'Vtok propustku' : 'Výtok propustku',
+      pos: { x: FOREST.culvertX, y: heightmap.heightAt(FOREST.culvertX, fz), z: fz },
+    });
+  }
+  // Hraniční kámen lesního pozemku na kraji cesty.
+  {
+    const x = FOREST.stoneX;
+    const z = R.z + R.halfWidth + 1.4;
+    const gy = heightmap.heightAt(x, z);
+    scenery.push({ kind: 'post', x, z, yaw: 0.2, w: 0.2, d: 0.16, h: 0.12, groundY: gy, color: 0x8f8d88 });
+    features.push({ id: 'les-hranice', code: 'HRANICE', label: 'Hraniční kámen u cesty', pos: { x, y: gy + 0.12, z } });
+  }
+  // Lesní cesta: dvě řady stromů těsně u cesty, koruny ji zastíní.
+  const rows: TreeInstance[] = [];
+  const oakZ = R.z - (R.halfWidth + 1.6);
+  const oak: TreeInstance = { ...makeTree(rng, FOREST.oakX, oakZ, heightmap.heightAt(FOREST.oakX, oakZ), false), height: 17, trunkR: 0.55, crownR: 5.2, crownBase: 3.6 };
+  rows.push(oak);
+  features.push({ id: 'les-dub', code: 'STROM', label: 'Památný dub (pata kmene u cesty)', pos: { x: oak.x, y: oak.groundY, z: oak.z + oak.trunkR + 0.05 } });
+  for (const side of [-1, 1]) {
+    for (const band of [
+      [R.halfWidth + 1.4, R.halfWidth + 3],
+      [R.halfWidth + 5, R.halfWidth + 8],
+    ]) {
+      for (let x = FOREST.edgeX + rng.range(0, 3); x < half - 10; x += rng.range(3.2, 5)) {
+        const z = R.z + side * rng.range(band[0], band[1]);
+        if (Math.abs(x - FOREST.culvertX) < 2.2 || Math.hypot(x - oak.x, z - oak.z) < 6 || Math.hypot(x - FOREST.stoneX, z - (R.z + R.halfWidth + 1.4)) < 1.2) continue;
+        rows.push(makeTree(rng, x, z, heightmap.heightAt(x, z), rng.next() < 0.75));
+      }
+    }
+  }
+  place(c, scenery, 'sign', FOREST.edgeX - 4, R.z + R.halfWidth + 2.2, 1.2, 0.1, 2, { color: 0x2f5d3a, text: 'LESY OBCE HRUŠOV', clear: 1 });
+
+  const vehicle = vehicleAt(-150, R.z - 1.3, -Math.PI / 2, heightmap); // na cestě na louce čelem k lesu
+  c.clear.push({ x: vehicle.x, z: vehicle.z, r: 10 });
+  const blocked = (x: number, z: number): boolean =>
+    c.clear.some((q) => (x - q.x) ** 2 + (z - q.z) ** 2 < q.r * q.r) || Math.abs(z - R.z) < R.halfWidth + 9;
+  const trees = scatterTrees(
+    c,
+    forestNoise,
+    blocked,
+    (x, _z, forest) => (inForest(x) ? 0.75 + 0.25 * forest : 0.004 + 0.02 * forest),
+    rows,
+  );
+
+  return new World({
+    location: 'les',
+    name: loc.name,
+    frame,
+    heightmap,
+    colliders: c.colliders,
+    trees,
+    marks: c.marks,
+    vehicle,
+    road: { surface: 'dirt', z: R.z, halfWidth: R.halfWidth, xMin: R.xMin, xMax: R.xMax, curbHeight: 0, curbWidth: 0, inlets: [] },
+    building: null,
+    fence: null,
+    parcels: [],
+    features,
+    flatRadius: 0,
+    scenery,
+    water: [],
+    fields: [],
     spawn: { x: vehicle.x + 2, z: vehicle.z - 3, yaw: 0 },
     itemSpawns: [],
   });

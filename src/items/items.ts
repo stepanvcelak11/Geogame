@@ -28,7 +28,7 @@ export const ITEM_DEFS: Record<ItemKind, ItemDef> = {
     kind: 'prismPole',
     name: 'Výtyčka s hranolem a tabletem',
     nameAcc: 'výtyčku s hranolem a tabletem',
-    short: 'Výtyčka',
+    short: 'Hranol',
     massKg: 1.6,
     pickRadius: 0.7,
     pickHeight: 0.06,
@@ -43,7 +43,7 @@ export const ITEM_DEFS: Record<ItemKind, ItemDef> = {
     pickHeight: 0.16,
   },
   // Karbonová teleskopická výtyčka; až se na ni našroubuje přijímač a nasadí kontroler, je z ní rover.
-  gnssRover: { kind: 'gnssRover', name: 'Výtyčka pro GNSS', nameAcc: 'výtyčku pro GNSS', short: 'Výtyčka', massKg: 0.9, pickRadius: 0.7, pickHeight: 0.1 },
+  gnssRover: { kind: 'gnssRover', name: 'Výtyčka pro GNSS', nameAcc: 'výtyčku pro GNSS', short: 'Rover GNSS', massKg: 0.9, pickRadius: 0.7, pickHeight: 0.1 },
   level: { kind: 'level', name: 'Nivelační přístroj', nameAcc: 'nivelační přístroj', short: 'Nivelák', massKg: 4.6, pickRadius: 0.5, pickHeight: 0.1 },
   rod: { kind: 'rod', name: 'Nivelační lať', nameAcc: 'nivelační lať', short: 'Lať', massKg: 2.3, pickRadius: 0.9, pickHeight: 0.05 },
 };
@@ -56,7 +56,7 @@ export interface WorldItem {
   id: string;
   kind: ItemKind;
   state: 'ground' | 'held' | 'deployed' | 'stored'; // stored = naložený v dodávce
-  location: 'kancelar' | 'stavba' | 'louka' | 'servis'; // kde leží / stojí (u held a stored nerozhoduje); servis = na opravě
+  location: 'kancelar' | 'stavba' | 'louka' | 'les' | 'servis'; // kde leží / stojí (u held a stored nerozhoduje); servis = na opravě
   home?: { x: number; y: number; z: number }; // místo ve skladu (sem se vrací ze servisu)
   secured?: boolean; // stativ: nohy sešlápnuté do země
   legLen?: number; // stativ: vysunutí nohou [m] (výška hlavy)

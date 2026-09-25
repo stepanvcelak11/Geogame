@@ -633,7 +633,8 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .od-kit li.is-ok { color: #7fd489; }
 .od-kit li.is-miss { color: #f0a38f; }
 .od-kit li span:last-child { color: var(--muted); font-size: 12px; }
-.od-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.od-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; position: sticky; bottom: -4px; padding: 8px 0 6px; background: linear-gradient(rgba(38, 44, 48, 0), #262c30 30%); }
+.od-actions:empty { display: none; }
 .od-actions button { min-height: 42px; padding: 0 14px; border-radius: 6px; border: 1px solid rgba(238, 241, 234, 0.35); background: transparent; color: var(--paper); font-weight: 700; font-size: 15px; cursor: pointer; }
 .od-actions button.is-primary { border: 0; background: var(--survey); color: var(--ink); }
 .od-empty { color: var(--muted); }

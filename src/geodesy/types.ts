@@ -9,7 +9,8 @@ export type FeatureCode =
   | 'VPUST'
   | 'HRANICE'
   | 'TERENNI_BOD'
-  | 'PEVNY_BOD';
+  | 'PEVNY_BOD'
+  | 'PROPUSTEK';
 
 export type MeasurementMethod = 'polarni' | 'gnss_rtk' | 'nivelace' | 'katalog';
 

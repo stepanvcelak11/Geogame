@@ -35,10 +35,18 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     sjtsk: { originY: 751_800, originX: 1_036_900, originH: 331 },
     region: { x: 0.72, y: 0.28 },
   },
+  les: {
+    id: 'les',
+    name: 'Lesní cesta u Hrušova',
+    short: 'Les',
+    seed: 430_117,
+    sjtsk: { originY: 739_600, originX: 1_049_900, originH: 402 },
+    region: { x: 0.18, y: 0.3 },
+  },
 };
 
 /** Doba jízdy mezi lokalitami [min]. */
-const TRAVEL: Record<string, number> = { 'kancelar-stavba': 14, 'kancelar-louka': 26, 'louka-stavba': 22 };
+const TRAVEL: Record<string, number> = { 'kancelar-stavba': 14, 'kancelar-louka': 26, 'louka-stavba': 22, 'kancelar-les': 32, 'les-stavba': 21, 'les-louka': 41 };
 
 export function travelMinutes(a: LocationId, b: LocationId): number {
   if (a === b) return 0;

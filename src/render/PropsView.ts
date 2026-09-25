@@ -94,6 +94,16 @@ export function createMarkMesh(mark: ControlMark): THREE.Group {
       if (!missing) g.add(cylinder(0.012, 0.012, 0.01, PALETTE.metal, 8));
       break;
     }
+    case 'PB': {
+      // Pomocný bod: měřický hřeb v zemi, kolem sprejem nastříkaný oranžový kroužek.
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.05, 0.11, 18).rotateX(-Math.PI / 2),
+        matte({ color: 0xff7a1a, polygonOffset: true, polygonOffsetFactor: -2 }),
+      );
+      ring.position.y = 0.012;
+      g.add(ring, cylinder(0.011, 0.011, 0.012, PALETTE.metal, 8));
+      break;
+    }
     case 'NZ': {
       // Hlava hřebu vystupuje z východní zdi (+x).
       const head = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 12).rotateZ(Math.PI / 2), lambert(PALETTE.metal));

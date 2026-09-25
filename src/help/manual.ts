@@ -102,6 +102,10 @@ export const MANUAL: ManualChapter[] = [
       { do: 'Volné stanovisko: stanici postav kamkoli a změř aspoň dva známé body; v tabletu (Stanice) přijmi výsledek.', why: 'Opravy vYX a σ0 ukazují kvalitu – velká oprava = špatný bod nebo špatné měření.' },
       { do: 'Kde GNSS nedá FIX (pod korunami, u zdí), měř stanicí: stanovisko na volném místě s výhledem, orientace na jiný známý bod – klidně i hraniční znak.', why: 'Záměra stanice potřebuje jen volnou přímku, ne volnou oblohu.' },
       {
+        do: 'Kde není bodové pole ani GNSS (les), stabilizuj si pomocné body: mimo stromy s FIXem zamiř roverem na volné místo a dej Stabilizovat. Stanici pak postav na jeden a orientuj na druhý.',
+        why: 'Pomocné body nesou chybu GNSS. Čím jsou od sebe dál (a čím delší je orientace oproti záměrám), tím menší chyba se přenese do bodů v lese.',
+      },
+      {
         do: 'Přepínač I+II v dalekohledu: stanice změří v I. poloze, proloží dalekohled, změří v II. poloze a zprůměruje.',
         why: 'Průměr obou poloh vyruší kolimační a indexovou chybu přístroje. Rozdíl poloh (2c) prozradí, že je stanice po pádu rozladěná – pak patří do servisu.',
       },

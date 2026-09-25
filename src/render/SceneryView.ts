@@ -224,8 +224,38 @@ function post(s: SceneryItem): THREE.Group {
   return g;
 }
 
+/** Betonové čelo propustku s troubou (osa trouby podél lokálního z, výtok na +z). */
+function culvert(s: SceneryItem): THREE.Group {
+  const g = new THREE.Group();
+  const conc = lambert(PALETTE.concrete, 'culvert');
+  g.add(box(s.w, s.h + 0.25, s.d, conc, 0, (s.h - 0.25) / 2, 0));
+  g.add(box(0.14, s.h + 0.1, 0.9, conc, -s.w / 2 + 0.07, (s.h - 0.1) / 2, -0.45));
+  g.add(box(0.14, s.h + 0.1, 0.9, conc, s.w / 2 - 0.07, (s.h - 0.1) / 2, -0.45));
+  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.34, 16, 1, true).rotateX(Math.PI / 2), lambert(0x6f6a62, 'pipe'));
+  pipe.position.set(0, 0.24, 0.02);
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(0.23, 16), lambert(0x15130f, 'pipehole'));
+  hole.position.set(0, 0.24, s.d / 2 + 0.005);
+  g.add(pipe, hole);
+  return g;
+}
+
+/** Cedule na dvou kůlech (text na desce). */
+function sign(s: SceneryItem): THREE.Group {
+  const g = new THREE.Group();
+  const wood = lambert(0x5a4632, 'post');
+  for (const x of [-s.w / 2 + 0.08, s.w / 2 - 0.08]) g.add(box(0.08, s.h, 0.08, wood, x, s.h / 2, 0));
+  const bh = s.w * (96 / 512) * 1.4;
+  const t = signTexture(s.text ?? '', '#2f5d3a');
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(s.w, bh), matte({ color: 0xffffff, map: t ?? undefined }));
+  board.position.set(0, s.h - bh / 2 - 0.05, 0.05);
+  g.add(box(s.w + 0.04, bh + 0.04, 0.04, wood, 0, s.h - bh / 2 - 0.05, 0.02), board);
+  return g;
+}
+
 const BUILDERS: Partial<Record<SceneryItem['kind'], (s: SceneryItem) => THREE.Group>> = {
   post,
+  culvert,
+  sign,
   house,
   office,
   garage,

@@ -892,5 +892,36 @@ const world = generateWorld('stavba');
   } else check('stanice změří hranol ve vzduchu', false);
 }
 
+// --- Les: pomocné body a stanice
+{
+  const { JOBS } = await import('../src/jobs/JobCatalog');
+  const { GnssReceiver } = await import('../src/gnss/GnssReceiver');
+  const { Rng } = await import('../src/core/Rng');
+  const w = generateWorld('les');
+  const job = JOBS.find((j) => j.id === 'les-cesta')!;
+  check('les: prvky zakázky existují', job.featureIds!.every((id) => w.features.some((f) => f.id === id)));
+  const fix = (x: number, z: number): string => {
+    const g = new GnssReceiver(new Rng(4));
+    g.powerOn();
+    g.corrections = { baseKm: 20 };
+    const a = { x, y: w.heightmap.heightAt(x, z) + 2, z };
+    for (let t = 0; t < 20; t += 1 / 30) g.update(1 / 30, a, w);
+    return g.solution;
+  };
+  const inForest = w.features.map((f) => fix(f.pos.x, f.pos.z));
+  check('v lese GNSS FIX nedá', inForest.every((q) => q !== 'fix'), inForest.join(','));
+  const helpers = job.helperPoints!.map((q) => fix(q.x, q.z));
+  check('na doporučených pomocných bodech je FIX', helpers.every((q) => q === 'fix'), helpers.join(','));
+  const [h1, h2] = job.helperPoints!;
+  const eye = { x: h1.x, y: w.heightmap.heightAt(h1.x, h1.z) + 1.55, z: h1.z };
+  const see = (p: { x: number; y: number; z: number }): boolean => {
+    const d = Math.hypot(p.x - eye.x, p.y - eye.y, p.z - eye.z);
+    const h = w.raycast(eye, { x: (p.x - eye.x) / d, y: (p.y - eye.y) / d, z: (p.z - eye.z) / d }, d);
+    return !h || h.t > d - 0.05;
+  };
+  const vis = [...w.features.map((f) => see({ x: f.pos.x, y: f.pos.y + 2, z: f.pos.z })), see({ x: h2.x, y: w.heightmap.heightAt(h2.x, h2.z) + 2, z: h2.z })];
+  check('z pomocného bodu 8001 je vidět na 8002 i na všechny prvky v lese', vis.every(Boolean), vis.join(','));
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');
