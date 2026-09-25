@@ -36,6 +36,29 @@ function triangulationSign(): THREE.CanvasTexture {
   return signTexture;
 }
 
+let targetTex: THREE.CanvasTexture | null = null;
+/** Terč odrazného štítku: dva černé a dva stříbrné kvadranty. */
+function targetTexture(): THREE.CanvasTexture {
+  if (targetTex) return targetTex;
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d');
+  if (g) {
+    g.fillStyle = '#d9dde0';
+    g.fillRect(0, 0, 64, 64);
+    g.fillStyle = '#141414';
+    g.fillRect(0, 0, 32, 32);
+    g.fillRect(32, 32, 32, 32);
+    g.strokeStyle = '#141414';
+    g.lineWidth = 3;
+    g.strokeRect(1.5, 1.5, 61, 61);
+  }
+  targetTex = new THREE.CanvasTexture(c);
+  targetTex.colorSpace = THREE.SRGBColorSpace;
+  return targetTex;
+}
+
 /** Křížek na hlavě kamene. */
 function cross(size: number): THREE.Group {
   const g = new THREE.Group();
@@ -92,6 +115,15 @@ export function createMarkMesh(mark: ControlMark): THREE.Group {
       g.add(ring);
       // Zničený bod: hřeb chybí, zbyl jen kus vybledlého kroužku.
       if (!missing) g.add(cylinder(0.012, 0.012, 0.01, PALETTE.metal, 8));
+      break;
+    }
+    case 'ST': {
+      // Odrazný štítek 6 × 6 cm: šachovnice se středem, přilepený na zdi (normála `facing`).
+      const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.06), matte({ map: targetTexture(), polygonOffset: true, polygonOffsetFactor: -2 }));
+      plate.rotation.y = mark.facing ?? 0;
+      const f = mark.facing ?? 0;
+      plate.position.set(Math.sin(f) * 0.003, 0, Math.cos(f) * 0.003);
+      g.add(plate);
       break;
     }
     case 'PB': {

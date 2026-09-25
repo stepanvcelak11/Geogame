@@ -104,6 +104,10 @@ export const MANUAL: ManualChapter[] = [
       { do: 'Po ustavení odečti výšku přístroje na pásmu a zadej ji na displeji stanice (Stanovisko).', why: 'Výška přístroje vstupuje do všech výšek; chyba o 1 cm = všechny body o 1 cm vedle.' },
       { do: 'Orientace: namiř dalekohled zhruba na hranol na druhém známém bodě, dej Cílit (ATR) a Orientovat.', why: 'ATR (automatické cílení) dotočí stanici přesně na střed hranolu. Kontrolní délka ověří, že stojíš na správném bodě.' },
       { do: 'Volné stanovisko: stanici postav kamkoli a změř aspoň dva známé body; v tabletu (Stanice) přijmi výsledek.', why: 'Opravy vYX a σ0 ukazují kvalitu – velká oprava = špatný bod nebo špatné měření.' },
+      {
+        do: 'Odrazné štítky na zdech a sloupech (901, 902…) jsou známé body se souřadnicemi i výškou. Měří se bez hranolu: přepni Režim, zamiř dalekohledem 30× přesně na střed terče (Jemně) a měř. Hodí se na orientaci i volné stanovisko.',
+        why: 'Štítek nikdo nemusí držet a vydrží léta. Laser ale musí trefit terč – vedle něj změříš zeď a délka nesedí.',
+      },
       { do: 'Kde GNSS nedá FIX (pod korunami, u zdí), měř stanicí: stanovisko na volném místě s výhledem, orientace na jiný známý bod – klidně i hraniční znak.', why: 'Záměra stanice potřebuje jen volnou přímku, ne volnou oblohu.' },
       {
         do: 'Kde není bodové pole ani GNSS (les), stabilizuj si pomocné body: mimo stromy s FIXem zamiř roverem na volné místo a dej Stabilizovat. Stanici pak postav na jeden a orientuj na druhý.',

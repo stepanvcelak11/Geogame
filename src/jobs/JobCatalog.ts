@@ -24,6 +24,9 @@ export interface JobSpec {
   helperPoints?: { x: number; z: number }[];
   /** Polygonový pořad: body stabilizované stanicí (8101, 8102…) a doporučená místa; poslední je konečné stanovisko. */
   traverse?: { x: number; z: number }[];
+  /** Volné stanovisko (bez bodu pod stanicí) a doporučené místo pro stativ. */
+  freeStation?: boolean;
+  freeAt?: { x: number; z: number };
   /** Za kolik herních minut od převzetí bagr výkop zasype. */
   deadlineMin?: number;
   /** Oměrné míry pásmem: dvojice prvků (sousední rohy budovy). */
@@ -103,6 +106,24 @@ export const JOBS: JobSpec[] = [
     pay: 3600,
     kit: ['tripod', 'tsCase', 'prismPole'],
     difficulty: 1,
+  },
+  {
+    id: 'stavba-stitky',
+    title: 'Volné stanovisko na štítky',
+    client: 'Stavby Polabí s.r.o.',
+    location: 'stavba',
+    type: 'polohopis',
+    brief:
+      'Na staveništi jsou na trafostanici, stavební buňce a sloupu vedení odrazné štítky 901–903 se známými souřadnicemi. Postav stanici kamkoli, odkud je vidíš, a bez hranolu je změř (volné stanovisko). Pak s výtyčkou s hranolem zaměř obě uliční vpusti (kód Vpust).',
+    tolerance: { xy: 0.08 },
+    featureIds: ['vpust-1', 'vpust-2'],
+    requireStation: true,
+    freeStation: true,
+    freeAt: { x: 5, z: 24 },
+    stationTask: 'Zaměř uliční vpusti 1 a 2 (hranol na mříž, kód Vpust)',
+    pay: 5400,
+    kit: ['tripod', 'tsCase', 'prismPole'],
+    difficulty: 2,
   },
   {
     id: 'stavba-tachymetrie',

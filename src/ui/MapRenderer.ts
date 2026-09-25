@@ -411,6 +411,14 @@ export class MapRenderer {
       case 'NZ':
         ctx.rect(x - 4, y - 4, 8, 8);
         break;
+      case 'ST':
+        // Štítek: čtvereček na zdi s křížkem.
+        ctx.rect(x - 3.5, y - 3.5, 7, 7);
+        ctx.moveTo(x - 3.5, y);
+        ctx.lineTo(x + 3.5, y);
+        ctx.moveTo(x, y - 3.5);
+        ctx.lineTo(x, y + 3.5);
+        break;
       default:
         ctx.arc(x, y, m.type === 'HZ' ? 3 : 4.5, 0, Math.PI * 2);
     }
