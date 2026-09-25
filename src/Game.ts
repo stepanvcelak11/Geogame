@@ -39,6 +39,7 @@ import {
   type EquipId,
 } from './jobs/Equipment';
 import { HelpScreen } from './ui/HelpScreen';
+import { coachSeen, showCoach } from './ui/Coach';
 import { StationDialog } from './ui/StationDialog';
 import { Input } from './input/Input';
 import { TouchControls } from './input/TouchControls';
@@ -375,6 +376,10 @@ export class Game {
     this.stationDialog.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     this.help = new HelpScreen(root);
     this.help.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    this.help.onCoach = () => {
+      this.help.hide();
+      this.openCoach();
+    };
     this.hud.onHelp = () => {
       if (this.input.pointerLocked) document.exitPointerLock();
       this.help.show(this.helpTopic());
@@ -453,6 +458,9 @@ export class Game {
       }
       this.started = true;
       this.weatherTip();
+      // Při prvním spuštění krátký úvod do ovládání (v automatických testech ne).
+      const testing = (window as unknown as { __GEODET_TEST?: boolean }).__GEODET_TEST;
+      if (!coachSeen() && !testing) setTimeout(() => this.openCoach(), 900);
       this.root.classList.remove('is-intro');
       this.sfx.unlock();
       if (this.touchMode) {
@@ -466,7 +474,7 @@ export class Game {
           this.world.location === 'kancelar'
             ? `Den ${this.career.day}. Zakázky jsou na nástěnce u vchodu, vybavení ve skladu.`
             : this.touchMode
-              ? 'Zakázky čekají v tabletu. Klepni na Mapa.'
+              ? 'Zakázky čekají v tabletu. Klepni na Tablet.'
               : 'Zakázky čekají v tabletu. Otevři ho klávesou M.',
       });
     });
@@ -654,6 +662,7 @@ export class Game {
       this.helperSheet.isOpen ||
       this.bench.isOpen ||
       this.help.isOpen ||
+      this.coachOpen ||
       this.stationDialog.isOpen ||
       this.ctrlScreen.isOpen ||
       this.traveling
@@ -2322,6 +2331,18 @@ export class Game {
         tone: 'warn',
       });
     }
+  }
+
+  private coachOpen = false;
+
+  private openCoach(): void {
+    if (this.coachOpen) return;
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.coachOpen = true;
+    showCoach(this.root, this.touchMode, () => {
+      this.coachOpen = false;
+      this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    });
   }
 
   /** Kapitola příručky podle toho, co hráč právě dělá. */

@@ -7,6 +7,7 @@ export class HelpScreen {
   private readonly el: HTMLElement;
   private current = 'start';
   onClose: (() => void) | null = null;
+  onCoach: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     this.el = document.createElement('div');
@@ -16,6 +17,7 @@ export class HelpScreen {
     this.el.addEventListener('click', (e) => {
       const t = e.target as HTMLElement;
       if (t === this.el || t.closest('.help-close')) return this.hide();
+      if (t.closest('.help-coach')) return this.onCoach?.();
       const c = t.closest<HTMLElement>('[data-ch]');
       if (c) {
         this.current = c.dataset.ch ?? 'start';
@@ -43,7 +45,7 @@ export class HelpScreen {
   private render(): void {
     const c = chapter(this.current);
     this.el.innerHTML = `<div class="help-body">
-      <header><h2>Příručka měřiče</h2><button class="help-close">Zavřít</button></header>
+      <header><h2>Příručka měřiče</h2><button class="help-coach">Ovládání</button><button class="help-close">Zavřít</button></header>
       <div class="help-main">
         <nav>${MANUAL.map((m) => `<button data-ch="${m.id}" class="${m.id === c.id ? 'is-sel' : ''}">${esc(m.title)}</button>`).join('')}</nav>
         <article>

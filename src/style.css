@@ -1012,3 +1012,16 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .stn-actions { display: flex; gap: 6px; }
 .stn-actions button { flex: 1; min-height: 40px; border-radius: 4px; border: 0; background: #1b2a1b; color: #c9d6c2; font: 700 15px var(--font); cursor: pointer; }
 .stn-actions .stn-cancel { background: transparent; color: #1b2a1b; border: 2px solid #1b2a1b; }
+
+/* ---------- Úvod do ovládání ---------- */
+.coach { position: absolute; inset: 0; z-index: 20; }
+.coach-hole { position: absolute; border-radius: 12px; border: 3px solid var(--survey); box-shadow: 0 0 0 9999px rgba(10, 12, 14, 0.72); pointer-events: none; transition: all 0.25s; }
+.coach-card { position: absolute; width: min(340px, calc(100vw - 24px)); padding: 12px 14px; border-radius: 12px; background: #f4f1e8; color: #1f2428; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
+.coach-card h3 { margin: 0 0 4px; font-size: 18px; }
+.coach-card p { margin: 0; font-size: 15px; line-height: 1.35; }
+.coach-n { font-size: 12px !important; color: #5d6a70; }
+.coach-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.coach-actions button { min-height: 42px; padding: 0 14px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; }
+.coach-skip { border: 1px solid #b9c2bb; background: transparent; color: #1f2428; }
+.coach-next { border: 0; background: var(--survey); color: var(--ink); flex: 1; }
+.help-coach { min-height: 36px; margin-right: 8px; padding: 0 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.5); background: transparent; color: #fff; font-weight: 700; cursor: pointer; }
