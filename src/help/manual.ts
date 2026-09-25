@@ -106,6 +106,10 @@ export const MANUAL: ManualChapter[] = [
         why: 'Pomocné body nesou chybu GNSS. Čím jsou od sebe dál (a čím delší je orientace oproti záměrám), tím menší chyba se přenese do bodů v lese.',
       },
       {
+        do: 'Polygonový pořad: kam ze stanoviska nevidíš, dojdi s výtyčkou s hranolem na místo s výhledem dál a dej Stabilizovat – stanice bod změří a zatlučeš hřeb. Stanici pak přestav na nový bod a orientuj ji zpět na předchozí stanovisko.',
+        why: 'Každé přestavení přidá chybu orientace a centrace. Proto záměry mezi body pořadu drž dlouhé a pořad co nejkratší.',
+      },
+      {
         do: 'Přepínač I+II v dalekohledu: stanice změří v I. poloze, proloží dalekohled, změří v II. poloze a zprůměruje.',
         why: 'Průměr obou poloh vyruší kolimační a indexovou chybu přístroje. Rozdíl poloh (2c) prozradí, že je stanice po pádu rozladěná – pak patří do servisu.',
       },

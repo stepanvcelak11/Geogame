@@ -66,6 +66,8 @@ export const FOREST = {
   culvertX: 28,
   stoneX: 61,
   oakX: 92,
+  lane: { x: 40, zEnd: -58, half: 2.6 }, // průsek na jih od cesty ke studánce
+  spring: { x: 40.4, z: -47 },
 } as const;
 
 export function rectCorners(p: { x: number; z: number; halfU: number; halfV: number; rotDeg: number }): { x: number; z: number }[] {
@@ -694,9 +696,33 @@ function generateForest(): World {
     ]) {
       for (let x = FOREST.edgeX + rng.range(0, 3); x < half - 10; x += rng.range(3.2, 5)) {
         const z = R.z + side * rng.range(band[0], band[1]);
-        if (Math.abs(x - FOREST.culvertX) < 2.2 || Math.hypot(x - oak.x, z - oak.z) < 6 || Math.hypot(x - FOREST.stoneX, z - (R.z + R.halfWidth + 1.4)) < 1.2) continue;
+        if ((side < 0 && Math.abs(x - FOREST.lane.x) < FOREST.lane.half + 0.6) || Math.abs(x - FOREST.culvertX) < 2.2 || Math.hypot(x - oak.x, z - oak.z) < 6 || Math.hypot(x - FOREST.stoneX, z - (R.z + R.halfWidth + 1.4)) < 3.5) continue;
         rows.push(makeTree(rng, x, z, heightmap.heightAt(x, z), rng.next() < 0.75));
       }
+    }
+  }
+  // Studánka na konci průseku a hraniční kámen za ní.
+  {
+    const S = FOREST.spring;
+    const gy = heightmap.heightAt(S.x, S.z);
+    scenery.push({ kind: 'well', x: S.x, z: S.z, yaw: 0, w: 1.3, d: 1.3, h: 0.35, groundY: gy });
+    c.clear.push({ x: S.x, z: S.z, r: 2.2 });
+    features.push({ id: 'les-studanka', code: 'STUDANKA', label: 'Studánka (střed obruby)', pos: { x: S.x, y: gy, z: S.z } });
+    const kx = FOREST.lane.x - 0.8;
+    const kz = FOREST.lane.zEnd + 2;
+    const ky = heightmap.heightAt(kx, kz);
+    scenery.push({ kind: 'post', x: kx, z: kz, yaw: -0.3, w: 0.2, d: 0.16, h: 0.1, groundY: ky, color: 0x8f8d88 });
+    features.push({ id: 'les-hranice-2', code: 'HRANICE', label: 'Hraniční kámen v průseku', pos: { x: kx, y: ky + 0.1, z: kz } });
+  }
+  // Hustá smrčina jižně od cesty: z louky do průseku není vidět, u studánky není FIX.
+  for (let x = FOREST.edgeX + 6; x < 120; x += rng.range(3.4, 4.6)) {
+    for (let z = -(R.halfWidth + 10); z > FOREST.lane.zEnd - 14; z -= rng.range(3.4, 4.6)) {
+      const tx = x + rng.range(-1, 1);
+      const tz = z + rng.range(-1, 1);
+      if (Math.abs(tx - FOREST.lane.x) < FOREST.lane.half + 0.9 && tz > FOREST.lane.zEnd - 1) continue;
+      if (Math.hypot(tx - FOREST.spring.x, tz - FOREST.spring.z) < 3) continue;
+      if (Math.hypot(tx - oak.x, tz - oak.z) < 6) continue;
+      rows.push(makeTree(rng, tx, tz, heightmap.heightAt(tx, tz), rng.next() < 0.85));
     }
   }
   place(c, scenery, 'sign', FOREST.edgeX - 4, R.z + R.halfWidth + 2.2, 1.2, 0.1, 2, { color: 0x2f5d3a, text: 'LESY OBCE HRUŠOV', clear: 1 });
@@ -704,7 +730,9 @@ function generateForest(): World {
   const vehicle = vehicleAt(-150, R.z - 1.3, -Math.PI / 2, heightmap); // na cestě na louce čelem k lesu
   c.clear.push({ x: vehicle.x, z: vehicle.z, r: 10 });
   const blocked = (x: number, z: number): boolean =>
-    c.clear.some((q) => (x - q.x) ** 2 + (z - q.z) ** 2 < q.r * q.r) || Math.abs(z - R.z) < R.halfWidth + 9;
+    c.clear.some((q) => (x - q.x) ** 2 + (z - q.z) ** 2 < q.r * q.r) ||
+    Math.abs(z - R.z) < R.halfWidth + 9 ||
+    (Math.abs(x - FOREST.lane.x) < FOREST.lane.half + 1.2 && z < R.z && z > FOREST.lane.zEnd - 3);
   const trees = scatterTrees(
     c,
     forestNoise,

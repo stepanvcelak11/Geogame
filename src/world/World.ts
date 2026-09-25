@@ -110,7 +110,8 @@ export type SceneryKind =
   | 'bench'
   | 'sign'
   | 'post'
-  | 'culvert';
+  | 'culvert'
+  | 'well';
 
 export interface SceneryItem {
   kind: SceneryKind;

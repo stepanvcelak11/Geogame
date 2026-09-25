@@ -160,6 +160,7 @@ const CODES: { code: FeatureCode; label: string }[] = [
   { code: 'STROM', label: 'Strom' },
   { code: 'HRANICE', label: 'Hranice' },
   { code: 'PROPUSTEK', label: 'Propustek' },
+  { code: 'STUDANKA', label: 'Studánka' },
 ];
 const GAME_MIN_PER_SEC = 10 / 60; // herní čas běží 10× rychleji
 const INSURANCE = 12000; // jednorázové pojištění vybavení [Kč]
@@ -168,7 +169,7 @@ const lowerFirst = (s: string): string => s.charAt(0).toLowerCase() + s.slice(1)
 /** Metry → „−0,6“ mm s typografickým minus. */
 const mmTxt = (v: number): string => (v * 1000).toFixed(1).replace('.', ',').replace('-', '−');
 
-type RobotKind = 'orient' | 'measure' | 'resect';
+type RobotKind = 'orient' | 'measure' | 'resect' | 'stabilize';
 
 export interface GameOptions {
   start?: LocationId; // testy: začít rovnou na stavbě
@@ -1588,7 +1589,50 @@ export class Game {
     }
     if (kind === 'resect' && aim.mark) this.lastMeasure = this.addResection(ts, r.shot, aim.mark);
     else if (kind === 'orient' && aim.mark) this.lastMeasure = this.orientStation(ts, r.shot, aim.mark);
-    else this.recordStationPoint(r.shot, aim.mark ?? undefined, foot);
+    else if (kind === 'stabilize') {
+      const n = this.activeRun()?.spec.location === this.world.location ? this.nextTraverse() : null;
+      const c = ts.compute(r.shot);
+      if (!n || !c) return;
+      this.recordStationPoint(r.shot, undefined, foot);
+      this.sfx.drop();
+      this.createHelperMark(n, aim, c, 'totální stanicí (polární metoda)');
+    } else this.recordStationPoint(r.shot, aim.mark ?? undefined, foot);
+  }
+
+  /** Číslo dalšího bodu polygonového pořadu, který si zakázka žádá, nebo null. */
+  private nextTraverse(spec?: JobSpec): string | null {
+    const sp = spec ?? this.activeRun()?.spec;
+    const need = sp?.traverse?.length ?? 0;
+    if (!sp || !need) return null;
+    const marks = this.worldOf(sp.location).marks;
+    for (let k = 1; k <= need; k++) {
+      const n = String(8100 + k);
+      if (!marks.some((m) => m.id === `PB-${n}`)) return n;
+    }
+    return null;
+  }
+
+  /**
+   * Kde má stát stanice a na co se orientovat. U polygonového pořadu se stanovisko posouvá:
+   * nejdřív na výchozím bodě, po stabilizaci dalšího bodu pořadu na něm s orientací zpět.
+   */
+  private stationPhase(spec: JobSpec): { at?: string; on?: string; stabilize: string | null } {
+    const n = spec.traverse?.length ?? 0;
+    if (!n) return { at: spec.stationAt, on: spec.orientOn, stabilize: null };
+    const back = (k: number): string | undefined => (k === 0 ? spec.stationAt : `PB-${8100 + k}`); // k-tý bod pořadu (0 = výchozí)
+    const tn = this.nextTraverse(spec);
+    if (tn) {
+      const k = Number(tn) - 8101; // kolik bodů pořadu už stojí
+      return { at: back(k), on: k === 0 ? spec.orientOn : back(k - 1), stabilize: tn };
+    }
+    return { at: back(n), on: back(n - 1), stabilize: null };
+  }
+
+  /** Ustavená stanice – u pořadu jen ta, která stojí na správném bodě. */
+  private phaseStation(spec: JobSpec): ReturnType<Game['connected']> {
+    const c = this.connected();
+    if (!c || !spec.traverse?.length) return c;
+    return c.tripod.overMarkId === this.stationPhase(spec).at ? c : null;
   }
 
   /** Akce s výtyčkou v ruce, když je v lokalitě ustavená stanice. */
@@ -1622,6 +1666,11 @@ export class Game {
     if (target && !target.existingMarkId && this.navReading) {
       const d = Math.hypot(target.world.x - this.navReading.x, target.world.z - this.navReading.z);
       if (d <= 0.1) return { verb: 'Zatlouct', target: `kolík na bod ${target.id}`, available: true, run: () => this.drive(target, aim, d) };
+    }
+    const tn = this.activeRun()?.spec.location === this.world.location ? this.nextTraverse() : null;
+    if (tn && !aim.mark && !aim.feature) {
+      if (!still) return { verb: 'Stabilizovat', target: `bod pořadu ${tn}`, available: false, reason: 'Stůj s výtyčkou v klidu' };
+      return { verb: 'Stabilizovat', target: `bod pořadu ${tn}`, available: true, run: () => this.startRobot('stabilize', aim) };
     }
     const what = aim.mark ? `bod ${aim.mark.number}` : aim.feature ? lowerFirst(aim.feature.label) : 'bod';
     if (!still) return { verb: 'Změřit', target: what, available: false, reason: 'Stůj s výtyčkou v klidu' };
@@ -2067,10 +2116,21 @@ export class Game {
             steps.push(...this.gnssSetupSteps(have > 0));
             steps.push({ text: `Mimo les stabilizuj GNSS pomocné body ${spec.helperPoints.map((_, k) => 8001 + k).join(' a ')} (${Math.min(have, need)} z ${need})`, done: have >= need });
           }
-          const at = this.markNo(spec.stationAt);
-          const on = this.markNo(spec.orientOn);
-          steps.push({ text: `Rozlož stativ nad bodem ${at}, nasaď stanici a ustav ji`, done: !!c });
-          steps.push({ text: `Orientuj stanici: výtyčku s hranolem postav na ${on}`, done: !!c && c.ts.orientation !== null });
+          if (spec.traverse?.length) {
+            const tn = this.nextTraverse(spec);
+            const total = spec.traverse.length;
+            const have = tn ? Number(tn) - 8101 : total;
+            const pc = this.phaseStation(spec);
+            steps.push({ text: `Stanice na ${this.markNo(spec.stationAt)}, orientace na ${this.markNo(spec.orientOn)}`, done: have > 0 || (!!pc && pc.ts.orientation !== null) });
+            steps.push({ text: `Výtyčkou s hranolem stabilizuj bod pořadu ${spec.traverse.map((_, k) => 8101 + k).join(', ')} (${have} z ${total})`, done: have >= total });
+            const ph = this.stationPhase(spec);
+            steps.push({ text: `Přestav stanici na ${this.markNo(ph.at)} a orientuj ji zpět na ${this.markNo(ph.on)}`, done: have >= total && !!pc && pc.ts.orientation !== null });
+          } else {
+            const at = this.markNo(spec.stationAt);
+            const on = this.markNo(spec.orientOn);
+            steps.push({ text: `Rozlož stativ nad bodem ${at}, nasaď stanici a ustav ji`, done: !!c });
+            steps.push({ text: `Orientuj stanici: výtyčku s hranolem postav na ${on}`, done: !!c && c.ts.orientation !== null });
+          }
           steps.push({ text: `${spec.stationTask ?? 'Změř požadované prvky'}${cnt}`, done: f === n && n > 0 });
         } else {
           steps.push(...this.gnssSetupSteps(f > 0));
@@ -2151,8 +2211,15 @@ export class Game {
             const q = spec.helperPoints[Number(hn) - 8001];
             return { x: q.x, y: this.world.heightmap.heightAt(q.x, q.z), z: q.z };
           }
-          if (!c) return this.world.marks.find((m) => m.id === spec.stationAt)?.pos ?? null;
-          if (c.ts.station && c.ts.orientation === null) return this.world.marks.find((m) => m.id === spec.orientOn)?.pos ?? null;
+          const ph = this.stationPhase(spec);
+          const pc = this.phaseStation(spec);
+          if (!pc) return this.world.marks.find((m) => m.id === ph.at)?.pos ?? null;
+          if (pc.ts.station && pc.ts.orientation === null) return this.world.marks.find((m) => m.id === ph.on)?.pos ?? null;
+          if (ph.stabilize && spec.traverse) {
+            const q = spec.traverse[Number(ph.stabilize) - 8101];
+            return { x: q.x, y: this.world.heightmap.heightAt(q.x, q.z), z: q.z };
+          }
+          void c;
         }
         return nearest((run.mapping?.required ?? []).filter((f) => !run.mapping?.found.has(f.id)).map((f) => f.pos));
       }
@@ -2213,13 +2280,19 @@ export class Game {
             if (g) return g;
             return `Pomocný bod ${hn}: na cestě před lesem (šipka ukazuje doporučené místo, kde je FIX a je odtud vidět do lesa) zamiř roverem na volné místo a dej Stabilizovat.`;
           }
-          if (!c) {
+          const ph = this.stationPhase(spec);
+          const pc = this.phaseStation(spec);
+          if (!pc) {
             const t = this.items.find((i) => i.kind === 'tripod');
+            if (c && spec.traverse?.length)
+              return `Přestav stanici na ${this.markNo(ph.at)}: s kufrem zamiř na stativ a sundej stanici, stativ slož, rozlož ho nad ${this.markNo(ph.at)} a stanici znovu nasaď a ustav.`;
             if (t?.state === 'deployed' && !t.secured) return 'Sešlápni nohy stativu (s prázdnýma rukama zamiř na stativ), pak nasaď stanici z kufru.';
-            return `Rozlož stativ nad ${this.markNo(spec.stationAt)}, sešlápni nohy, nasaď stanici z kufru a ustav ji.`;
+            return `Rozlož stativ nad ${this.markNo(ph.at)}, sešlápni nohy, nasaď stanici z kufru a ustav ji.`;
           }
-          if (!c.ts.station) return 'Volné stanovisko: připoj ho výtyčkou na dva známé body, pak ho přijmi v tabletu (Stanice).';
-          if (c.ts.orientation === null) return `Orientuj stanici: výtyčku s hranolem postav na ${this.markNo(spec.orientOn)}, namiř, Cílit (ATR) a Orientovat.`;
+          if (!pc.ts.station) return 'Volné stanovisko: připoj ho výtyčkou na dva známé body, pak ho přijmi v tabletu (Stanice).';
+          if (pc.ts.orientation === null) return `Orientuj stanici: výtyčku s hranolem postav na ${this.markNo(ph.on)}, namiř, Cílit (ATR) a Orientovat.`;
+          if (ph.stabilize)
+            return `Bod pořadu ${ph.stabilize}: s výtyčkou s hranolem jdi na doporučené místo (šipka) – odkud je vidět dál do lesa – a dej Stabilizovat. Stanice bod změří a zatlučeš hřeb.`;
           return spec.stationTask ? `${spec.stationTask}.` : 'Měř prvky: výtyčku s hranolem na prvek, nebo bez hranolu dalekohledem.';
         }
         {
@@ -3015,14 +3088,14 @@ export class Game {
   }
 
   /** Nový pomocný bod: hřeb v terénu, souřadnice z GNSS měření (i s jeho chybou). */
-  private createHelperMark(number: string, aim: AimPoint, c: { Y: number; X: number; H: number }): void {
+  private createHelperMark(number: string, aim: AimPoint, c: { Y: number; X: number; H: number }, how?: string): void {
     const r3 = (v: number): number => Math.round(v * 1000) / 1000;
     const mark: ControlMark = {
       id: `PB-${number}`,
       number,
       type: 'PB',
       stabilization: 'Měřický hřeb, kolem oranžový kroužek sprejem',
-      description: `Pomocný bod stabilizovaný dne ${this.career.day}. Souřadnice z GNSS RTK (${SOLUTION_LABEL[this.gnss.solution]}).`,
+      description: `Pomocný bod stabilizovaný dne ${this.career.day}. Souřadnice ${how ?? `z GNSS RTK (${SOLUTION_LABEL[this.gnss.solution]})`}.`,
       pos: { x: aim.x, y: aim.groundY, z: aim.z },
       catalog: { Y: r3(c.Y), X: r3(c.X), H: r3(c.H) },
       condition: 'ok',
@@ -3034,7 +3107,7 @@ export class Game {
     setTimeout(
       () =>
         this.bus.emit('toast', {
-          text: `Pomocný bod ${number} stabilizován: Y ${mark.catalog.Y.toFixed(3)}, X ${mark.catalog.X.toFixed(3)}. Stanice ho vezme jako známý bod.`,
+          text: `${how ? 'Bod pořadu' : 'Pomocný bod'} ${number} stabilizován: Y ${mark.catalog.Y.toFixed(3)}, X ${mark.catalog.X.toFixed(3)}. Stanice ho vezme jako známý bod.`,
         }),
       1600,
     );
