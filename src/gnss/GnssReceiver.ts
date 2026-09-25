@@ -23,6 +23,8 @@ export class GnssReceiver {
   antennaBoost = false; // vylepšení: anténa pro víc družicových systémů
   /** Korekce RTK: null = žádné (jen autonomní řešení), jinak vzdálenost báze [km]. */
   corrections: { baseKm: number } | null = { baseKm: 3 };
+  /** Stav přijímače: násobí chybu (opotřebený nebo po pádu). */
+  degrade = 1;
   sats = 0;
   pdop = 99;
   sigmaH = 99; // střední polohová chyba [m]
@@ -101,6 +103,7 @@ export class GnssReceiver {
       default:
         this.sigmaH = 1.5 + this.pdop * 0.4;
     }
+    this.sigmaH *= this.degrade;
     this.sigmaV = this.sigmaH * 1.6;
   }
 

@@ -51,6 +51,7 @@ export class Hud {
   onInspectClose: (() => void) | null = null;
   onOpenTablet: (() => void) | null = null;
   onOpenController: (() => void) | null = null;
+  onHelp: (() => void) | null = null;
   onCodeTap: (() => void) | null = null;
   onHelper: (() => void) | null = null;
   onSettings: (() => void) | null = null;
@@ -66,7 +67,7 @@ export class Hud {
       <div class="reticle">${RETICLE}</div>
       <div class="prompt" hidden><kbd>E</kbd><span class="prompt-text"></span></div>
       <nav class="topbtns" aria-label="Nabídka">
-        <button class="map-btn" aria-label="Otevřít tablet s mapou">Tablet<kbd>M</kbd></button><button class="ctrl-btn" aria-label="Kontroler GNSS" hidden>Kontroler<kbd>K</kbd></button><button class="helper-btn" aria-label="Vysílačka: pomocník Pepa">Pepa</button><button class="gear-btn" aria-label="Nastavení">⚙</button>
+        <button class="map-btn" aria-label="Otevřít tablet s mapou">Tablet<kbd>M</kbd></button><button class="ctrl-btn" aria-label="Kontroler GNSS" hidden>Kontroler<kbd>K</kbd></button><button class="helper-btn" aria-label="Vysílačka: pomocník Pepa">Pepa</button><button class="help-btn" aria-label="Příručka">?</button><button class="gear-btn" aria-label="Nastavení">⚙</button>
       </nav>
       <section class="panel pos" aria-label="Přibližná poloha">
         <h2><span class="pos-title">Poloha</span> <span class="pos-acc muted">±5 m</span><span class="gnss-badge" hidden></span></h2>
@@ -170,6 +171,11 @@ export class Hud {
       e.preventDefault();
       e.stopPropagation();
       this.onHelper?.();
+    });
+    this.q('.help-btn').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.onHelp?.();
     });
     this.q('.ctrl-btn').addEventListener('pointerdown', (e) => {
       e.preventDefault();

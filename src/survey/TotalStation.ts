@@ -46,6 +46,10 @@ export class TotalStation {
   readonly circleZero: number; // natočení limbu – kde má kruh nulu
   orientation: number | null = null; // orientační posun O [rad]
   orientedOn: string | null = null;
+  /** Stav přístroje: 1 = šum podle výrobce, víc = opotřebený (násobí šum). */
+  wear = 1;
+  /** Soustavná chyba úhlů poškozeného přístroje (kolimace) [rad]. */
+  bias = 0;
 
   constructor(
     readonly center: Vec3,
@@ -67,7 +71,7 @@ export class TotalStation {
     const n = (): number => this.rng.gaussian();
     const angles = (): { hz: number; zen: number } => {
       const r = this.reading(dir);
-      return { hz: norm(r.hz + n() * ARCSEC), zen: r.zen + n() * ARCSEC };
+      return { hz: norm(r.hz + this.bias + n() * ARCSEC * this.wear), zen: r.zen + this.bias * 0.5 + n() * ARCSEC * this.wear };
     };
     if (mode === 'prism') {
       let best: { p: Prism; t: number } | null = null;
@@ -83,13 +87,13 @@ export class TotalStation {
         return { ok: false, reason: obstacle.kind === 'crown' ? 'Paprsek zastínila koruna stromu.' : 'Mezi stanicí a hranolem je překážka.' };
       }
       const d = Math.hypot(best.p.center.x - o.x, best.p.center.y - o.y, best.p.center.z - o.z);
-      const sd = d + n() * (0.001 + d * 1.5e-6);
+      const sd = d + n() * (0.001 + d * 1.5e-6) * this.wear;
       return { ok: true, shot: { ...angles(), sd, mode, prism: best.p, hit: { ...best.p.center }, hitKind: 'prism' } };
     }
     if (!obstacle) return { ok: false, reason: range.reflectorless < RANGE.reflectorless ? `Bez odrazu. Za tohoto počasí laser dosáhne jen na ${range.reflectorless} m.` : 'Bez odrazu. Laser nic nezasáhl.' };
     const t = obstacle.t;
     const hit = { x: o.x + dir.x * t, y: o.y + dir.y * t, z: o.z + dir.z * t };
-    const sd = t + n() * (0.002 + t * 2e-6);
+    const sd = t + n() * (0.002 + t * 2e-6) * this.wear;
     return { ok: true, shot: { ...angles(), sd, mode, prism: null, hit, hitKind: obstacle.kind } };
   }
 
