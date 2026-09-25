@@ -41,7 +41,7 @@ const HINT: Record<Stage, string> = {
   rxTake: 'Vyndej přijímač z kufru (tlačítko dole).',
   rxSeat: 'Táhni přijímač nad vrchol výtyčky a nasaď ho na závit.',
   rxScrew:
-    'Levou rukou drž výtyčku (✋ nebo mezerník) a pravou otáčej přijímačem po směru hodinových ručiček – krouživým tahem kolem přijímače. Bez přidržení se výtyčka točí s ním.',
+    'Levou rukou drž výtyčku (✋ – ťukni a drží, nebo mezerník) a pravou otáčej přijímačem po směru hodinových ručiček – krouživým tahem kolem přijímače. Bez přidržení se výtyčka točí s ním.',
   brTake: 'Vyndej z kufru držák kontroleru.',
   brSeat: 'Přilož držák k výtyčce (táhni ho k ní).',
   brScrew: 'Drž výtyčku a utáhni šroub držáku krouživým tahem kolem knoflíku.',
@@ -56,7 +56,7 @@ const HINT: Record<Stage, string> = {
   rxOut: 'Zvedni přijímač ze závitu a ulož ho do kufru.',
   tsSeat: 'Stanici drž oběma rukama, posaď ji doprostřed hlavy stativu (táhni dolů).',
   tsScrew:
-    'Levou rukou drž stanici (✋ nebo mezerník), pravou zespodu zašroubuj upínací šroub stativu do trojnožky (krouživě kolem šroubu). Nepouštěj ji, dokud není přitažená!',
+    'Levou rukou drž stanici (✋ – ťukni a drží, nebo mezerník), pravou zespodu zašroubuj upínací šroub stativu do trojnožky (krouživě kolem šroubu). Nepouštěj ji, dokud není přitažená!',
   tsUnscrew: 'Drž stanici a povol upínací šroub stativu (proti směru hodinových ručiček).',
   tsLift: 'Zvedni stanici z hlavy stativu (táhni nahoru) a ulož ji do kufru.',
   done: 'Hotovo.',
@@ -139,6 +139,7 @@ export class Bench {
   private stage: Stage = 'height';
   private held = false; // levá ruka drží výtyčku / stanici
   private keyHeld = false;
+  private holdLocked = false; // ✋ zamknuté ťuknutím
   // --- GNSS
   private pole = new THREE.Group(); // počátek = hrot
   private upper!: THREE.Mesh;
@@ -191,6 +192,7 @@ export class Bench {
     this.el.hidden = true;
     this.el.innerHTML = `
       <div class="bench-touch"></div>
+      <div class="bench-ring" hidden><span>↻</span></div>
       <header class="bench-top"><h2 class="bench-title"></h2><button class="bench-help" aria-label="Nápověda">?</button><button class="bench-close">Zavřít</button></header>
       <p class="bench-hint"></p>
       <p class="bench-msg" hidden></p>
@@ -206,18 +208,25 @@ export class Bench {
     touch.addEventListener('pointerup', up);
     touch.addEventListener('pointercancel', up);
     const hold = this.el.querySelector('.bench-hold') as HTMLElement;
+    // Podržet = drží, dokud je prst na tlačítku. Krátké ťuknutí = zamknout (drží, dokud neťukneš znovu).
+    let t0 = 0;
+    let wasLocked = false;
     hold.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      this.held = true;
-      hold.classList.add('is-on');
+      wasLocked = this.holdLocked;
+      this.holdLocked = false;
+      t0 = performance.now();
+      this.held = !wasLocked || this.keyHeld;
     });
     const release = (): void => {
-      this.held = this.keyHeld;
-      hold.classList.remove('is-on');
+      if (!t0) return;
+      const tap = performance.now() - t0 < 280;
+      t0 = 0;
+      if (tap && !wasLocked) this.holdLocked = true;
+      this.held = this.holdLocked || this.keyHeld;
     };
     hold.addEventListener('pointerup', release);
     hold.addEventListener('pointercancel', release);
-    hold.addEventListener('pointerleave', release);
     addEventListener('keydown', (e) => {
       if (this.el.hidden || (e.code !== 'Space' && e.code !== 'ShiftLeft')) return;
       e.preventDefault();
@@ -226,7 +235,7 @@ export class Bench {
     addEventListener('keyup', (e) => {
       if (e.code !== 'Space' && e.code !== 'ShiftLeft') return;
       this.keyHeld = false;
-      this.held = hold.classList.contains('is-on');
+      this.held = this.holdLocked;
     });
     this.el.querySelector('.bench-close')?.addEventListener('click', () => this.close());
     this.el.querySelector('.bench-help')?.addEventListener('click', () => this.flash(HINT[this.stage], 8));
@@ -238,6 +247,8 @@ export class Bench {
     this.buildTs();
     this.leftHand.rotation.set(0.2, 0.4, 0);
     this.rightHand.rotation.set(0.2, -0.4, 0);
+    this.leftHand.scale.setScalar(0.65);
+    this.rightHand.scale.setScalar(0.65);
   }
 
   get isOpen(): boolean {
@@ -363,7 +374,7 @@ export class Bench {
   private clear(): void {
     this.group.clear();
     this.pole.remove(this.receiver, this.bracket, this.controller);
-    this.held = this.keyHeld = false;
+    this.held = this.keyHeld = this.holdLocked = false;
     this.drag = null;
     this.power = null;
     this.poleSpin = 0;
@@ -579,7 +590,7 @@ export class Bench {
         if (s.startsWith('ts')) this.tsSpin += a;
         else this.poleSpin += a;
         if (this.msgT <= 0)
-          this.flash(s.startsWith('ts') ? 'Stanice se točí se šroubem! Drž ji levou rukou (✋ / mezerník).' : 'Výtyčka se točí s ním. Drž ji levou rukou (✋ / mezerník).', 2.5);
+          this.flash(s.startsWith('ts') ? 'Stanice se točí se šroubem! Drž ji levou rukou (✋ – ťukni, nebo mezerník).' : 'Výtyčka se točí s ním. Drž ji levou rukou (✋ – ťukni, nebo mezerník).', 2.5);
       }
       if (s.startsWith('rx')) this.rxSpin += gained * Math.PI * 2;
       if (Math.abs(gained) > 0 && Math.floor(thread.turns * 4) !== Math.floor((thread.turns - gained) * 4)) this.cb?.onRig('screw');
@@ -785,14 +796,14 @@ export class Bench {
         m.emissiveIntensity = r?.controllerOn ? 0.9 : 0.02;
       }
       // Ruce: levá na výtyčce (když drží), pravá u dílu, se kterým se pracuje.
-      const lp = new THREE.Vector3(0, this.focus.y - 0.12, 0);
+      const lp = new THREE.Vector3(0, this.focus.y - 0.2, 0);
       this.pole.localToWorld(lp);
       this.group.worldToLocal(lp);
       this.leftHand.position.copy(this.held ? lp.add(new THREE.Vector3(-0.05, 0, 0.02)) : new THREE.Vector3(-0.32, -0.34, -0.5));
       const target = this.rxHand || this.stage.startsWith('rx') ? this.receiver : this.brHand || this.stage.startsWith('br') ? this.bracket : this.controller;
       const rp = target.getWorldPosition(new THREE.Vector3());
       this.group.worldToLocal(rp);
-      this.rightHand.position.copy(rp.add(new THREE.Vector3(0.09, -0.03, 0.04)));
+      this.rightHand.position.copy(rp.add(new THREE.Vector3(0.14, -0.04, 0.03)));
       this.rightHand.visible = this.stage !== 'height' && this.stage !== 'done';
     } else {
       this.tsHead.position.set(0, -0.2, -0.5);
@@ -807,7 +818,22 @@ export class Bench {
       );
       this.rightHand.visible = true;
     }
-    (this.el.querySelector('.bench-hold') as HTMLElement).classList.toggle('is-on', this.held);
+    // Kruhová značka: kudy vést prst při šroubování (šipka po směru nebo proti).
+    const ring = this.el.querySelector('.bench-ring') as HTMLElement;
+    const st = this.stage;
+    const screwing = st === 'rxScrew' || st === 'rxUnscrew' || st === 'brScrew' || st === 'brUnscrew' || st === 'tsScrew' || st === 'tsUnscrew';
+    ring.hidden = !screwing;
+    if (screwing) {
+      const c = st.startsWith('rx') ? this.screenOf(this.receiver) : st.startsWith('br') ? this.screenOf(this.bracket, new THREE.Vector3(-0.032, 0, 0)) : this.screenOf(this.screwKnob);
+      const r = this.el.getBoundingClientRect();
+      ring.style.left = `${c.x - r.left}px`;
+      ring.style.top = `${c.y - r.top}px`;
+      ring.classList.toggle('is-ccw', st.endsWith('Unscrew'));
+      (ring.querySelector('span') as HTMLElement).textContent = st.endsWith('Unscrew') ? '↺' : '↻';
+    }
+    const hb = this.el.querySelector('.bench-hold') as HTMLElement;
+    hb.classList.toggle('is-on', this.held);
+    hb.classList.toggle('is-locked', this.holdLocked);
   }
 
   private depth = 0.52;

@@ -194,10 +194,27 @@ export class Hud {
     });
   }
 
+  private layoutBound = false;
+
   setTouchMode(on: boolean): void {
     this.touchMode = on;
     this.el.classList.toggle('is-touch', on);
     this.promptKey = '';
+    requestAnimationFrame(() => this.layoutTop());
+    if (!this.layoutBound) {
+      this.layoutBound = true;
+      addEventListener('resize', () => this.layoutTop());
+    }
+  }
+
+  /** Řádek „Co dál“ se vejde mezi horní tlačítka a panel rukou; když ne, uhne pod tlačítka. */
+  private layoutTop(): void {
+    const top = this.el.querySelector('.topbtns') as HTMLElement | null;
+    if (!top) return;
+    const w = top.getBoundingClientRect().width;
+    this.el.style.setProperty('--top-w', `${Math.round(w)}px`);
+    const free = innerWidth - w - 18 - 250;
+    this.el.classList.toggle('goal-below', free < 220);
   }
 
   /** Tlačítko kontroleru: jen když je rover sestavený a kontroler zapnutý. */
@@ -205,7 +222,7 @@ export class Hud {
     const b = this.q('.ctrl-btn');
     if (b.hidden === !visible) return;
     b.hidden = !visible;
-    this.el.classList.toggle('has-ctrl', visible); // řádek „Co dál“ uhne pod tlačítka
+    this.layoutTop();
   }
 
   /** decimals = 0 pro orientační polohu, 2 pro polohu hrotu z GNSS. */
