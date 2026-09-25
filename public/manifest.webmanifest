@@ -1,10 +1,19 @@
 {
   "name": "Geodet – terénní simulátor",
   "short_name": "Geodet",
+  "description": "Mobilní FPV simulátor zeměměřiče: GNSS, totální stanice, nivelace.",
   "lang": "cs",
   "start_url": "./",
+  "scope": "./",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#1f2428",
-  "theme_color": "#1f2428"
+  "theme_color": "#1f2428",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
 }
