@@ -189,6 +189,9 @@ export function buildTripod(): THREE.Group {
     const tilt = new THREE.Group();
     tilt.position.z = -0.05;
     const leg = tripodLeg();
+    leg.children[2].name = `legClamp${i}`; // svěrka nohy (pro montáž v rukou)
+    leg.children[3].name = `legFoot${i}`; // patka
+    leg.children[4].name = `legFoot${i}`; // ostruha k sešlápnutí
     tilt.add(leg);
     pivot.add(tilt);
     g.add(pivot);
@@ -339,5 +342,23 @@ export function glove(): THREE.Group {
   c.position.z = 0.08;
   g.add(c);
   return g;
+}
+
+
+/** Rozevření nohou [rad] a délka vysunutých nohou [m]; hroty vždy na y = 0. */
+export function setTripodPose(g: THREE.Group, spread: number, len: number): void {
+  const u = g.userData as {
+    head: THREE.Object3D;
+    station: THREE.Object3D;
+    legs: { pivot: THREE.Group; tilt: THREE.Group; leg: THREE.Group }[];
+  };
+  const h = len * Math.cos(spread);
+  u.head.position.y = h + 0.03;
+  u.station.position.y = h + 0.06;
+  for (const l of u.legs) {
+    l.pivot.position.y = h;
+    l.tilt.rotation.x = spread;
+    l.leg.scale.y = len;
+  }
 }
 

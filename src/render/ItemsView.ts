@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { ItemKind, WorldItem } from '../items/items';
-import { buildCase, buildLevel, buildPole, buildTripod, glove } from './InstrumentModels';
+import { buildCase, buildLevel, buildPole, buildTripod, glove, setTripodPose } from './InstrumentModels';
 import { lambert, matte, PALETTE } from './materials';
 
 type Triple = [number, number, number];
@@ -116,23 +116,6 @@ function withGlove(pole: THREE.Group): THREE.Object3D {
 const FOLDED = { spread: 0.035, len: 1.0 };
 const DEPLOYED = { spread: 0.36, len: 1.38 };
 
-/** Rozevření nohou [rad] a délka vysunutých nohou [m]; hroty vždy na y = 0. */
-function setTripodPose(g: THREE.Group, spread: number, len: number): void {
-  const u = g.userData as {
-    head: THREE.Object3D;
-    station: THREE.Object3D;
-    legs: { pivot: THREE.Group; tilt: THREE.Group; leg: THREE.Group }[];
-  };
-  const h = len * Math.cos(spread);
-  u.head.position.y = h + 0.03;
-  u.station.position.y = h + 0.06;
-  for (const l of u.legs) {
-    l.pivot.position.y = h;
-    l.tilt.rotation.x = spread;
-    l.leg.scale.y = len;
-  }
-}
-
 interface Entry {
   root: THREE.Group;
   model: THREE.Group;
@@ -184,7 +167,7 @@ export class ItemsView {
       if (!e.root.visible) continue;
       if (it.kind === 'tripod') {
         const p = it.state === 'deployed' ? DEPLOYED : FOLDED;
-        setTripodPose(e.model, p.spread, p.len);
+        setTripodPose(e.model, p.spread, it.state === 'deployed' ? (it.legLen ?? p.len) : p.len);
         const station = (e.model.userData as { station: THREE.Object3D }).station;
         station.visible = it.state === 'deployed' && !!it.mounted;
         (station.userData as { alidade: THREE.Object3D }).alidade.rotation.y = (it.stationYaw ?? it.yaw) - it.yaw;

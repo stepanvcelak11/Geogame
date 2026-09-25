@@ -900,6 +900,10 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .bench-ring.is-ccw { animation-direction: reverse; }
 .bench-ring span { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 26px; color: var(--survey); text-shadow: 0 1px 3px #000; }
 @keyframes bench-spin { to { transform: rotate(360deg); } }
+.bench-gauge { position: absolute; right: calc(14px + var(--inset-r)); top: calc(50px + var(--inset-t)); margin: 0; padding: 6px; border-radius: 10px; background: rgba(31, 36, 40, 0.8); text-align: center; }
+.bench-gauge canvas { display: block; width: 100px; height: 180px; }
+.bench-gauge figcaption { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.bench-gauge:not([hidden]) ~ .bench-steps { display: none; }
 .bench-loupe { position: absolute; right: calc(14px + var(--inset-r)); top: calc(50px + var(--inset-t)); margin: 0; padding: 6px; border-radius: 10px; background: rgba(31, 36, 40, 0.8); text-align: center; }
 .bench-loupe canvas { display: block; width: 110px; height: 220px; border-radius: 6px; }
 .bench-loupe figcaption { font-size: 12px; color: var(--muted); margin-top: 3px; }
@@ -1025,3 +1029,12 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .coach-skip { border: 1px solid #b9c2bb; background: transparent; color: #1f2428; }
 .coach-next { border: 0; background: var(--survey); color: var(--ink); flex: 1; }
 .help-coach { min-height: 36px; margin-right: 8px; padding: 0 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.5); background: transparent; color: #fff; font-weight: 700; cursor: pointer; }
+
+/* ---------- Program stanice v dalekohledu ---------- */
+.lcd-steps { margin: 0 0 3px; font-size: 11px; letter-spacing: 0.02em; display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.lcd-steps span { padding: 0 4px; border-radius: 3px; }
+.lcd-steps .is-done { opacity: 0.65; }
+.lcd-steps .is-cur { background: #1b2a1b; color: #c9d6c2; font-weight: 700; }
+.lcd-steps i { font-style: normal; opacity: 0.5; }
+.scope-hint { position: absolute; left: calc(228px + var(--inset-l)); right: calc(222px + var(--inset-r)); top: calc(8px + var(--inset-t)); max-width: 520px; margin: 0; padding: 6px 12px; border-radius: 8px; background: rgba(31, 36, 40, 0.82); border-left: 4px solid var(--survey); font-size: 14px; line-height: 1.3; pointer-events: none; }
+.sc-atr { background: #1d6fb5 !important; color: #fff !important; }
