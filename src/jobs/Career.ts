@@ -9,12 +9,13 @@ export interface CareerState {
   day: number;
   money: number;
   jobs: Record<string, CareerJob>;
-  stats: { jobsDone: number; km: number; points: number };
+  stats: { jobsDone: number; km: number; points: number; okJobs?: number };
   upgrades?: string[]; // koupené vybavení
+  urgentDone?: number; // den, kdy už byla spěšná zakázka zaplacena
 }
 
 export interface Upgrade {
-  id: 'imu' | 'antena';
+  id: 'imu' | 'antena' | 'nivelak' | 'dalkomer';
   name: string;
   desc: string;
   price: number;
@@ -33,7 +34,71 @@ export const UPGRADES: Upgrade[] = [
     desc: 'Víc družic: FIX i pod řidšími stromy a blíž u budov.',
     price: 9000,
   },
+  {
+    id: 'nivelak',
+    name: 'Nivelák s magnetickým tlumením kompenzátoru',
+    desc: 'Ve větru se obraz lati tolik nechvěje: šum čtení ve větru zhruba poloviční.',
+    price: 12000,
+  },
+  {
+    id: 'dalkomer',
+    name: 'Totální stanice s výkonným dálkoměrem',
+    desc: 'Bez hranolu dosáhne dvakrát dál, na hranol i v mlze až 400 m.',
+    price: 22000,
+  },
 ];
+
+/** Profesní stupeň: podle počtu zakázek odevzdaných bez vady. */
+export interface Rank {
+  name: string;
+  minOk: number; // kolik zakázek v pořádku je potřeba
+  maxDifficulty: 1 | 2 | 3; // nejtěžší zakázka, kterou dispečink svěří
+  payBonus: number; // příplatek k odměně (0,05 = 5 %)
+}
+
+export const RANKS: Rank[] = [
+  { name: 'Pomocník měřiče', minOk: 0, maxDifficulty: 1, payBonus: 0 },
+  { name: 'Měřič', minOk: 2, maxDifficulty: 2, payBonus: 0 },
+  { name: 'Samostatný geodet', minOk: 5, maxDifficulty: 3, payBonus: 0.05 },
+  { name: 'Úředně oprávněný zeměměřický inženýr', minOk: 9, maxDifficulty: 3, payBonus: 0.1 },
+];
+
+/** Zakázky odevzdané v pořádku (starší uložení počítala jen všechny odevzdané). */
+export function okJobs(c: CareerState): number {
+  return c.stats.okJobs ?? c.stats.jobsDone;
+}
+
+export function rankIndex(c: CareerState): number {
+  const n = okJobs(c);
+  let i = 0;
+  while (i + 1 < RANKS.length && n >= RANKS[i + 1].minOk) i++;
+  return i;
+}
+
+export function rankOf(c: CareerState): Rank {
+  return RANKS[rankIndex(c)];
+}
+
+/** Stupeň, který zakázku odemyká (první, jehož maxDifficulty stačí). */
+export function rankFor(difficulty: number): Rank {
+  return RANKS.find((r) => r.maxDifficulty >= difficulty) ?? RANKS[RANKS.length - 1];
+}
+
+/** Příplatek za spěšnou zakázku odevzdanou bez vady týž den. */
+export const URGENT_BONUS = 0.3;
+
+/**
+ * Spěšná zakázka dne: deterministicky z čísla dne mezi zakázkami, které hráč smí vzít.
+ * Stejný den = stejná zakázka, i po načtení uložené hry.
+ */
+export function urgentJob(day: number, allowed: readonly string[]): string | null {
+  if (!allowed.length) return null;
+  let h = Math.imul(day ^ 0x9e3779b9, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return allowed[(h >>> 0) % allowed.length];
+}
 
 const KEY = 'geodet-kariera-v1';
 
@@ -66,6 +131,14 @@ export function clearCareer(): void {
   } catch {
     /* nevadí */
   }
+}
+
+const round100 = (v: number): number => Math.round(v / 100) * 100;
+
+/** Příplatky k základní odměně (jen za zakázku v pořádku). */
+export function extraPay(base: number, ok: boolean, rank: Rank, urgent: boolean): { rank: number; urgent: number } {
+  if (!ok) return { rank: 0, urgent: 0 };
+  return { rank: round100(base * rank.payBonus), urgent: urgent ? round100(base * URGENT_BONUS) : 0 };
 }
 
 /** Odměna za zakázku: v pořádku plná, k opravě 30 %. */

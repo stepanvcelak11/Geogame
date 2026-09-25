@@ -15,6 +15,7 @@ import { InteractionSystem, type InteractionPrompt } from './interaction/Interac
 import { ITEM_DEFS, type Hand, type WorldItem } from './items/items';
 import { designTargets } from './jobs/designTargets';
 import { JOB_TYPE_NAME, JOBS, type JobSpec } from './jobs/JobCatalog';
+import { EXPORT_FORMATS, exportPoints, pointsCsv, type ExportFormat } from './survey/PointExport';
 import { MappingTask } from './jobs/MappingTask';
 import { ReconTask, REPORT_RADIUS } from './jobs/ReconTask';
 import { StakeoutTask, type StakeTarget } from './jobs/StakeoutTask';
@@ -55,8 +56,24 @@ import { SettingsScreen } from './ui/SettingsScreen';
 import { ProtocolScreen, type ProtocolView } from './ui/ProtocolScreen';
 import { drawDistanceFor, loadSettings, saveSettings, type Settings } from './settings/Settings';
 import { showIntro } from './ui/IntroScreen';
-import { OfficeScreen, type KitRow, type OfficeView } from './ui/OfficeScreen';
-import { clearCareer, kc, loadCareer, newCareer, payFor, saveCareer, UPGRADES, type CareerState } from './jobs/Career';
+import { OfficeScreen, type KitRow, type OfficeCard, type OfficeView } from './ui/OfficeScreen';
+import {
+  clearCareer,
+  extraPay,
+  kc,
+  loadCareer,
+  newCareer,
+  okJobs,
+  payFor,
+  rankFor,
+  rankIndex,
+  rankOf,
+  RANKS,
+  saveCareer,
+  UPGRADES,
+  urgentJob,
+  type CareerState,
+} from './jobs/Career';
 import { MapRenderer } from './ui/MapRenderer';
 import { describeMark } from './ui/presenters';
 import { ScopeScreen } from './ui/ScopeScreen';
@@ -219,6 +236,7 @@ export class Game {
   private daylightT = 0;
   private poleHintShown = false;
   private lastBonus = 0;
+  private lastExtra = { rank: 0, urgent: 0, rankName: '' };
   private precise = false;
   private bipodTip: { x: number; z: number } | null = null; // výtyčka opřená o dvojnožku
   private navHistory: { x: number; z: number }[] = [];
@@ -294,6 +312,7 @@ export class Game {
     };
     this.tablet.onAction = (id) => this.tabletAction(id);
     this.tablet.onCopyPoints = () => this.copyPoints();
+    this.tablet.onDownloadPoints = (f) => this.downloadPoints(f);
     this.tablet.onClose = () => {
       this.sfx.click();
       this.departConfirm = null;
@@ -319,6 +338,8 @@ export class Game {
     this.hud.onHelper = () => this.openHelper();
     this.protocolScreen = new ProtocolScreen(root);
     this.protocolScreen.onCopy = (t) => this.copyText(t, 'Protokol zkopírován.');
+    this.protocolScreen.onDownload = (t, title) =>
+      this.downloadText(`protokol-den${this.career.day}-${title.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.txt`, t, 'text/plain');
     this.settingsScreen = new SettingsScreen(root);
     this.settingsScreen.onChange = (s) => this.applySettings(s);
     this.settingsScreen.onResetCareer = () => {
@@ -1037,7 +1058,7 @@ export class Game {
       this.bus.emit('toast', { text, tone: 'warn' });
     };
     const dir = lookDirection(sc.yaw, sc.pitch);
-    const r = ts.shoot(dir, this.world, this.prisms(), sc.mode, stationRanges(this.weather));
+    const r = ts.shoot(dir, this.world, this.prisms(), sc.mode, this.stationRanges());
     if (!r.ok) return warn(r.reason);
     const shot = r.shot;
     const hd = shot.sd * Math.sin(shot.zen);
@@ -1299,7 +1320,7 @@ export class Game {
     if (!this.pole.inCircle) this.bus.emit('toast', { text: 'Bublina byla mimo kroužek, měření je zatížené náklonem.', tone: 'warn' });
     const d = { x: prism.center.x - ts.center.x, y: prism.center.y - ts.center.y, z: prism.center.z - ts.center.z };
     const l = Math.hypot(d.x, d.y, d.z);
-    const r = ts.shoot({ x: d.x / l, y: d.y / l, z: d.z / l }, this.world, [prism], 'prism', stationRanges(this.weather));
+    const r = ts.shoot({ x: d.x / l, y: d.y / l, z: d.z / l }, this.world, [prism], 'prism', this.stationRanges());
     if (!r.ok) {
       this.bus.emit('toast', { text: r.reason, tone: 'warn' });
       return;
@@ -1433,7 +1454,7 @@ export class Game {
   private levelRecord(lv: WorldItem, rod: WorldItem): { ok: boolean; text: string } {
     const inst = this.levelInstrument(lv);
     const sightLen = Math.hypot(rod.pos.x - inst.center.x, rod.pos.z - inst.center.z);
-    const r = readRod(inst, rod.pos, this.world, this.rng, levelNoise(this.weather, this.clockMin, sightLen));
+    const r = readRod(inst, rod.pos, this.world, this.rng, levelNoise(this.weather, this.clockMin, sightLen) * (this.hasUpgrade('nivelak') ? 1 / (1 + this.weather.wind) : 1));
     if (!r.ok) return { ok: false, text: r.reason };
     this.lastLevelRead = { reading: r.reading, dist: r.dist };
     this.sfx.success();
@@ -1620,6 +1641,30 @@ export class Game {
     this.gnss.antennaBoost = this.hasUpgrade('antena');
   }
 
+  /** Dosah dálkoměru podle počasí a vybavení. */
+  private stationRanges(): { prism: number; reflectorless: number } {
+    const r = stationRanges(this.weather);
+    return this.hasUpgrade('dalkomer') ? { prism: Math.max(r.prism, 400), reflectorless: r.reflectorless * 2 } : r;
+  }
+
+  private jobsWord(n: number): string {
+    return n === 1 ? 'zakázku' : n >= 2 && n <= 4 ? 'zakázky' : 'zakázek';
+  }
+
+  /** Dispečink svěří jen zakázky do obtížnosti podle profesního stupně. */
+  private jobUnlocked(spec: JobSpec): boolean {
+    return spec.difficulty <= rankOf(this.career).maxDifficulty;
+  }
+
+  /** Spěšná zakázka dnešního dne (příplatek, když se odevzdá bez vady ještě dnes). */
+  private urgentToday(): string | null {
+    if (this.career.urgentDone === this.career.day) return null; // příplatek jen jednou za den
+    return urgentJob(
+      this.career.day,
+      JOBS.filter((j) => this.jobUnlocked(j)).map((j) => j.id),
+    );
+  }
+
   private hasUpgrade(id: string): boolean {
     return !!this.career.upgrades?.includes(id);
   }
@@ -1673,10 +1718,11 @@ export class Game {
         const st = run.stake;
         const d = st?.doneCount ?? 0;
         const n = st?.targets.length ?? 0;
+        const cnt = n > 0 ? ` (${d} z ${n})` : '';
         steps.push({ text: 'Vezmi do ruky GNSS rover', done: has('gnssRover') || d > 0 });
         steps.push({ text: 'Jdi po šipce k bodu. U bodu se sám zpomalíš, dole uvidíš Vpřed / Vpravo v cm', done: d > 0 });
         steps.push({
-          text: `${this.hasUpgrade('imu') ? 'Až bude navigace do 2 cm' : 'Opři výtyčku o Dvojnožku (tlačítko nad libelou)'}, pak Zatlouct kolík (${d} z ${n})`,
+          text: `${this.hasUpgrade('imu') ? 'Až bude navigace do 2 cm' : 'Opři výtyčku o Dvojnožku (tlačítko nad libelou)'}, pak Zatlouct kolík${cnt}`,
           done: d === n && n > 0,
         });
         break;
@@ -1684,16 +1730,17 @@ export class Game {
       case 'polohopis': {
         const m = run.mapping;
         const f = m?.found.size ?? 0;
-        const n = m?.required.length ?? 0;
+        const n = m?.required.length ?? spec.featureIds?.length ?? 0;
+        const cnt = n > 0 ? ` (${f} z ${n})` : '';
         if (spec.requireStation) {
           const c = this.connected();
           steps.push({ text: 'Rozlož stativ nad bodem 4001, nasaď stanici a ustav ji', done: !!c });
           steps.push({ text: 'Orientuj stanici: výtyčku s hranolem postav na 4021', done: !!c && c.ts.orientation !== null });
-          steps.push({ text: `Změř rohy trafostanice, SZ z volného stanoviska (${f} z ${n})`, done: f === n && n > 0 });
+          steps.push({ text: `Změř rohy trafostanice, SZ z volného stanoviska${cnt}`, done: f === n && n > 0 });
         } else {
           steps.push({ text: 'Vezmi do ruky GNSS rover', done: has('gnssRover') || f > 0 });
           steps.push({ text: 'Vyber správný kód (růžové tlačítko vlevo)', done: f > 0 });
-          steps.push({ text: `Změř všechny prvky (${f} z ${n})`, done: f === n && n > 0 });
+          steps.push({ text: `Změř všechny prvky${cnt}`, done: f === n && n > 0 });
         }
         break;
       }
@@ -1831,9 +1878,34 @@ export class Game {
 
   /** Zápisník bodů jako CSV do schránky. */
   private copyPoints(): void {
-    const rows = ['cislo;Y;X;H;kod;metoda;reseni;lokalita'];
-    for (const p of this.log.points) rows.push([p.id, p.Y.toFixed(3), p.X.toFixed(3), p.Z.toFixed(3), p.code, p.method, p.solution, p.location].join(';'));
-    this.copyText(rows.join('\n'), `Zápisník zkopírován (${this.log.points.length} bodů, CSV se středníky).`);
+    this.copyText(pointsCsv(this.log.points), `Zápisník zkopírován (${pointsCount(this.log.points.length)}, CSV se středníky).`);
+  }
+
+  /** Zápisník jako soubor do telefonu (CSV, seznam souřadnic TXT nebo výkres DXF). */
+  private downloadPoints(format: ExportFormat): void {
+    if (!this.log.points.length) {
+      this.bus.emit('toast', { text: 'Zápisník je prázdný, zatím není co uložit.', tone: 'warn' });
+      return;
+    }
+    const f = EXPORT_FORMATS.find((x) => x.id === format) ?? EXPORT_FORMATS[0];
+    this.downloadText(`zapisnik-den${this.career.day}.${f.id}`, exportPoints(this.log.points, f.id), f.mime);
+    this.bus.emit('toast', { text: `Zápisník uložen jako ${f.label} (${pointsCount(this.log.points.length)}).` });
+  }
+
+  /** Soubor ke stažení. CSV a TXT dostanou BOM, ať je Excel otevře v UTF-8; DXF ne, CAD by ho nepřečetl. */
+  private downloadText(name: string, text: string, mime: string): void {
+    try {
+      const url = URL.createObjectURL(new Blob([mime === 'application/dxf' ? text : '\ufeff' + text], { type: `${mime};charset=utf-8` }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch {
+      this.bus.emit('toast', { text: 'Uložení souboru tady prohlížeč nepovolil.', tone: 'warn' });
+    }
   }
 
   private copyText(text: string, okMsg: string): void {
@@ -2150,16 +2222,28 @@ export class Game {
   private openOffice(): void {
     if (this.input.pointerLocked) document.exitPointerLock();
     this.sfx.click();
-    this.officeSel = this.officeSel ?? this.activeJobId ?? JOBS.find((j) => this.jobs.get(j.id)?.status === 'nova')?.id ?? null;
+    this.officeSel =
+      this.officeSel ?? this.activeJobId ?? JOBS.find((j) => this.jobs.get(j.id)?.status === 'nova' && this.jobUnlocked(j))?.id ?? null;
     this.officeScreen.show();
   }
 
   private officeView(): OfficeView {
+    const urgent = this.urgentToday();
     const cards = JOBS.map((spec) => {
       const r = this.jobs.get(spec.id) as JobRun;
-      const status =
-        r.status === 'nova' ? 'Nová' : r.status === 'aktivni' ? (this.activeJobId === spec.id ? 'Aktivní' : 'Převzatá') : r.result?.ok ? 'Hotovo' : 'K opravě';
-      const tone: 'new' | 'active' | 'done' | 'bad' = r.status === 'nova' ? 'new' : r.status === 'aktivni' ? 'active' : r.result?.ok ? 'done' : 'bad';
+      const locked = !this.jobUnlocked(spec) && r.status !== 'aktivni';
+      const status = locked
+        ? 'Zamčeno'
+        : r.status === 'nova'
+          ? 'Nová'
+          : r.status === 'aktivni'
+            ? this.activeJobId === spec.id
+              ? 'Aktivní'
+              : 'Převzatá'
+            : r.result?.ok
+              ? 'Hotovo'
+              : 'K opravě';
+      const tone: OfficeCard['tone'] = locked ? 'locked' : r.status === 'nova' ? 'new' : r.status === 'aktivni' ? 'active' : r.result?.ok ? 'done' : 'bad';
       return {
         id: spec.id,
         title: spec.title,
@@ -2168,6 +2252,7 @@ export class Game {
         difficulty: spec.difficulty,
         status,
         tone,
+        badge: locked ? `od stupně ${rankFor(spec.difficulty).name}` : spec.id === urgent ? 'Spěchá +30 %' : undefined,
       };
     });
     const spec = JOBS.find((j) => j.id === this.officeSel);
@@ -2175,7 +2260,10 @@ export class Game {
     if (spec) {
       const r = this.jobs.get(spec.id) as JobRun;
       const actions: { id: string; label: string; primary?: boolean }[] = [];
-      if (r.status === 'nova') actions.push({ id: `accept:${spec.id}`, label: 'Převzít zakázku', primary: true });
+      const locked = !this.jobUnlocked(spec) && r.status !== 'aktivni';
+      if (locked) {
+        /* zamčená zakázka: jen popis */
+      } else if (r.status === 'nova') actions.push({ id: `accept:${spec.id}`, label: 'Převzít zakázku', primary: true });
       else if (r.status === 'aktivni' && this.activeJobId !== spec.id) actions.push({ id: `open:${spec.id}`, label: 'Nastavit jako aktivní', primary: true });
       else if (r.status === 'odevzdana') actions.push({ id: `redo:${spec.id}`, label: 'Přijmout novou objednávku' });
       detail = {
@@ -2183,6 +2271,11 @@ export class Game {
         client: spec.client,
         place: LOCATIONS[spec.location].name,
         brief: r.result ? `${spec.brief} Výsledek: ${r.result.text}` : spec.brief,
+        notice: locked
+          ? `Tuhle zakázku dispečink svěří až od stupně ${rankFor(spec.difficulty).name}. Odevzdej bez vady ještě ${rankFor(spec.difficulty).minOk - okJobs(this.career)} ${this.jobsWord(rankFor(spec.difficulty).minOk - okJobs(this.career))}.`
+          : spec.id === urgent
+            ? `Spěchá: odevzdáš-li ji bez vady ještě dnes, objednatel přidá ${kc(Math.round((spec.pay * 0.3) / 100) * 100)}.`
+            : undefined,
         steps: this.jobSteps(r)
           .slice(0, -1)
           .map((s) => s.text),
@@ -2192,8 +2285,16 @@ export class Game {
       };
     }
     const loaded = this.items.filter((i) => i.state === 'stored').length;
+    const ri = rankIndex(this.career);
+    const next = RANKS[ri + 1];
+    const done = okJobs(this.career);
     return {
       day: `Den ${this.career.day} · ${weatherText(this.weather)}`,
+      rank: {
+        name: RANKS[ri].name,
+        progress: next ? `Další stupeň ${next.name}: ${done} z ${next.minOk} zakázek bez vady` : `Nejvyšší stupeň, příplatek ${Math.round(RANKS[ri].payBonus * 100)} % ke každé zakázce`,
+        frac: next ? (done - RANKS[ri].minOk) / (next.minOk - RANKS[ri].minOk) : 1,
+      },
       clock: clockText(this.clockMin),
       money: kc(this.career.money),
       cards,
@@ -2282,7 +2383,7 @@ export class Game {
     switch (cmd) {
       case 'accept': {
         const run = this.jobs.get(arg);
-        if (!run) return;
+        if (!run || !this.jobUnlocked(run.spec)) return;
         this.startJob(run);
         this.activeJobId = arg;
         this.showBoard = false;
@@ -2425,7 +2526,14 @@ export class Game {
         : `${ok ? 'Vyhovuje.' : 'Nevyhovuje, objednatel chce opravu.'} ${text}`,
       ok,
       pay: kc(pay),
-      bonus: this.lastBonus ? `Bonus za přesnost: +${kc(this.lastBonus)} (práce výrazně lepší než tolerance)` : undefined,
+      bonus:
+        [
+          this.lastBonus ? `Bonus za přesnost: +${kc(this.lastBonus)} (práce výrazně lepší než tolerance)` : '',
+          this.lastExtra.urgent ? `Spěšná zakázka odevzdaná týž den: +${kc(this.lastExtra.urgent)}` : '',
+          this.lastExtra.rank ? `Příplatek za stupeň ${this.lastExtra.rankName}: +${kc(this.lastExtra.rank)}` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ') || undefined,
     };
   }
 
@@ -2470,9 +2578,26 @@ export class Game {
       if (cl <= closureLimit(run.level.heights.length) / 3) bonus = Math.round((run.spec.pay * 0.2) / 100) * 100;
     } else if (ok && run.mapping && run.mapping.wrongCode === 0) bonus = Math.round((run.spec.pay * 0.1) / 100) * 100;
     this.lastBonus = bonus;
-    this.career.money += pay + bonus;
-    this.dayEarned += pay + bonus;
+    const rankBefore = rankIndex(this.career);
+    const extra = extraPay(run.spec.pay, ok, RANKS[rankBefore], run.spec.id === this.urgentToday());
+    this.lastExtra = { ...extra, rankName: RANKS[rankBefore].name };
+    if (extra.urgent) this.career.urgentDone = this.career.day;
+    this.career.money += pay + bonus + extra.rank + extra.urgent;
+    this.dayEarned += pay + bonus + extra.rank + extra.urgent;
+    this.career.stats.okJobs = okJobs(this.career) + (ok ? 1 : 0);
     this.career.stats.jobsDone++;
+    const rankAfter = rankIndex(this.career);
+    if (rankAfter > rankBefore) {
+      const r = RANKS[rankAfter];
+      const unlocked = JOBS.filter((j) => j.difficulty <= r.maxDifficulty && j.difficulty > RANKS[rankBefore].maxDifficulty).length;
+      setTimeout(
+        () =>
+          this.bus.emit('toast', {
+            text: `Povýšení: ${r.name}!${unlocked ? ` Dispečink ti teď svěří ${unlocked} ${unlocked === 1 ? 'těžší zakázku' : unlocked <= 4 ? 'těžší zakázky' : 'těžších zakázek'}.` : ''}${r.payBonus ? ` Příplatek ${Math.round(r.payBonus * 100)} % ke každé zakázce.` : ''}`,
+          }),
+        1800,
+      );
+    }
     this.career.jobs[run.spec.id] = { status: 'odevzdana', result: { ok, text, pay } };
     this.activeJobId = null;
     this.showBoard = true;
@@ -2505,15 +2630,16 @@ export class Game {
         rows: JOBS.map((spec) => {
           const r = this.jobs.get(spec.id) as JobRun;
           const far = spec.location !== here ? `, jízda ${travelMinutes(here, spec.location)} min` : ', tady';
-          const status = r.status === 'nova' ? 'Nová' : r.status === 'aktivni' ? 'Rozpracovaná' : r.result?.ok ? 'Odevzdaná' : 'K opravě';
+          const locked = !this.jobUnlocked(spec) && r.status !== 'aktivni';
+          const status = locked ? 'Zamčeno' : r.status === 'nova' ? (spec.id === this.urgentToday() ? 'Spěchá' : 'Nová') : r.status === 'aktivni' ? 'Rozpracovaná' : r.result?.ok ? 'Odevzdaná' : 'K opravě';
           const tone: PanelRow['tone'] = r.status === 'odevzdana' ? (r.result?.ok ? 'ok' : 'bad') : r.status === 'aktivni' ? 'active' : 'pending';
           return {
             key: spec.id,
             title: spec.title,
-            subtitle: `${JOB_TYPE_NAME[spec.type]}, ${LOCATIONS[spec.location].short}${far}`,
+            subtitle: locked ? `Od stupně ${rankFor(spec.difficulty).name}` : `${JOB_TYPE_NAME[spec.type]}, ${LOCATIONS[spec.location].short}${far}`,
             status,
             tone,
-            button: r.status === 'nova' ? { id: `accept:${spec.id}`, label: 'Převzít' } : r.status === 'aktivni' ? { id: `open:${spec.id}`, label: 'Otevřít' } : undefined,
+            button: locked ? undefined : r.status === 'nova' ? { id: `accept:${spec.id}`, label: 'Převzít' } : r.status === 'aktivni' ? { id: `open:${spec.id}`, label: 'Otevřít' } : undefined,
           };
         }),
         footer: [...this.jobs.values()]
@@ -3125,4 +3251,9 @@ export class Game {
     };
     this.hud.setGnss(view);
   }
+}
+
+/** „1 bod“, „3 body“, „7 bodů“. */
+function pointsCount(n: number): string {
+  return `${n} ${n === 1 ? 'bod' : n >= 2 && n <= 4 ? 'body' : 'bodů'}`;
 }

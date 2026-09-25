@@ -43,6 +43,12 @@ Mobilní FPV simulátor zeměměřiče. Three.js + Vite + TypeScript, běží v 
 - **Snazší vytyčování**: hrot výtyčky / roveru je vždy 60 cm před hráčem (žádné míření kamerou do země). U cíle se pohyb sám zpomalí až na pár cm/s a bez setrvačnosti – joystickem se dá trefit na centimetry. Navigace průměruje čtení (na dvojnožce déle).
 - **Dvojnožka** (tlačítko nad libelou): opře výtyčku, drží ji svisle a hrot stojí, i když se rozhlížíš; pohybem se složí.
 - **Vybavení k zakoupení** (dispečink v kanceláři): GNSS s náklonovým senzorem IMU (bublinu u GNSS neřešíš), anténa pro více družicových systémů (FIX i pod řidšími stromy).
+- **Profesní stupně**: Pomocník měřiče → Měřič (2 zakázky bez vady) → Samostatný geodet (5) → ÚOZI (9). Stupeň odemyká zakázky vyšší obtížnosti, od Samostatného geodeta příplatek 5 %, ÚOZI 10 %. Postup je vidět nahoře v dispečinku.
+- **Spěšná zakázka dne**: jedna ze svěřených zakázek má štítek „Spěchá“ a +30 %, když ji odevzdáš bez vady ještě ten den.
+- **Další vybavení**: nivelák s magnetickým tlumením (ve větru poloviční šum čtení) a totální stanice s výkonným dálkoměrem (bez hranolu 2× dál, na hranol v mlze 400 m).
+- **Zakázky navíc**: obnova hranice parcely 1254/3 na stavbě (ověřit mezníky 101, 102, 104, vyvrácený 103 vytyčit) a zaměření polní kůlny na louce.
+- **Export zápisníku** v tabletu (Body): kopírovat CSV, nebo uložit jako CSV, TXT (seznam souřadnic) či DXF (body s čísly do CADu). Protokol po odevzdání jde uložit do souboru.
+- **Offline**: po první návštěvě hra běží i bez signálu (service worker).
 - **Bonus za přesnost** v protokolu: +20 % za vytyčení do poloviny tolerance nebo uzávěr nivelace do třetiny meze, +10 % za bezchybné kódy.
 
 ## Nastavení
@@ -72,5 +78,5 @@ Architektura: logika (`core`, `world`, `geodesy`, `player`, `interaction`, `item
 
 ## Další kroky
 
-- Export zápisníku (TXT/CSV), protokol o vytyčení, zakázky na louce pro stanici a nivelaci.
-- Nivelace, export TXT / CSV / DXF, protokol o vytyčení.
+- Zakázka na louce pro totální stanici (stromořadí na mezi, kde GNSS nedá FIX).
+- Zakázky s náhodnými variantami (jiné body, jiný objednatel), aby se daly hrát opakovaně.

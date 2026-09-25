@@ -25,6 +25,14 @@ export function designTargets(spec: JobSpec, world: World): StakeTarget[] {
       make(String(201 + i), `Roh domu ${201 + i}`, p.x, p.z),
     );
   }
+  if (spec.stake === 'parcela') {
+    // Hranice parcely 1254/3: lomy 101–104, ověřují se jen mezníky, které jsou v pořádku.
+    return rectCorners(LAYOUT.parcel).map((p, i) => {
+      const id = String(101 + i);
+      const mark = world.marks.find((m) => m.id === `HZ-${id}` && m.condition === 'ok');
+      return make(id, `Lom hranice ${id}`, p.x, p.z, mark?.id);
+    });
+  }
   const corners = rectCorners(MEADOW.parcel);
   return corners.map((p, i) => {
     const id = String(301 + i);

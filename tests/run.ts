@@ -300,6 +300,29 @@ const world = generateWorld('stavba');
   check('kontrola vytyčení odhalí kolík mimo toleranci', ev.rows[0].ok && !ev.rows[1].ok && !ev.allOk);
   const fence = designTargets(JOBS.find((j) => j.id === 'louka-hranice')!, meadow);
   check('hranice louky: 301 a 302 dochované, 303 a 304 chybí', fence.filter((t) => t.existingMarkId).map((t) => t.id).join() === '301,302');
+  const parcel = designTargets(JOBS.find((j) => j.id === 'stavba-hranice')!, world);
+  check('hranice 1254/3: ověřit 101, 102, 104, vyvrácený 103 vytyčit', parcel.filter((t) => t.existingMarkId).map((t) => t.id).join() === '101,102,104' && parcel.length === 4);
+  const hz = world.marks.find((m) => m.id === 'HZ-101')!;
+  check('hranice 1254/3: projekt sedí na katalog mezníku', Math.hypot(parcel[0].design.Y - hz.catalog.Y, parcel[0].design.X - hz.catalog.X) < 0.015);
+  const shedCorners = meadow.features.filter((f) => f.id.startsWith('kulna-'));
+  check('kůlna na louce: 4 rohy s kódem roh budovy', shedCorners.length === 4 && shedCorners.every((f) => f.code === 'ROH_BUDOVY'));
+  const kulnaJob = JOBS.find((j) => j.id === 'louka-kulna')!;
+  check('zakázka kůlny míří na existující prvky', kulnaJob.featureIds!.every((id) => meadow.features.some((f) => f.id === id)));
+  {
+    const { GnssReceiver } = await import('../src/gnss/GnssReceiver');
+    const { Rng } = await import('../src/core/Rng');
+    const sc = meadow.scenery.find((q) => q.kind === 'shed')!;
+    const sols = shedCorners.map((f) => {
+      const ox = Math.sign(f.pos.x - sc.x) * 0.1;
+      const oz = Math.sign(f.pos.z - sc.z) * 0.1;
+      const g = new GnssReceiver(new Rng(3));
+      g.powerOn();
+      const a = { x: f.pos.x + ox, y: meadow.heightmap.heightAt(f.pos.x, f.pos.z) + 2, z: f.pos.z + oz };
+      for (let t = 0; t < 15; t += 1 / 30) g.update(1 / 30, a, meadow);
+      return g.solution;
+    });
+    check('rohy kůlny jdou změřit GNSS s FIXem', sols.every((x) => x === 'fix'), sols.join(','));
+  }
 
   const { MappingTask } = await import('../src/jobs/MappingTask');
   const mt = new MappingTask([...world.features]);
@@ -652,6 +675,40 @@ const world = generateWorld('stavba');
     const n = setups;
     check('louka: pořad Kn-15 → VB2 jde změřit s přestavovými body', one || two, `${n} postavení tam`);
   }
+}
+
+// --- Export zápisníku
+{
+  const { exportPoints } = await import('../src/survey/PointExport');
+  const pts = [
+    { id: '1001', Y: 742400.1234, X: 1046300.5678, Z: 285.0004, code: 'VPUST' as const, sigmaXY: 0.01, sigmaZ: 0.02, method: 'gnss_rtk' as const, timestamp: 0, solution: 'FIX', location: 'Stavba' },
+  ];
+  const csv = exportPoints(pts, 'csv').split('\r\n');
+  check('CSV: hlavička a bod na 3 desetinná místa', csv[0].startsWith('cislo;Y;X;H') && csv[1] === '1001;742400.123;1046300.568;285.000;VPUST;gnss_rtk;FIX;Stavba');
+  const txt = exportPoints(pts, 'txt');
+  check('TXT: pevné sloupce se souřadnicemi', /1001\s+742400\.123\s+1046300\.568\s+285\.000\s+VPUST/.test(txt));
+  const dxf = exportPoints(pts, 'dxf').split('\r\n');
+  const i = dxf.indexOf('POINT');
+  check('DXF: bod v CAD osách (x = −Y, y = −X), vrstva podle kódu', i > 0 && dxf[i + 2] === 'VPUST' && dxf[i + 4] === '-742400.123' && dxf[i + 6] === '-1046300.568' && dxf[dxf.length - 2] === 'EOF');
+}
+
+// --- Kariéra: stupně a spěšné zakázky
+{
+  const { newCareer, rankOf, rankFor, okJobs, urgentJob, extraPay, RANKS } = await import('../src/jobs/Career');
+  const c = newCareer();
+  check('nováček je pomocník a smí jen lehké zakázky', rankOf(c).name === RANKS[0].name && rankOf(c).maxDifficulty === 1);
+  c.stats.okJobs = 2;
+  check('po 2 zakázkách bez vady je měřič', rankOf(c).name === 'Měřič' && rankOf(c).maxDifficulty === 2);
+  c.stats.okJobs = 9;
+  check('po 9 zakázkách ÚOZI s příplatkem', rankOf(c).payBonus === 0.1);
+  const old = newCareer();
+  old.stats.jobsDone = 6;
+  check('starší uložení: stupeň z počtu odevzdaných', okJobs(old) === 6 && rankOf(old).maxDifficulty === 3);
+  check('obtížnost 3 odemyká samostatný geodet', rankFor(3).name === 'Samostatný geodet');
+  const ids = ['a', 'b', 'c', 'd'];
+  const days = new Set(Array.from({ length: 20 }, (_, i) => urgentJob(i + 1, ids)));
+  check('spěšná zakázka je stejná pro stejný den a střídá se', urgentJob(5, ids) === urgentJob(5, ids) && days.size >= 3, [...days].join());
+  check('příplatky jen za zakázku v pořádku', extraPay(5000, false, RANKS[3], true).urgent === 0 && extraPay(5000, true, RANKS[3], true).urgent === 1500 && extraPay(5000, true, RANKS[3], false).rank === 500);
 }
 
 if (failed) throw new Error(`Selhalo testů: ${failed}`);

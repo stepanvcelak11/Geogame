@@ -13,7 +13,7 @@ export interface JobSpec {
   brief: string;
   tolerance: { xy: number }; // [m]
   reconMarks?: string[]; // rekognoskace: ID bodů z katalogu
-  stake?: 'dum' | 'hranice'; // vytyčení: zdroj projektových souřadnic
+  stake?: 'dum' | 'hranice' | 'parcela'; // vytyčení: zdroj projektových souřadnic
   featureCodes?: FeatureCode[]; // polohopis: co zaměřit
   featureIds?: string[]; // polohopis: konkrétní prvky (má přednost před kódy)
   requireStation?: boolean; // měřit jen totální stanicí
@@ -87,6 +87,20 @@ export const JOBS: JobSpec[] = [
     difficulty: 3,
   },
   {
+    id: 'stavba-hranice',
+    title: 'Obnova hranice parcely 1254/3',
+    client: 'Ing. Novák, stavebník',
+    location: 'stavba',
+    type: 'vytyceni',
+    brief:
+      'Před stavbou plotu obnov hranici parcely. Plastové mezníky 101, 102 a 104 ověř měřením. Mezník 103 technika vyvrátila, jeho lom vytyč znovu kolíkem. Mezní odchylka 3 cm.',
+    tolerance: { xy: 0.03 },
+    stake: 'parcela',
+    pay: 6200,
+    kit: ['gnssRover'],
+    difficulty: 2,
+  },
+  {
     id: 'stavba-nivelace',
     title: 'Přenesení výšky na stavbu',
     client: 'Stavební firma Vltava',
@@ -115,6 +129,20 @@ export const JOBS: JobSpec[] = [
     pay: 6400,
     kit: ['level', 'rod'],
     difficulty: 3,
+  },
+  {
+    id: 'louka-kulna',
+    title: 'Zaměření polní kůlny',
+    client: 'Zemědělské družstvo Kněžívka',
+    location: 'louka',
+    type: 'polohopis',
+    brief:
+      'Družstvo chce kůlnu u cesty zapsat do katastru. Zaměř všechny čtyři rohy s kódem roh budovy. Kůlna je nízká, GNSS u ní FIX udrží. Hrot postav přesně do rohu, mezní odchylka 10 cm.',
+    tolerance: { xy: 0.1 },
+    featureIds: ['kulna-SZ', 'kulna-SV', 'kulna-JV', 'kulna-JZ'],
+    pay: 3600,
+    kit: ['gnssRover'],
+    difficulty: 1,
   },
   {
     id: 'louka-hranice',

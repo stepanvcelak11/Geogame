@@ -544,7 +544,22 @@ function generateMeadow(): World {
   const vb2z = POND.z;
   const vb2y = heightmap.heightAt(vb2x, vb2z) + 0.15;
   scenery.push({ kind: 'post', x: vb2x, z: vb2z, yaw: 0, w: 0.16, d: 0.16, h: 0.15, groundY: heightmap.heightAt(vb2x, vb2z) });
-  const features: FeatureInfo[] = [{ id: 'vb2', code: 'PEVNY_BOD', label: 'Výškový bod VB2 (hráz)', pos: { x: vb2x, y: vb2y, z: vb2z } }];
+  const features: FeatureInfo[] = [
+    { id: 'vb2', code: 'PEVNY_BOD', label: 'Výškový bod VB2 (hráz)', pos: { x: vb2x, y: vb2y, z: vb2z } },
+    // Rohy polní kůlny (osově zarovnaná, w podél x, d podél z).
+    ...(
+      [
+        [-1, -1, 'SZ'],
+        [1, -1, 'SV'],
+        [1, 1, 'JV'],
+        [-1, 1, 'JZ'],
+      ] as const
+    ).map(([sx, sz, n]) => {
+      const x = shed.x + (sx * shed.w) / 2;
+      const z = shed.z + (sz * shed.d) / 2;
+      return { id: `kulna-${n}`, code: 'ROH_BUDOVY' as const, label: `Roh kůlny ${n}`, pos: { x, y: heightmap.heightAt(x, z), z } };
+    }),
+  ];
   const fields: FieldInfo[] = [
     { crop: 'wheat', corners: [ { x: -200, z: -72 }, { x: 62, z: -76 }, { x: 62, z: -200 }, { x: -200, z: -200 } ] },
     { crop: 'plowed', corners: [ { x: 82, z: -150 }, { x: 200, z: -150 }, { x: 200, z: 18 }, { x: 82, z: 18 } ] },
