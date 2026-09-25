@@ -73,6 +73,9 @@ import { PlayerController, type MoveIntent } from './player/PlayerController';
 import { Flashlight } from './render/Flashlight';
 import { ItemsView } from './render/ItemsView';
 import { TrenchView } from './render/TrenchView';
+import { PavingView, paverPrism } from './render/PavingView';
+import { MachinePanel, type MachineView } from './ui/MachinePanel';
+import { designTop, PAVER_MODELS, PAVING, PaverSim } from './jobs/Paving';
 import { mergeStatic } from './render/mergeStatic';
 import { createMarkMesh, createVehicleMesh, DRIVER_EYE, syncVehicle } from './render/PropsView';
 import { setRealisticMaterials } from './render/materials';
@@ -156,6 +159,7 @@ interface JobRun {
   buried?: boolean; // bagr výkop zasypal dřív, než bylo zaměřeno
   tape?: Map<string, number>; // oměrné míry pásmem: „a|b“ → délka [m]
   tsIssues?: Set<'prism' | 'target' | 'atm'>; // chyby nastavení stanice, se kterými se měřilo
+  paver?: PaverSim; // pokládka s 3D řízením (zakázka na dálnici)
 }
 
 const CHECK_TOL = { xy: 0.03, h: 0.05 };
@@ -171,6 +175,7 @@ const CODES: { code: FeatureCode; label: string }[] = [
   { code: 'PROPUSTEK', label: 'Propustek' },
   { code: 'STUDANKA', label: 'Studánka' },
   { code: 'VODOVOD', label: 'Vodovod' },
+  { code: 'KONTROLA', label: 'Kontrola vrstvy' },
 ];
 const GAME_MIN_PER_SEC = 10 / 60; // herní čas běží 10× rychleji
 const INSURANCE = 12000; // jednorázové pojištění vybavení [Kč]
@@ -210,6 +215,11 @@ export class Game {
   private procJob: string | null = null;
   private readonly ctrlScreen: ControllerScreen;
   private readonly tsSoft: TsSoftware;
+  private readonly machinePanel: MachinePanel;
+  private pavingView: PavingView | null = null;
+  private readonly paverIdle = new PaverSim(); // finišer bez naší zakázky jen stojí
+  private paverLock = { ok: false, dist: 0, dh: 0, why: '', t: 0 };
+  private paverWarned = 0; // 1 = varování o dosahu, 2 = ztráta
   private tsCfg: TsConfig = defaultTsConfig();
   private tsGate: (() => void) | null = null; // po nastavení programu pokračovat na zadání stanoviska
   private rigCase: WorldItem | null = null; // kufr, u kterého se rover skládá
@@ -416,6 +426,9 @@ export class Game {
     };
     this.ctrlScreen = new ControllerScreen(root);
     this.tsSoft = new TsSoftware(root);
+    this.machinePanel = new MachinePanel(root);
+    this.machinePanel.onAction = (id, v) => this.machineAction(id, v);
+    this.machinePanel.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     this.tsSoft.onAction = (id, v) => this.tsAction(id, v);
     this.tsSoft.onClose = () => {
       this.tsGate = null;
@@ -574,6 +587,8 @@ export class Game {
     for (const m of world.marks) statics.add(createMarkMesh(m));
     // Statické kusy sloučené podle materiálu: z desítek draw callů pár.
     g.add(mergeStatic(statics));
+    this.pavingView = world.location === 'dalnice' ? new PavingView(world.heightmap) : null;
+    if (this.pavingView) g.add(this.pavingView.group);
     this.trench = world.trench ? new TrenchView(world.trench, world.heightmap) : null;
     if (this.trench) g.add(this.trench.group);
     this.vanMesh = createVehicleMesh(world.vehicle);
@@ -695,6 +710,165 @@ export class Game {
     });
   }
 
+  // ================================================================ finišer a 3D řízení
+
+  /** Pokládka aktivní zakázky na dálnici, jinak stojící finišer. */
+  private paverSim(): PaverSim {
+    const run = this.activeRun();
+    if (run?.paver && run.spec.location === this.world.location) return run.paver;
+    // Po odevzdání zůstane položená vrstva vidět (poslední pokládka v lokalitě).
+    for (const r of this.jobs.values()) if (r.paver && r.spec.location === this.world.location && r.status !== 'nova') return r.paver;
+    return this.paverIdle;
+  }
+
+  /** Zámek stanice na hranol finišeru: stanovisko, orientace, dosah a volná záměra. */
+  private paverLockState(sim: PaverSim): { ok: boolean; dist: number; dh: number; why: string } {
+    const c = this.connected();
+    const prism = paverPrism(sim.x);
+    if (!c) return { ok: false, dist: 0, dh: 0, why: 'Na stavbě není ustavená stanice.' };
+    const ts = c.ts;
+    const dist = Math.hypot(prism.x - ts.center.x, prism.y - ts.center.y, prism.z - ts.center.z);
+    if (!ts.station || ts.orientation === null) return { ok: false, dist, dh: 0, why: 'Stanice nemá stanovisko nebo orientaci.' };
+    const trueH = this.world.frame.toSjtsk(ts.center).H;
+    const dh = ts.station.H + ts.instrumentHeight - trueH;
+    if (dist > PAVING.lockRange) return { ok: false, dist, dh, why: `Hranol je ${Math.round(dist)} m daleko – mimo dosah sledování.` };
+    const d = { x: (prism.x - ts.center.x) / dist, y: (prism.y - ts.center.y) / dist, z: (prism.z - ts.center.z) / dist };
+    const hit = this.world.raycast(ts.center, d, dist);
+    if (hit && hit.t < dist - 0.3) return { ok: false, dist, dh, why: 'Mezi stanicí a hranolem je překážka.' };
+    return { ok: true, dist, dh, why: '' };
+  }
+
+  private paverStep(dt: number): void {
+    const sim = this.paverSim();
+    this.paverLock.t -= dt;
+    if (this.paverLock.t <= 0) {
+      const l = this.paverLockState(sim);
+      this.paverLock = { ...l, t: 0.2 };
+    }
+    const L = this.paverLock;
+    const before = sim.stops;
+    const r = sim.update(dt, L.ok, L.dh, L.dist, () => this.rng.gaussian());
+    if (sim !== this.paverIdle) {
+      if (sim.stops > before) {
+        this.sfx.lost();
+        this.bus.emit('toast', { text: `Finišer zastavil – stanice ztratila hranol (${L.why || 'odpojeno'}). Každé zastavení = příčná spára ve vrstvě. Obnov zámek a pokládka pojede dál.`, tone: 'warn' });
+      }
+      if (r === 'moving' && L.dist > PAVING.maxRange && this.paverWarned < 1) {
+        this.paverWarned = 1;
+        this.bus.emit('toast', { text: `Finišer je ${Math.round(L.dist)} m od stanice. Nad ${PAVING.lockRange} m ji ztratí – přestav stanici dopředu (znovu volné stanovisko na štítky).`, tone: 'warn' });
+      }
+      if (L.dist < PAVING.maxRange - 20) this.paverWarned = 0;
+      if (r === 'done' && sim.running) {
+        sim.running = false;
+        this.sfx.success();
+        this.bus.emit('toast', { text: 'Pokládka úseku dokončena. Teď kontrola za finišerem: změř kontrolní profily (sprejové značky) s kódem Kontrola vrstvy.' });
+      }
+      // Kontrolní body leží na položeném asfaltu (hrot výtyčky na povrch vrstvy).
+      for (const f of this.world.features) {
+        if (f.code !== 'KONTROLA') continue;
+        const top = sim.laidTop(f.pos.x, f.pos.z);
+        if (top !== null) (f.pos as { y: number }).y = top;
+      }
+    }
+  }
+
+  private openMachinePanel(): void {
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.sfx.click();
+    this.machinePanel.show();
+    this.machinePanel.update(this.machineView());
+  }
+
+  private machineView(): MachineView {
+    const sim = this.paverSim();
+    const L = this.paverLock;
+    const mine = sim !== this.paverIdle;
+    const c = this.connected();
+    const ready = !!c && !!c.ts.station && c.ts.orientation !== null;
+    const km = (12 + Math.max(0, sim.x - PAVING.x0) / 1000).toFixed(3).replace('.', ',');
+    const mm = (v: number): string => `${v >= 0 ? '+' : '−'}${Math.abs(v * 1000).toFixed(0)} mm`;
+    let dev: MachineView['dev'] = null;
+    if (sim.tracking && L.ok && sim.laid.length) {
+      const d = sim.laid[sim.laid.length - 1].dev;
+      // Panel ukazuje, co systém vidí: chybu desky proti modelu (po kalibraci ~0).
+      const shown = (v: number): number => v - (PAVER_MODELS.find((m) => m.id === sim.model)?.offset ?? 0) - (sim.calibrated ? 0 : 0.018) + L.dh;
+      dev = { left: mm(shown(d[0])), right: mm(shown(d[2])), slope: `${(PAVING.crossSlope * 100).toFixed(2).replace('.', ',')} %` };
+    }
+    const next: MachineView['next'] = !mine
+      ? { page: 'home', text: 'Finišer čeká na geodeta – převezmi zakázku 3D řízení pokládky.' }
+      : !sim.model
+        ? { page: 'model', text: 'Vyber 3D model vrstvy, která se dnes pokládá (podle zadání zakázky).' }
+        : !ready
+          ? { page: 'station', text: 'Ustav stanici u trasy (volné stanovisko na štítky) a zorientuj ji.' }
+          : !sim.calibrated
+            ? { page: 'calib', text: 'Kalibruj desku: stanice změří hranol na stožáru.' }
+            : !sim.tracking
+              ? { page: 'station', text: 'Připoj stanici a zapni sledování hranolu.' }
+              : !sim.running && !sim.done
+                ? { page: 'home', text: 'Vše připraveno – spusť pokládku.' }
+                : null;
+    const log: string[] = [];
+    if (mine) {
+      if (sim.stops) log.push(`Zastavení kvůli ztrátě signálu: ${sim.stops}× (příčné spáry)`);
+      if (sim.done) log.push('Úsek položen. Kontrola za finišerem čeká.');
+    }
+    return {
+      status: {
+        lock: !sim.tracking ? 'off' : L.ok ? 'ok' : 'lost',
+        km,
+        dist: c ? `${Math.round(L.dist)} m od TPS` : 'bez TPS',
+        speed: sim.running && L.ok && !sim.done ? `${(PAVING.speed * 6).toFixed(1).replace('.', ',')} m/min` : 'stojí',
+      },
+      dev,
+      next,
+      models: PAVER_MODELS.map((m) => ({ id: m.id, file: m.file, label: m.label })),
+      model: sim.model,
+      calibrated: sim.calibrated,
+      calibText: sim.calibrated ? 'Deska kalibrovaná: offset stožáru 3,000 m uložen.' : 'Deska není kalibrovaná – jede o offset stožáru vedle (≈ +18 mm).',
+      station: [
+        c ? `Stanice na ${c.tripod.overMarkId ? this.markNo(c.tripod.overMarkId) : 'volném stanovisku'}${ready ? ', stanovisko a orientace OK' : ', bez stanoviska nebo orientace'}.` : 'Stanice není ustavená.',
+        c ? `Vzdálenost k hranolu finišeru: ${Math.round(L.dist)} m (spolehlivě do ${PAVING.maxRange} m, ztráta nad ${PAVING.lockRange} m).` : '',
+        L.why ? `Stav: ${L.why}` : sim.tracking ? 'Stav: hranol zamčený, sleduje se.' : 'Stav: nepřipojeno.',
+      ].filter(Boolean),
+      canTrack: mine && ready,
+      tracking: sim.tracking,
+      running: sim.running,
+      canStart: mine && sim.tracking && !!sim.model && !sim.done,
+      log,
+    };
+  }
+
+  private machineAction(id: string, arg?: string): void {
+    const sim = this.paverSim();
+    if (sim === this.paverIdle) return;
+    this.sfx.click();
+    switch (id) {
+      case 'model':
+        sim.model = (arg as PaverSim['model']) ?? sim.model;
+        return;
+      case 'calib':
+        if (this.paverLock.ok || this.paverLockState(sim).ok) {
+          sim.calibrated = true;
+          this.bus.emit('toast', { text: 'Kalibrace desky: stanice změřila hranol na stožáru, výška hrany desky uložena.' });
+        } else this.bus.emit('toast', { text: `Kalibrace nejde: ${this.paverLockState(sim).why}`, tone: 'warn' });
+        return;
+      case 'track':
+        sim.tracking = true;
+        this.bus.emit('toast', { text: 'Stanice sleduje 360° hranol na stožáru desky (ATR zámek).' });
+        return;
+      case 'untrack':
+        sim.tracking = false;
+        return;
+      case 'start':
+        sim.running = true;
+        this.bus.emit('toast', { text: 'Pokládka běží. Hlídej zámek stanice a vzdálenost – nad 150 m přestav stanici dopředu.' });
+        return;
+      case 'stop':
+        sim.running = false;
+        return;
+    }
+  }
+
   // ================================================================ jízda po krajině
 
   /** Cesta, kterou hráč jede sám: odkud, kam a jestli už opustil výjezd, ze kterého vyjel. */
@@ -765,6 +939,7 @@ export class Game {
       this.proc.isOpen ||
       this.ctrlScreen.isOpen ||
       this.tsSoft.isOpen ||
+      this.machinePanel.isOpen ||
       this.traveling
     );
   }
@@ -790,6 +965,18 @@ export class Game {
   }
 
   private registerInteractables(): void {
+    if (this.world.location === 'dalnice')
+      this.interaction.register({
+        id: 'paver-panel',
+        radius: 2.2,
+        center: () => {
+          const x = this.paverSim().x + 2.2;
+          return { x, y: designTop(x, 0) + 1.4, z: 0 };
+        },
+        isActive: () => !this.driving,
+        prompt: () => ({ verb: 'Otevřít', target: 'řídicí panel finišeru (3D)', available: true }),
+        use: () => this.openMachinePanel(),
+      });
     for (const item of this.items) {
       const def = ITEM_DEFS[item.kind];
       const deployed = (): boolean => item.state === 'deployed';
@@ -1576,6 +1763,8 @@ export class Game {
       }
     }
     if (run.mapping && run.buried) this.buriedToast();
+    else if (run.mapping && run.paver && run.paver.laidTop(truePos.x, truePos.z) === null && code === 'KONTROLA')
+      setTimeout(() => this.bus.emit('toast', { text: 'Tady ještě není položeno – kontrola až za finišerem.', tone: 'warn' }), 1200);
     else if (run.mapping) {
       const f = run.mapping.onMeasured(p.id, code, truePos);
       if (f) setTimeout(() => this.bus.emit('toast', { text: `${f.label} zaměřen` }), 1800);
@@ -2322,9 +2511,15 @@ export class Game {
             steps.push({ text: `Přestav stanici na ${this.markNo(ph.at)} a orientuj ji zpět na ${this.markNo(ph.on)}`, done: have >= total && !!pc && pc.ts.orientation !== null });
           } else if (spec.freeStation) {
             const res = c ? (this.resections.get(c.tripod.id)?.length ?? 0) : 0;
-            steps.push({ text: 'Postav stativ na volném místě s výhledem na štítky 901, 902, 903 a ustav stanici', done: !!c });
+            steps.push({ text: spec.paving ? 'Postav stativ na krajnici u začátku úseku (šipka) s výhledem na štítky a ustav stanici' : 'Postav stativ na volném místě s výhledem na štítky 901, 902, 903 a ustav stanici', done: !!c });
             steps.push({ text: `Režim bez hranolu: zamiř přesně na střed štítku (Jemně) a změř aspoň 2 štítky (${Math.min(res, 3)} z 2)`, done: !!c && (!!c.ts.station || res >= 2) });
             steps.push({ text: 'V tabletu (Stanice) zkontroluj opravy a přijmi volné stanovisko', done: !!c && !!c.ts.station });
+            if (spec.paving && run.paver) {
+              const pv = run.paver;
+              steps.push({ text: 'U finišeru otevři řídicí panel 3D a vyber model vrstvy podle zadání', done: !!pv.model });
+              steps.push({ text: 'Kalibruj desku (stanice změří hranol na stožáru) a připoj stanici', done: pv.calibrated && pv.tracking });
+              steps.push({ text: 'Spusť pokládku a hlídej zámek; nad 150 m přestav stanici dopředu', done: pv.done });
+            }
           } else {
             const at = this.markNo(spec.stationAt);
             const on = this.markNo(spec.orientOn);
@@ -2422,6 +2617,10 @@ export class Game {
           }
           const ph = this.stationPhase(spec);
           const pc = this.phaseStation(spec);
+          if (pc && spec.paving && run.paver && pc.ts.station && (!run.paver.model || !run.paver.calibrated || !run.paver.tracking || !run.paver.running)) {
+            const x = run.paver.x + 2.2;
+            return { x, y: designTop(x, 0), z: 0 };
+          }
           if (!pc && spec.freeAt) return { x: spec.freeAt.x, y: this.world.heightmap.heightAt(spec.freeAt.x, spec.freeAt.z), z: spec.freeAt.z };
           if (!pc) return this.world.marks.find((m) => m.id === ph.at)?.pos ?? null;
           if (pc.ts.station && pc.ts.orientation === null) return this.world.marks.find((m) => m.id === ph.on)?.pos ?? null;
@@ -2514,12 +2713,25 @@ export class Game {
             if (c && spec.traverse?.length)
               return `Přestav stanici na ${this.markNo(ph.at)}: s kufrem zamiř na stativ a sundej stanici, stativ slož, rozlož ho nad ${this.markNo(ph.at)} a stanici znovu nasaď a ustav.`;
             if (t?.state === 'deployed' && !t.secured) return 'Sešlápni nohy stativu (s prázdnýma rukama zamiř na stativ), pak nasaď stanici z kufru.';
-            if (spec.freeStation) return 'Rozlož stativ kdekoli na staveništi, odkud jsou vidět štítky 901, 902 a 903 (šipka ukazuje dobré místo), sešlápni nohy, nasaď stanici a ustav ji.';
+            if (spec.freeStation)
+              return spec.paving
+                ? 'Rozlož stativ na krajnici u začátku úseku (šipka), odkud vidíš štítky na protihlukové stěně a sloupech osvětlení, sešlápni nohy, nasaď stanici a ustav ji.'
+                : 'Rozlož stativ kdekoli na staveništi, odkud jsou vidět štítky 901, 902 a 903 (šipka ukazuje dobré místo), sešlápni nohy, nasaď stanici a ustav ji.';
             return `Rozlož stativ nad ${this.markNo(ph.at)}, sešlápni nohy, nasaď stanici z kufru a ustav ji.`;
           }
           {
             const miss = this.tsMissingNow();
             if (miss.length) return `V programu stanice (v dalekohledu tlačítko Program): ${this.tsMissText(miss[0])}`;
+          }
+          if (spec.paving && run.paver && pc.ts.station) {
+            const pv = run.paver;
+            if (!pv.model || !pv.calibrated || !pv.tracking) return 'Dojdi k finišeru a otevři řídicí panel 3D: vyber model vrstvy, kalibruj desku a připoj stanici.';
+            if (!pv.done) {
+              const L = this.paverLock;
+              if (!pv.running) return 'Řídicí panel finišeru: spusť pokládku.';
+              if (!L.ok) return `Finišer stojí: ${L.why} Obnov zámek – případně přestav stanici blíž k finišeru.`;
+              return L.dist > PAVING.maxRange ? `Finišer je ${Math.round(L.dist)} m od stanice – přestav stanici dopředu (volné stanovisko na štítky), než ji ztratí!` : `Pokládka běží (km ${(12 + (pv.x - PAVING.x0) / 1000).toFixed(3).replace('.', ',')}), finišer ${Math.round(L.dist)} m od stanice. Hlídej zámek.`;
+            }
           }
           if (!pc.ts.station)
             return spec.freeStation
@@ -2786,6 +2998,7 @@ export class Game {
     { id: 'dxf', label: 'Výkres DXF a seznam souřadnic zaměřených prvků' },
     { id: 'niv', label: 'Nivelační zápisník a výpočet výšky' },
     { id: 'gp', label: 'Geometrický plán' },
+    { id: 'kont', label: 'Protokol kontroly pokládky (výšky vrstvy)' },
   ];
 
   private correctOutput(run: JobRun): string {
@@ -3071,6 +3284,7 @@ export class Game {
       if (this.ctrl.missing().length) return 'gnss-ctrl';
       return run?.spec.type === 'vytyceni' ? 'stakeout' : 'gnss-measure';
     }
+    if (run?.spec.paving && run.spec.location === this.world.location && this.connected()) return 'paving';
     if (active?.kind === 'tripod' || active?.kind === 'tsCase') return 'tripod';
     if (active?.kind === 'prismPole' || this.connected()) return 'ts-measure';
     if (active?.kind === 'level' || active?.kind === 'rod' || run?.spec.type === 'nivelace') return 'level';
@@ -4235,6 +4449,7 @@ export class Game {
       const nz = w.marks.find((m) => m.id === run.spec.levelFrom);
       if (nz) run.level = new LevelLine(nz.id, nz.number, nz.catalog.H);
     }
+    if (run.spec.paving) run.paver = new PaverSim();
     if (run.spec.deadlineMin) run.deadline = { day: this.career.day, min: this.clockMin + run.spec.deadlineMin };
     if (run.spec.type === 'polohopis') {
       const ids = run.spec.featureIds;
@@ -4245,6 +4460,7 @@ export class Game {
   private jobComplete(run: JobRun): boolean {
     if (run.level) return run.level.closure !== null && run.level.heights.points.has(run.spec.levelTo ?? '');
     if (run.mapping?.complete && !this.tapeDone(run)) return !!run.buried;
+    if (run.paver && !run.paver.done) return false;
     return !!(run.recon?.complete || run.stake?.complete || run.mapping?.complete || run.buried);
   }
 
@@ -4405,6 +4621,23 @@ export class Game {
     } else if (run.mapping && run.buried && !run.mapping.complete) {
       ok = false;
       text = `Výkop byl zasypán dřív, než se potrubí zaměřilo: zaměřeno ${run.mapping.found.size} z ${run.mapping.required.length} bodů. Skutečné provedení přípojky nejde doložit.`;
+    } else if (run.mapping && run.paver) {
+      const pv = run.paver;
+      const pts = new Map(this.log.points.map((p) => [p.id, p]));
+      let bad = 0;
+      const rows = run.mapping.required.map((f) => {
+        const pt = pts.get(run.mapping?.found.get(f.id) ?? '');
+        if (!pt) {
+          bad++;
+          return `${f.label.replace('Kontrolní profil ', '')}: chybí`;
+        }
+        const design = w.frame.toSjtsk({ x: f.pos.x, y: designTop(f.pos.x, f.pos.z), z: f.pos.z }).H;
+        const d = pt.Z - design;
+        if (Math.abs(d) > 0.01) bad++;
+        return `${f.label.replace('Kontrolní profil ', '')} ${d >= 0 ? '+' : '−'}${Math.abs(d * 1000).toFixed(0)} mm`;
+      });
+      ok = bad === 0 && run.mapping.wrongCode === 0 && pv.stops <= 1;
+      text = `Kontrola za finišerem (tolerance ±10 mm): ${rows.join(', ')}.${bad ? ` Mimo toleranci: ${bad}.` : ' Vše v toleranci.'}${pv.stops ? ` Finišer stál ${pv.stops}× kvůli ztrátě signálu (příčné spáry)${pv.stops > 1 ? ' – investor reklamuje' : ''}.` : ' Pokládka bez zastavení.'}`;
     } else if (run.mapping) {
       ok = run.mapping.wrongCode === 0;
       const tapeTxt = this.tapeCheck(run);
@@ -4981,6 +5214,7 @@ export class Game {
     if (!this.traveling) this.clockMin += dt * GAME_MIN_PER_SEC;
     if (this.started && !this.traveling) this.batteryTick(dt * GAME_MIN_PER_SEC);
     if (this.started) this.checkDeadlines();
+    if (this.started && !this.traveling && this.world.location === 'dalnice') this.paverStep(dt);
     if (this.started && !this.traveling) this.windCheck(dt);
     if (this.started && !this.traveling && !this.helper.inVan) {
       // Když Pepa něco nese k tobě, míří tam, kde zrovna stojíš.
@@ -5114,6 +5348,8 @@ export class Game {
     if (this.officeScreen.isOpen) this.officeScreen.update(this.officeView());
     if (this.ctrlScreen.isOpen) this.ctrlScreen.update(this.controllerView());
     if (this.tsSoft.isOpen) this.tsSoft.update(this.tsView());
+    if (this.machinePanel.isOpen) this.machinePanel.update(this.machineView());
+    this.pavingView?.update(this.paverSim(), performance.now() / 1000);
     this.bench.update(dt);
     this.setupScreen.render();
 

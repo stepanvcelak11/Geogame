@@ -12,7 +12,8 @@ export type FeatureCode =
   | 'PEVNY_BOD'
   | 'PROPUSTEK'
   | 'STUDANKA'
-  | 'VODOVOD';
+  | 'VODOVOD'
+  | 'KONTROLA';
 
 export type MeasurementMethod = 'polarni' | 'gnss_rtk' | 'nivelace' | 'katalog';
 

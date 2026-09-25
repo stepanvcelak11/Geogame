@@ -27,6 +27,8 @@ export interface JobSpec {
   /** Volné stanovisko (bez bodu pod stanicí) a doporučené místo pro stativ. */
   freeStation?: boolean;
   freeAt?: { x: number; z: number };
+  /** 3D řízení finišeru na dálnici (pokládka + kontrola za finišerem). */
+  paving?: boolean;
   /** Za kolik herních minut od převzetí bagr výkop zasype. */
   deadlineMin?: number;
   /** Oměrné míry pásmem: dvojice prvků (sousední rohy budovy). */
@@ -122,6 +124,26 @@ export const JOBS: JobSpec[] = [
     freeAt: { x: 5, z: 24 },
     stationTask: 'Zaměř uliční vpusti 1 a 2 (hranol na mříž, kód Vpust)',
     pay: 5400,
+    kit: ['tripod', 'tsCase', 'prismPole'],
+    difficulty: 2,
+  },
+  {
+    id: 'dalnice-finiser',
+    title: '3D řízení finišeru a kontrola pokládky',
+    client: 'Silnice Polabí a.s. – stavba D35',
+    location: 'dalnice',
+    type: 'polohopis',
+    brief:
+      'Dnes se na pravém pásu pokládá ložná vrstva ACL 22+ tl. 60 mm. Finišer má 3D řízení: robotická stanice sleduje 360° hranol na stožáru desky. Postav stanici na krajnici u začátku úseku, volné stanovisko na odrazné štítky (stěna, sloupy osvětlení), v programu stanice nastav zakázku. U finišeru v řídicím panelu vyber model ložné vrstvy, kalibruj desku, připoj stanici a spusť pokládku. Nad 150 m od stanice ji přestav dopředu, jinak finišer zastaví (příčná spára). Nakonec kontrola za finišerem: tři profily (vlevo, osa, vpravo) s kódem Kontrola vrstvy, tolerance ±10 mm.',
+    tolerance: { xy: 0.15 },
+    featureIds: ['kontrola-1-L', 'kontrola-1-O', 'kontrola-1-P', 'kontrola-2-L', 'kontrola-2-O', 'kontrola-2-P', 'kontrola-3-L', 'kontrola-3-O', 'kontrola-3-P'],
+    requireStation: true,
+    freeStation: true,
+    freeAt: { x: -140, z: -8 },
+    paving: true,
+    output: 'kont',
+    stationTask: 'Kontrola za finišerem: hranol na sprejové značky v profilech, kód Kontrola vrstvy',
+    pay: 16800,
     kit: ['tripod', 'tsCase', 'prismPole'],
     difficulty: 2,
   },

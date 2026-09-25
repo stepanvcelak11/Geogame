@@ -5,6 +5,7 @@ import { SjtskFrame } from '../geodesy/CoordinateSystem';
 import { ColliderSet } from './Colliders';
 import { Heightmap } from './Heightmap';
 import { LOCATIONS } from './locations';
+import { baseAxis, baseTop, designTop, PAVING } from '../jobs/Paving';
 import { Noise2D } from './Noise';
 import {
   World,
@@ -98,6 +99,7 @@ export function frameFor(location: LocationId): SjtskFrame {
 /** Deterministicky vygeneruje lokalitu. */
 export function generateWorld(location: LocationId): World {
   if (location === 'kraj') return generateRegion();
+  if (location === 'dalnice') return generateHighway();
   return location === 'louka' ? generateMeadow() : location === 'kancelar' ? generateOffice() : location === 'les' ? generateForest() : generateSite();
 }
 
@@ -807,6 +809,109 @@ function generateForest(): World {
   });
 }
 
+// ------------------------------------------------------------------ stavba dálnice
+
+/** Příčné uspořádání (z): náš pás −5…5, střední dělicí pás, hotový protější pás, staveništní cesta, protihluková stěna. */
+export const HIGHWAY = { paveHalf: 5.2, medianZ: 7, farZ0: 9, farZ1: 20, serviceZ: -10, barrierZ: -13.5, lampZ: 22.5, xMin: -240, xMax: 240 };
+
+function generateHighway(): World {
+  const loc = LOCATIONS.dalnice;
+  const frame = frameFor('dalnice');
+  const rng = new Rng(loc.seed);
+  const terrainNoise = new Noise2D(rng);
+  const forestNoise = new Noise2D(rng);
+  const { size, cell } = CONFIG.world;
+  const half = size / 2;
+  const H = HIGHWAY;
+  // Okolí: mírně zvlněné pole, těleso dálnice na náspu/v zářezu kolem nivelety.
+  const raw = (x: number, z: number): number => baseAxis(x) - 1.6 + terrainNoise.fbm(x / 160, z / 160, 4) * 7 + terrainNoise.fbm(x / 30, z / 30, 2) * 0.4;
+  const corridor = (x: number, z: number): number | null => {
+    if (z >= -H.paveHalf && z <= H.paveHalf) return baseTop(x, Math.max(-PAVING.halfWidth - 0.6, Math.min(PAVING.halfWidth + 0.6, z)));
+    if (z > H.paveHalf && z < H.farZ0) return baseAxis(x) - 0.35; // dělicí pás
+    if (z >= H.farZ0 && z <= H.farZ1) return designTop(x, 0) + 0.04 - 0.025 * (z - H.farZ0); // hotový protější pás
+    if (z < -H.paveHalf && z > H.barrierZ - 0.8) return baseAxis(x) - 0.25; // krajnice a staveništní cesta
+    return null;
+  };
+  const heightmap = Heightmap.generate(size, cell, (x, z) => {
+    const r = raw(x, z);
+    const c = corridor(x, z);
+    if (c !== null) return c;
+    // Svahy náspu / zářezu 1 : 2 k okolnímu terénu.
+    const edge = z > 0 ? H.farZ1 : H.barrierZ - 0.8;
+    const d = Math.abs(z - edge);
+    const ce = corridor(x, z > 0 ? H.farZ1 : H.barrierZ - 0.5) ?? r;
+    const w = 1 - smoothstep(0, Math.max(3, Math.abs(ce - r) * 2.2), d);
+    const e = smoothstep(half * 0.8, half, Math.max(Math.abs(x), Math.abs(z)));
+    return lerp(r, ce, w) + e * e * 20;
+  });
+  const c: Ctx = { rng, heightmap, frame, colliders: new ColliderSet(8), marks: [], clear: [{ x: 0, z: 0, r: 0 }] };
+  const scenery: SceneryItem[] = [];
+  // Protihluková stěna (panely po 4 m) a sloupy osvětlení za protějším pásem.
+  for (let x = H.xMin; x < H.xMax; x += 4) {
+    const gy = heightmap.heightAt(x + 2, H.barrierZ);
+    scenery.push({ kind: 'barrier', x: x + 2, z: H.barrierZ, yaw: 0, w: 4, d: 0.22, h: 3, groundY: gy });
+    c.colliders.add({ kind: 'box', minX: x, maxX: x + 4, minZ: H.barrierZ - 0.11, maxZ: H.barrierZ + 0.11, yMin: gy - 1, yMax: gy + 3, tag: 'prop' });
+  }
+  for (let x = H.xMin + 25; x < H.xMax; x += 50) {
+    const gy = heightmap.heightAt(x, H.lampZ);
+    scenery.push({ kind: 'lamp', x, z: H.lampZ, yaw: 0, w: 0.3, d: 0.3, h: 10, groundY: gy });
+    c.colliders.add({ kind: 'circle', x, z: H.lampZ, r: 0.13, yMin: gy - 1, yMax: gy + 10, tag: 'trunk' });
+  }
+  // Odrazné štítky: na sloupcích stěny (strana k dálnici) a na sloupech osvětlení.
+  const stitek = (num: string, x: number, y: number, z: number, facing: number, where: string): void => {
+    const cat = frame.toSjtsk({ x, y, z });
+    const catalog = { Y: round(cat.Y, 3), X: round(cat.X, 3), H: round(cat.H, 3) };
+    c.marks.push({ id: `ST-${num}`, number: num, type: 'ST', stabilization: 'Odrazný štítek 60 × 60 mm', description: `${where}. Měří se bez hranolu, zamiř přesně na střed terče.`, pos: frame.toWorld(catalog), catalog, condition: 'ok', facing });
+  };
+  let k = 0;
+  for (let x = -200; x <= 200; x += 50) {
+    const gy = heightmap.heightAt(x, H.barrierZ);
+    stitek(String(1201 + k++), x, gy + 1.6, H.barrierZ + 0.11, 0, `Protihluková stěna, sloupek u km ${(12 + (x + 150) / 1000).toFixed(3).replace('.', ',')}`);
+  }
+  for (let x = H.xMin + 25; x < H.xMax; x += 50) {
+    const gy = heightmap.heightAt(x, H.lampZ);
+    stitek(String(1201 + k++), x, gy + 1.8, H.lampZ - 0.13, Math.PI, 'Sloup osvětlení za protějším pásem');
+  }
+  // Bod bodového pole u staveništní cesty (kontrola GNSS).
+  addMark(c, 'PBPP', '1250', -205, H.serviceZ + 2.4, heightmap.heightAt(-205, H.serviceZ + 2.4) + 0.05, 'Měřický hřeb v obrubě staveništní cesty', 'Začátek úseku, u vjezdu na staveniště.');
+  // Kontrolní profily za finišerem: body vlevo, v ose, vpravo (vystříkané značky).
+  const features: FeatureInfo[] = [];
+  PAVING.checkX.forEach((cx, i) =>
+    PAVING.checkZ.forEach((cz, j) =>
+      features.push({
+        id: `kontrola-${i + 1}-${'LOP'[j]}`,
+        code: 'KONTROLA',
+        label: `Kontrolní profil km ${(12 + (cx - PAVING.x0) / 1000).toFixed(3).replace('.', ',')} ${['vlevo', 'osa', 'vpravo'][j]}`,
+        pos: { x: cx, y: designTop(cx, cz), z: cz },
+      }),
+    ),
+  );
+  const vehicle = vehicleAt(-215, H.serviceZ, -Math.PI / 2, heightmap);
+  const blocked = (x: number, z: number): boolean => (z > H.barrierZ - 12 && z < H.lampZ + 10) || Math.hypot(x - vehicle.x, z - vehicle.z) < 12;
+  const trees = scatterTrees(c, forestNoise, blocked, (_x, _z, forest) => 0.02 + 0.5 * forest * forest);
+  return new World({
+    location: 'dalnice',
+    name: loc.name,
+    frame,
+    heightmap,
+    colliders: c.colliders,
+    trees,
+    marks: c.marks,
+    vehicle,
+    road: { surface: 'dirt', z: H.serviceZ, halfWidth: 2.4, xMin: H.xMin, xMax: H.xMax, curbHeight: 0, curbWidth: 0, inlets: [] },
+    building: null,
+    fence: null,
+    parcels: [],
+    features,
+    flatRadius: 0,
+    scenery,
+    water: [],
+    fields: [],
+    spawn: { x: vehicle.x + 3, z: vehicle.z + 2.5, yaw: 0 },
+    itemSpawns: [],
+  });
+}
+
 // ------------------------------------------------------------------ krajina se silnicemi
 
 /** Silnice krajiny: z křižovatky u Kněžívky ke kanceláři, stavbě, louce a lesu. */
@@ -818,6 +923,7 @@ export const REGION = {
     { to: 'stavba' as const, label: 'Nová Ves', pts: [[0, 0], [30, -120], [-40, -260], [-10, -420], [-90, -580], [-60, -730]] },
     { to: 'louka' as const, label: 'Kněžívka – louka', pts: [[0, 0], [140, -20], [300, 40], [460, -10], [600, 30], [730, 10]] },
     { to: 'les' as const, label: 'Hrušov – lesy', pts: [[0, 0], [-30, 150], [40, 300], [-20, 460], [60, 600], [30, 730]] },
+    { to: 'dalnice' as const, label: 'D35 – stavba dálnice', pts: [[0, 0], [110, 90], [250, 120], [400, 220], [540, 250], [690, 330]] },
   ],
   halfWidth: 3.1,
 };
@@ -877,6 +983,16 @@ function generateRegion(): World {
   for (const l of lanes) {
     const pts = l.pts as { x: number; z: number; y: number }[];
     for (let i = 0; i < Math.min(40, pts.length); i++) pts[i].y = y0 + (pts[i].y - y0) * (i / 40);
+    // Podélný sklon nejvýš 7 % (průchod tam a zpět).
+    const g = 0.07;
+    for (let i = 1; i < pts.length; i++) {
+      const ds = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z);
+      pts[i].y = Math.max(pts[i - 1].y - g * ds, Math.min(pts[i - 1].y + g * ds, pts[i].y));
+    }
+    for (let i = pts.length - 2; i >= 1; i--) {
+      const ds = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].z - pts[i].z);
+      pts[i].y = Math.max(pts[i + 1].y - g * ds, Math.min(pts[i + 1].y + g * ds, pts[i].y));
+    }
   }
 
   // Terén: surový, u silnic srovnaný na výšku vozovky (razítko vzdálenosti po buňkách).

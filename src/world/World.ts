@@ -5,7 +5,7 @@ import type { ItemKind } from '../items/items';
 import { rayObb, resolveCircleObb, type ColliderSet, type ColliderTag, type Obb } from './Colliders';
 import type { Heightmap } from './Heightmap';
 
-export type LocationId = 'kancelar' | 'stavba' | 'louka' | 'les' | 'kraj';
+export type LocationId = 'kancelar' | 'stavba' | 'louka' | 'les' | 'kraj' | 'dalnice';
 
 export interface TreeInstance {
   x: number;
@@ -113,7 +113,9 @@ export type SceneryKind =
   | 'sign'
   | 'post'
   | 'culvert'
-  | 'well';
+  | 'well'
+  | 'barrier'
+  | 'lamp';
 
 export interface SceneryItem {
   kind: SceneryKind;

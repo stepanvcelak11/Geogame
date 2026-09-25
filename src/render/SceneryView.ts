@@ -245,6 +245,25 @@ function culvert(s: SceneryItem): THREE.Group {
   return g;
 }
 
+/** Panel protihlukové stěny (4 m) se sloupkem HEB na začátku. */
+function barrier(s: SceneryItem): THREE.Group {
+  const g = new THREE.Group();
+  g.add(box(s.w, s.h - 0.4, 0.14, tmat('planks', 0x6f7f68), 0, (s.h - 0.4) / 2 + 0.4, 0));
+  g.add(box(s.w, 0.4, 0.2, lambert(PALETTE.concrete, 'barrierfoot'), 0, 0.2, 0));
+  g.add(box(0.18, s.h + 0.1, 0.22, lambert(0x5d6268, 'heb'), -s.w / 2, (s.h + 0.1) / 2, 0));
+  return g;
+}
+
+/** Sloup veřejného osvětlení s výložníkem nad vozovkou. */
+function lamp(s: SceneryItem): THREE.Group {
+  const g = new THREE.Group();
+  const m = lambert(0x9aa0a6, 'lamppole');
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.13, s.h, 8).translate(0, s.h / 2, 0), m));
+  g.add(box(0.08, 0.08, 2.2, m, 0, s.h - 0.1, -1.1));
+  g.add(box(0.5, 0.12, 0.25, lambert(0x2b2e31, 'lamphead'), 0, s.h - 0.2, -2.1));
+  return g;
+}
+
 /** Kamenná obruba studánky s hladinou. */
 function well(s: SceneryItem): THREE.Group {
   const g = new THREE.Group();
@@ -277,6 +296,8 @@ const BUILDERS: Partial<Record<SceneryItem['kind'], (s: SceneryItem) => THREE.Gr
   culvert,
   sign,
   well,
+  barrier,
+  lamp,
   house,
   office,
   garage,

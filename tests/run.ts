@@ -974,7 +974,7 @@ const world = generateWorld('stavba');
 // --- Krajina se silnicemi
 {
   const w = generateWorld('kraj');
-  check('krajina: 4 výjezdy (kancelář, stavba, louka, les)', (w.exits ?? []).map((e) => e.location).sort().join() === 'kancelar,les,louka,stavba');
+  check('krajina: 5 výjezdů (kancelář, stavba, louka, les, dálnice)', (w.exits ?? []).map((e) => e.location).sort().join() === 'dalnice,kancelar,les,louka,stavba');
   const bad = (w.lanes ?? []).flatMap((l) => l.pts.filter((_, i) => i % 10 === 0).filter((p) => Math.abs(w.heightmap.heightAt(p.x, p.z) - p.y) > 0.25));
   check('krajina: terén pod silnicí sedí s vozovkou', bad.length === 0, `${bad.length} bodů mimo`);
   let grade = 0;
@@ -1008,6 +1008,75 @@ const world = generateWorld('stavba');
   const truth = w.frame.toSjtsk(center);
   const e = res ? Math.hypot(res.station.Y - truth.Y, res.station.X - truth.X) : 1;
   check('volné stanovisko na štítky do 1 cm', e < 0.01, `${(e * 1000).toFixed(1)} mm`);
+}
+
+// --- 3D řízení finišeru
+{
+  const { PaverSim, PAVING, designTop } = await import('../src/jobs/Paving');
+  const { Rng } = await import('../src/core/Rng');
+  const run = (setup: (p: InstanceType<typeof PaverSim>) => void, lockFn: (x: number) => boolean = () => true) => {
+    const p = new PaverSim();
+    const r = new Rng(3);
+    setup(p);
+    p.tracking = true;
+    p.running = true;
+    for (let t = 0; t < 400 && !p.done; t += 0.1) p.update(0.1, lockFn(p.x), 0, 60, () => r.gaussian());
+    return p;
+  };
+  const good = run((p) => ((p.model = 'lozna'), (p.calibrated = true)));
+  const worst = Math.max(...good.laid.map((l) => Math.max(...l.dev.map(Math.abs))));
+  check('správně nastavený finišer položí vrstvu do ±5 mm', good.done && worst < 0.005, `${(worst * 1000).toFixed(1)} mm`);
+  const wrong = run((p) => ((p.model = 'obrusna'), (p.calibrated = true)));
+  check('špatný model (obrusná) = vrstva o 4 cm výš', Math.abs(wrong.laid[50].dev[1] - 0.04) < 0.004);
+  const uncal = run((p) => (p.model = 'lozna'));
+  check('nekalibrovaná deska = soustavně +18 mm', Math.abs(uncal.laid[50].dev[1] - 0.018) < 0.004);
+  let flip = 0;
+  const lost = run((p) => ((p.model = 'lozna'), (p.calibrated = true)), (x) => !(x > -40 && x < -39 && flip++ < 30));
+  check('ztráta zámku finišer zastaví (příčná spára)', lost.stops === 1 && lost.done);
+  const top = good.laidTop(0, 3.5)!;
+  check('položená plocha má příčný sklon 2,5 %', Math.abs(top - designTop(0, 3.5)) < 0.006 && Math.abs(designTop(0, -3.5) - designTop(0, 3.5) - 0.175) < 1e-9);
+  void PAVING;
+}
+
+// --- Stavba dálnice: štítky, stanovisko, zámek na finišer
+{
+  const { TotalStation } = await import('../src/survey/TotalStation');
+  const { solveResection } = await import('../src/survey/FreeStation');
+  const { Rng } = await import('../src/core/Rng');
+  const { JOBS } = await import('../src/jobs/JobCatalog');
+  const { paverPrism } = await import('../src/render/PavingView');
+  const { PAVING } = await import('../src/jobs/Paving');
+  const w = generateWorld('dalnice');
+  const job = JOBS.find((j) => j.id === 'dalnice-finiser')!;
+  check('dálnice: kontrolní body zakázky existují', job.featureIds!.every((id) => w.features.some((f) => f.id === id)));
+  const at = job.freeAt!;
+  const center = { x: at.x, y: w.heightmap.heightAt(at.x, at.z) + 1.55, z: at.z };
+  const ts = new TotalStation(center, null, 0, new Rng(8));
+  const obs = w.marks
+    .filter((m) => m.type === 'ST' && Math.hypot(m.pos.x - center.x, m.pos.z - center.z) < 160)
+    .map((m) => {
+      const d = { x: m.pos.x - center.x, y: m.pos.y - center.y, z: m.pos.z - center.z };
+      const l = Math.hypot(d.x, d.y, d.z);
+      const r = ts.shoot({ x: d.x / l, y: d.y / l, z: d.z / l }, w, [], 'reflectorless');
+      return r.ok && Math.hypot(r.shot.hit.x - m.pos.x, r.shot.hit.y - m.pos.y, r.shot.hit.z - m.pos.z) < 0.04
+        ? { markId: m.id, number: m.number, known: m.catalog, hz: r.shot.hz, zen: r.shot.zen, sd: r.shot.sd, vc: 0, use: true }
+        : null;
+    })
+    .filter((o): o is NonNullable<typeof o> => !!o);
+  check('dálnice: z krajnice laser trefí aspoň 3 štítky', obs.length >= 3, `${obs.length}`);
+  const res = solveResection(obs);
+  const truth = w.frame.toSjtsk(center);
+  const e = res ? Math.hypot(res.station.Y - truth.Y, res.station.X - truth.X) : 1;
+  const eh = res ? Math.abs(res.station.H - truth.H) : 1;
+  check('dálnice: volné stanovisko na štítky do 5 mm polohy a 5 mm výšky', e < 0.005 && eh < 0.005, `${(e * 1000).toFixed(1)} / ${(eh * 1000).toFixed(1)} mm`);
+  let blocked = 0;
+  for (let x = PAVING.x0; x <= PAVING.x0 + 200; x += 5) {
+    const p = paverPrism(x);
+    const dd = Math.hypot(p.x - center.x, p.y - center.y, p.z - center.z);
+    const h = w.raycast(center, { x: (p.x - center.x) / dd, y: (p.y - center.y) / dd, z: (p.z - center.z) / dd }, dd);
+    if (h && h.t < dd - 0.3) blocked++;
+  }
+  check('dálnice: ze stanoviska je hranol finišeru vidět po celém dosahu', blocked === 0, `${blocked} poloh zakryto`);
 }
 
 if (failed) throw new Error(`Selhalo testů: ${failed}`);

@@ -125,6 +125,20 @@ export const MANUAL: ManualChapter[] = [
     ],
   },
   {
+    id: 'paving',
+    title: '3D řízení finišeru a kontrola pokládky',
+    intro: 'Na dálnici řídí výšku desky finišeru 3D systém: robotická stanice sleduje 360° hranol na stožáru desky a porovnává ji s 3D modelem vrstvy.',
+    steps: [
+      { do: 'Stanici postav na krajnici u začátku úseku a udělej volné stanovisko na odrazné štítky (protihluková stěna, sloupy osvětlení). Přijmi ho jen s malými opravami.', why: 'Chyba výšky stanoviska se položí přímo do asfaltu – o kolik se stanice splete, o tolik bude vrstva vedle.' },
+      { do: 'U finišeru otevři řídicí panel 3D a vyber model vrstvy, která se dnes pokládá (ložná ACL 22+).', why: 'Model obrusné vrstvy je o 4 cm výš – celý úsek by byl položený vysoko.' },
+      { do: 'Kalibruj desku: stanice změří hranol na stožáru, zatímco deska stojí na podkladu.', why: 'Systém tak zná offset stožáru. Bez kalibrace jede deska soustavně ~2 cm vedle.' },
+      { do: 'Připoj stanici (sledování hranolu) a spusť pokládku.' },
+      { do: 'Hlídej vzdálenost: nad 150 m přestav stanici dopředu (znovu volné stanovisko na štítky) dřív, než hranol ztratí (230 m) nebo ho zakryje překážka.', why: 'Při ztrátě zámku finišer zastaví – ve vrstvě vznikne příčná spára a investor ji reklamuje.' },
+      { do: 'Kontrola za finišerem: výtyčku s hranolem postav na sprejové značky kontrolních profilů (vlevo, osa, vpravo), kód Kontrola vrstvy. Tolerance ±10 mm od projektu.' },
+      { do: 'V kanceláři vyber výstup Protokol kontroly pokládky.' },
+    ],
+  },
+  {
     id: 'level',
     title: 'Nivelace',
     intro: 'Geometrická nivelace ze středu: přístroj uprostřed mezi latěmi, čte se zadní a přední lať.',
