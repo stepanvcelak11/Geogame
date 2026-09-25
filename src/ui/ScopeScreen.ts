@@ -10,6 +10,9 @@ export interface ScopeView {
   setupLabel: string; // „Ustavení“ / „Složit“
   finder: boolean;
   last: string | null;
+  steps?: { label: string; state: 'done' | 'cur' | 'todo' }[]; // program stanice
+  hint?: string; // co teď udělat
+  atr?: boolean; // tlačítko automatického cílení
 }
 
 /**
@@ -23,6 +26,7 @@ export class ScopeScreen {
   onMeasure: (() => void) | null = null;
   onMode: (() => void) | null = null;
   onZoom: (() => void) | null = null;
+  onAtr: (() => void) | null = null;
   onCode: (() => void) | null = null;
   onSetup: (() => void) | null = null;
   onClose: (() => void) | null = null;
@@ -43,7 +47,9 @@ export class ScopeScreen {
         </g>
       </svg>
       <p class="scope-finder-mark" hidden>Hledáček</p>
+      <p class="scope-hint" hidden></p>
       <section class="scope-lcd">
+        <p class="lcd-steps"></p>
         <p class="lcd-head"></p>
         <dl class="lcd-rows"></dl>
         <p class="lcd-foot"></p>
@@ -52,6 +58,7 @@ export class ScopeScreen {
       <p class="scope-last" hidden></p>
       <nav class="scope-btns">
         <button class="sc-measure"></button>
+        <button class="sc-atr" hidden>Cílit (ATR)</button>
         <button class="sc-mode"></button>
         <button class="sc-zoom"></button>
         <button class="sc-code"></button>
@@ -67,6 +74,7 @@ export class ScopeScreen {
     btn('.sc-measure', () => this.onMeasure?.());
     btn('.sc-mode', () => this.onMode?.());
     btn('.sc-zoom', () => this.onZoom?.());
+    btn('.sc-atr', () => this.onAtr?.());
     btn('.sc-code', () => this.onCode?.());
     btn('.sc-setup', () => this.onSetup?.());
     btn('.sc-close', () => this.hide());
@@ -134,6 +142,10 @@ export class ScopeScreen {
       }),
     );
     q('.lcd-foot').textContent = v.foot;
+    q('.lcd-steps').innerHTML = (v.steps ?? []).map((st) => `<span class="is-${st.state}">${st.state === 'done' ? '✓ ' : ''}${st.label}</span>`).join('<i>›</i>');
+    q('.scope-hint').hidden = !v.hint;
+    q('.scope-hint').textContent = v.hint ?? '';
+    q('.sc-atr').hidden = !v.atr;
     const m = q('.sc-measure') as HTMLButtonElement;
     m.textContent = v.measureLabel;
     m.disabled = !v.canMeasure;

@@ -837,7 +837,7 @@ export class Game {
         const target = aim?.mark ? `stativ nad bodem ${aim.mark.number}` : 'stativ';
         if (!aim) return { verb: 'Rozložit', target, available: false, reason: noAim };
         if (!aim.valid) return { verb: 'Rozložit', target, available: false, reason: 'Tady je moc strmý svah' };
-        return { verb: 'Rozložit', target, available: true, run: () => this.deploy(item, aim) };
+        return { verb: 'Rozložit', target, available: true, run: () => this.openTripodBench(item, aim) };
       }
       case 'prismPole': {
         const target = aim?.mark ? `výtyčku na bod ${aim.mark.number}` : 'výtyčku';
@@ -1113,6 +1113,7 @@ export class Game {
       if (this.scope.kind === 'ts') this.scope.pitch = clamp(this.scope.pitch - dy * k, -1.2, 1.2);
     };
     sc.onMeasure = () => (this.scope?.kind === 'level' ? this.levelMeasure() : this.scopeMeasure());
+    sc.onAtr = () => this.scopeAtr();
     sc.onMode = () => {
       if (!this.scope) return;
       if (this.scope.kind === 'level') {
@@ -1204,6 +1205,74 @@ export class Game {
       return;
     }
     sc.last = this.recordStationPoint(shot, mark, shot.prism ? shot.prism.foot : shot.hit);
+  }
+
+  /**
+   * Automatické cílení (ATR): stanice najde hranol blízko nitkového kříže (do ~6°)
+   * a dotočí se na jeho střed. Jen v režimu hranol a s volnou záměrou.
+   */
+  private scopeAtr(): void {
+    const sc = this.scope;
+    const ts = sc ? this.stations.get(sc.itemId) : undefined;
+    if (!sc || !ts || sc.kind !== 'ts') return;
+    const warn = (text: string): void => {
+      sc.last = text;
+      this.sfx.click();
+      this.bus.emit('toast', { text, tone: 'warn' });
+    };
+    if (sc.mode !== 'prism') return warn('ATR cílí jen na hranol. Přepni režim na hranol.');
+    const view = lookDirection(sc.yaw, sc.pitch);
+    const o = ts.center;
+    let best: { d: Vec3; dist: number; ang: number } | null = null;
+    for (const pr of this.prisms()) {
+      const v = { x: pr.center.x - o.x, y: pr.center.y - o.y, z: pr.center.z - o.z };
+      const dist = Math.hypot(v.x, v.y, v.z);
+      const d = { x: v.x / dist, y: v.y / dist, z: v.z / dist };
+      const ang = Math.acos(clamp(d.x * view.x + d.y * view.y + d.z * view.z, -1, 1));
+      if (ang < 6 * DEG && (!best || ang < best.ang)) best = { d, dist, ang };
+    }
+    if (!best) return warn('ATR: v zorném poli není hranol. Namiř dalekohled zhruba na hranol (v hledáčku) a zkus znovu.');
+    const hit = this.world.raycast(o, best.d, best.dist - 0.1);
+    if (hit) return warn(hit.kind === 'crown' ? 'ATR: hranol je za korunou stromu.' : 'ATR: mezi stanicí a hranolem je překážka.');
+    sc.yaw = Math.atan2(-best.d.x, -best.d.z);
+    sc.pitch = Math.asin(best.d.y);
+    sc.finder = false;
+    sc.last = `ATR: zacíleno na hranol, ${best.dist.toFixed(1).replace('.', ',')} m`;
+    this.sfx.click();
+  }
+
+  /** Program stanice: kroky a rada, co teď udělat (na displeji a nad dalekohledem). */
+  private stationProgram(ts: TotalStation, itemId: string): { steps: { label: string; state: 'done' | 'cur' | 'todo' }[]; hint: string } {
+    const free = !ts.station;
+    const oriented = ts.orientation !== null;
+    const tripod = this.items.find((i) => i.id === itemId);
+    const stMark = tripod?.overMarkId;
+    const steps: { label: string; state: 'done' | 'cur' | 'todo' }[] = [
+      { label: 'Stanovisko', state: free ? 'cur' : 'done' },
+      { label: 'Orientace', state: free ? 'todo' : oriented ? 'done' : 'cur' },
+      { label: 'Měření', state: oriented ? 'cur' : 'todo' },
+    ];
+    const o = ts.center;
+    const known = this.world.marks
+      .filter((m) => m.condition === 'ok' && m.type !== 'NZ' && m.id !== stMark)
+      .map((m) => ({ m, d: Math.hypot(m.pos.x - o.x, m.pos.z - o.z) }))
+      .filter((k) => k.d > 5 && k.d < 250)
+      .sort((a, b) => a.d - b.d);
+    const onMark = this.prisms().filter((p) => p.markId && p.markId !== stMark);
+    let hint: string;
+    if (free) {
+      const n = this.resections.get(itemId)?.length ?? 0;
+      hint =
+        n < 2
+          ? `Volné stanovisko: zamiř na hranol na známém bodě (ATR pomůže) a dej Připojit. Připojeno ${n} z aspoň 2.`
+          : 'Máš dost bodů. V tabletu (Stanice) zkontroluj opravy a dej Přijmout stanovisko.';
+    } else if (!oriented) {
+      const pm = onMark.length ? this.world.marks.find((m) => m.id === onMark[0].markId) : undefined;
+      hint = pm
+        ? `Orientace: namiř zhruba na hranol na bodě ${pm.number}, dej Cílit (ATR) a pak Orientovat.`
+        : `Orientace: postav výtyčku s hranolem na známý bod${known[0] ? ` (nejbližší ${known[0].m.number}, ${Math.round(known[0].d)} m)` : ''} – nebo ji dej Pepovi – a zamiř na ni.`;
+    } else hint = `Měř body: hranol na bodě, nebo bez hranolu na roh či zeď. Kód bodu: ${CODES[this.codeIdx].label}.`;
+    return { steps, hint };
   }
 
   /** Orientace stanice na známý bod; vrací text pro displej. */
@@ -1523,6 +1592,8 @@ export class Game {
       setupLabel: 'Ustavení',
       finder: sc.finder,
       last: sc.last,
+      ...this.stationProgram(ts, sc.itemId),
+      atr: sc.mode === 'prism',
     };
   }
 
@@ -2180,6 +2251,28 @@ export class Game {
       onRig: (ev) => (ev === 'screw' ? this.sfx.click() : this.sfx.drop()),
       onTsMounted: (m) => (m ? this.mount(tripod, kase) : this.unmount(tripod, kase)),
       onClose: () => this.closeBench(),
+    });
+  }
+
+  /** Rozložení stativu rukama: svěrky, délka nohou, rozkročení, sešlápnutí. Pak stojí nad bodem. */
+  private openTripodBench(item: WorldItem, aim: AimPoint): void {
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.sfx.click();
+    this.itemsView.setHeldHidden(true);
+    this.root.classList.add('is-bench');
+    const spot = { ...aim };
+    this.player.pitch = -0.62; // podívat se dolů ke stativu a nohám
+    this.bench.openTripod({
+      onRig: (ev) => (ev === 'screw' ? this.sfx.drop() : this.sfx.click()),
+      onTsMounted: () => {},
+      onClose: () => this.closeBench(),
+      onTripod: (head, len, secured) => {
+        this.deploy(item, spot);
+        const s = this.setups.get(item.id);
+        if (s) s.headHeight = head;
+        item.legLen = len;
+        item.secured = secured;
+      },
     });
   }
 

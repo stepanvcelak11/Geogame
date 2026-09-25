@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { dragAngle, Thread } from '../bench/Thread';
 import { POLE_HEIGHTS, type RoverRig } from '../items/items';
-import { buildController, buildReceiver, buildTotalStation, glove } from '../render/InstrumentModels';
+import { buildController, buildReceiver, buildTotalStation, buildTripod, glove, setTripodPose } from '../render/InstrumentModels';
 import { pbr } from '../render/materials';
 
 /**
@@ -10,7 +10,7 @@ import { pbr } from '../render/materials';
  * držák s kontrolerem, tlačítka napájení přímo na přístrojích. Totální stanice: posadit na hlavu
  * stativu a přitáhnout upínacím šroubem zespodu.
  */
-export type BenchMode = 'gnss-assemble' | 'gnss-pack' | 'ts-mount' | 'ts-unmount';
+export type BenchMode = 'gnss-assemble' | 'gnss-pack' | 'ts-mount' | 'ts-unmount' | 'tripod';
 
 type Stage =
   | 'height'
@@ -33,6 +33,11 @@ type Stage =
   | 'tsScrew'
   | 'tsUnscrew'
   | 'tsLift'
+  | 'trUnlock'
+  | 'trExtend'
+  | 'trLock'
+  | 'trSpread'
+  | 'trStep'
   | 'done';
 
 const HINT: Record<Stage, string> = {
@@ -59,6 +64,12 @@ const HINT: Record<Stage, string> = {
     'Levou rukou drž stanici (✋ – ťukni a drží, nebo mezerník), pravou zespodu zašroubuj upínací šroub stativu do trojnožky (krouživě kolem šroubu). Nepouštěj ji, dokud není přitažená!',
   tsUnscrew: 'Drž stanici a povol upínací šroub stativu (proti směru hodinových ručiček).',
   tsLift: 'Zvedni stanici z hlavy stativu (táhni nahoru) a ulož ji do kufru.',
+  trUnlock: 'Povol svěrky všech tří nohou: ťukni na černou svěrku na každé noze.',
+  trExtend:
+    'Táhni dolů – nohy se vysunou. Hlavu stativu nastav zhruba do výšky hrudníku, aby byl okulár stanice u oka. Pak dej Délka nohou OK.',
+  trLock: 'Zajisti svěrky (ťukni na každou), jinak se noha pod stanicí zasune.',
+  trSpread: 'Roztáhni nohy do stran (táhni vodorovně). Široký postoj = stabilní stativ; úzký ve větru spadne.',
+  trStep: 'Sešlápni ostruhy všech nohou do země (ťukni na patku každé nohy). Pak Hotovo.',
   done: 'Hotovo.',
 };
 
@@ -80,6 +91,11 @@ const STEP_LABEL: Partial<Record<Stage, string>> = {
   tsScrew: 'Přitáhnout šroubem',
   tsUnscrew: 'Povolit šroub',
   tsLift: 'Zvednout do kufru',
+  trUnlock: 'Povolit svěrky',
+  trExtend: 'Vysunout nohy',
+  trLock: 'Zajistit svěrky',
+  trSpread: 'Roztáhnout nohy',
+  trStep: 'Sešlápnout patky',
 };
 
 const CLAMP_Y = 1.0; // horní hrana svěrky nad hrotem [m]
@@ -128,6 +144,8 @@ export interface BenchCallbacks {
   onRig: (event: 'height' | 'receiver' | 'controller' | 'power' | 'screw' | 'click') => void;
   onTsMounted: (mounted: boolean) => void;
   onClose: (completed: boolean) => void;
+  /** Stativ rozložen: výška hlavy nad terénem, délka nohou a zda jsou ostruhy sešlápnuté. */
+  onTripod?: (head: number, len: number, secured: boolean) => void;
 }
 
 export class Bench {
@@ -171,6 +189,13 @@ export class Bench {
   private tsSeated = false;
   private screwKnob!: THREE.Mesh;
   private tsSpin = 0;
+  // --- stativ
+  private tripod = new THREE.Group();
+  private trLen = 1.0; // délka nohou (složené 1,0 m)
+  private trSpread = 0.05; // rozevření [rad]
+  private trClampOpen = [false, false, false];
+  private trStepped = [false, false, false];
+  private trLenOk = false;
   // --- ruce a kamera
   private readonly leftHand = glove();
   private readonly rightHand = glove();
@@ -196,6 +221,7 @@ export class Bench {
       <header class="bench-top"><h2 class="bench-title"></h2><button class="bench-help" aria-label="Nápověda">?</button><button class="bench-close">Zavřít</button></header>
       <p class="bench-hint"></p>
       <p class="bench-msg" hidden></p>
+      <figure class="bench-gauge" hidden><canvas width="110" height="200"></canvas><figcaption>Stativ vůči tobě</figcaption></figure>
       <figure class="bench-loupe" hidden><canvas width="120" height="240"></canvas><figcaption>Detail u svěrky</figcaption></figure>
       <ol class="bench-steps"></ol>
       <button class="bench-hold" aria-label="Držet levou rukou">✋ <span>Držet</span></button>
@@ -371,6 +397,34 @@ export class Bench {
     this.show(mounted ? 'Sundání stanice ze stativu' : 'Nasazení stanice na stativ');
   }
 
+  openTripod(cb: BenchCallbacks): void {
+    this.cb = cb;
+    this.mode = 'tripod';
+    this.rig = null;
+    this.clear();
+    if (!this.tripod.children.length) {
+      const t = buildTripod();
+      // Větší neviditelné cíle pro prst kolem patek a svěrek.
+      const legs = (t.userData as { legs: { leg: THREE.Group }[] }).legs;
+      legs.forEach((l, i) => {
+        const foot = mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ visible: false }), `legFoot${i}`);
+        foot.position.y = -0.93;
+        const cl = mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ visible: false }), `legClamp${i}`);
+        cl.position.y = -0.6;
+        l.leg.add(foot, cl);
+      });
+      this.tripod.add(t);
+    }
+    this.trLen = 1.0;
+    this.trSpread = 0.05;
+    this.trClampOpen = [false, false, false];
+    this.trStepped = [false, false, false];
+    this.trLenOk = false;
+    this.group.add(this.tripod);
+    this.stage = this.nextStage();
+    this.show('Rozložení stativu');
+  }
+
   private clear(): void {
     this.group.clear();
     this.pole.remove(this.receiver, this.bracket, this.controller);
@@ -434,10 +488,22 @@ export class Bench {
         if (!this.tsThread.loose) return 'tsUnscrew';
         if (this.tsSeated) return 'tsLift';
         return 'done';
+      case 'tripod':
+        if (!this.trLenOk) return this.trClampOpen.every(Boolean) ? 'trExtend' : 'trUnlock';
+        if (this.trClampOpen.some(Boolean)) return 'trLock';
+        if (this.trSpread < 0.3) return 'trSpread';
+        if (!this.trStepped.every(Boolean) && !this.trFinished) return 'trStep';
+        return 'done';
     }
   }
 
   private heightConfirmed = false;
+  private trFinished = false;
+
+  /** Výška hlavy stativu nad terénem podle délky nohou a rozevření. */
+  private get trHead(): number {
+    return this.trLen * Math.cos(this.trSpread) + 0.03;
+  }
 
   private advance(): void {
     const prev = this.stage;
@@ -485,6 +551,16 @@ export class Bench {
           this.cb?.onRig('receiver');
         }
         break;
+      case 'trLenOk':
+        if (this.trHead < 1.05) return this.flash('Stativ je moc nízko – okulár by byl u pasu. Vysuň nohy víc.', 3);
+        if (this.trHead > 1.55) return this.flash('Stativ je moc vysoko – na okulár nedosáhneš. Zasuň nohy.', 3);
+        this.trLenOk = true;
+        break;
+      case 'trDone':
+        this.trFinished = true;
+        this.advance();
+        if (this.stage === 'done') this.cb?.onTripod?.(this.trHead, this.trLen, this.trStepped.every(Boolean));
+        return;
       case 'tsStore':
         this.tsPos.y = 0.6;
         this.stage = 'done';
@@ -510,7 +586,7 @@ export class Bench {
     this.ray.setFromCamera(ndc, this.camera);
     const hits = this.ray.intersectObject(this.group, true);
     // Tlačítka a páčky mají přednost před neviditelnými oblastmi pro uchopení dílů.
-    const small = hits.find((h) => ['rxPower', 'ctPower', 'clamp'].includes(h.object.name));
+    const small = hits.find((h) => ['rxPower', 'ctPower', 'clamp'].includes(h.object.name) || /^leg(Clamp|Foot)\d$/.test(h.object.name));
     if (small) return { name: small.object.name, point: small.point };
     for (const h of hits) {
       let o: THREE.Object3D | null = h.object;
@@ -552,6 +628,10 @@ export class Bench {
       this.flash('Tlačítko napájení je na přístroji: u přijímače gumové kolečko na šedém pásu, u kontroleru červené na boku.', 4);
     }
     let kind: 'move' | 'rotate' | 'height' = 'move';
+    if (this.mode === 'tripod') {
+      if (s === 'trExtend' || s === 'trSpread') this.drag = { kind: 'height', x: e.clientX, y: e.clientY, cx: 0, cy: 0 };
+      return;
+    }
     let c = { x: e.clientX, y: e.clientY };
     if (s === 'height') {
       if (!this.clampOpen) return; // zavřená aretace: tah nic nedělá (ťuknutí vyhodnotí up)
@@ -577,7 +657,11 @@ export class Bench {
     const k = this.mPerPx();
     const s = this.stage;
     const r = this.rig;
-    if (d.kind === 'height' && r) {
+    if (d.kind === 'height' && this.mode === 'tripod') {
+      if (s === 'trExtend') this.trLen = Math.max(1.0, Math.min(1.62, this.trLen + dy * 0.0035));
+      else if (s === 'trSpread') this.trSpread = Math.max(0.05, Math.min(0.5, this.trSpread + Math.abs(dx) * 0.0025));
+      if (s === 'trSpread' && this.trSpread >= 0.3) this.advance();
+    } else if (d.kind === 'height' && r) {
       const before = Math.round(r.height * 100);
       r.height = Math.max(POLE_HEIGHTS[0], Math.min(POLE_HEIGHTS[POLE_HEIGHTS.length - 1], r.height - dy * k * 0.6));
       if (Math.round(r.height * 100) !== before && Math.round(r.height * 100) % 5 === 0) this.cb?.onRig('screw');
@@ -632,6 +716,31 @@ export class Bench {
     const t = this.tap;
     this.tap = null;
     const still = !!t && !!e && Math.hypot(e.clientX - t.x, e.clientY - t.y) < 8;
+    if (t && still && this.mode === 'tripod' && e) {
+      const hit = this.pick(e);
+      const m = hit?.name.match(/^leg(Clamp|Foot)(\d)$/);
+      if (m) {
+        // Svěrky (a patky) jsou u sebe: ťuknutí vyřídí tu trefenou, nebo nejbližší ještě nevyřízenou.
+        const pick = (done: boolean[], want: boolean): number => {
+          const i = Number(m[2]);
+          if (done[i] !== want) return i;
+          return done.findIndex((d) => d !== want);
+        };
+        if (m[1] === 'Clamp' && (this.stage === 'trUnlock' || this.stage === 'trLock')) {
+          const open = this.stage === 'trUnlock';
+          const i = pick(this.trClampOpen, open);
+          if (i >= 0) this.trClampOpen[i] = open;
+          this.cb?.onRig('click');
+        } else if (m[1] === 'Foot' && this.stage === 'trStep') {
+          const i = pick(this.trStepped, true);
+          if (i >= 0) this.trStepped[i] = true;
+          this.cb?.onRig('screw');
+        }
+        this.advance();
+        if (this.stage === 'done') this.cb?.onTripod?.(this.trHead, this.trLen, this.trStepped.every(Boolean));
+      } else if (this.stage === 'trUnlock' || this.stage === 'trLock') this.flash('Ťukni přímo na černou svěrku na noze stativu.', 2.5);
+      else if (this.stage === 'trStep') this.flash('Ťukni na ocelovou patku dole na noze.', 2.5);
+    }
     if (t && still && this.stage === 'height') {
       if (t.clamp) {
         this.clampOpen = !this.clampOpen;
@@ -771,6 +880,30 @@ export class Bench {
     const loupe = this.el.querySelector('.bench-loupe') as HTMLElement;
     loupe.hidden = this.stage !== 'height';
     if (!loupe.hidden) this.drawLoupe(loupe.querySelector('canvas') as HTMLCanvasElement);
+    const gauge = this.el.querySelector('.bench-gauge') as HTMLElement;
+    gauge.hidden = this.stage !== 'trExtend';
+    if (!gauge.hidden) this.drawGauge(gauge.querySelector('canvas') as HTMLCanvasElement);
+    if (this.mode === 'tripod') {
+      const tg = this.tripod.children[0] as THREE.Group | undefined;
+      if (tg) {
+        setTripodPose(tg, this.trSpread, this.trLen);
+        const u = tg.userData as { station: THREE.Object3D };
+        u.station.visible = false;
+      }
+      // Stativ stojí svisle ve světě, i když se kamera dívá dolů (skupina je na kameře).
+      const pitch = this.camera.rotation.x;
+      const X = new THREE.Vector3(1, 0, 0);
+      const held = this.stage === 'trUnlock' || this.stage === 'trExtend' || this.stage === 'trLock';
+      const toCam = (v: THREE.Vector3): THREE.Vector3 => v.applyAxisAngle(X, -pitch);
+      this.tripod.position.copy(toCam(new THREE.Vector3(0.05, -1.6 + (held ? 0.45 : 0), -1.25)));
+      this.tripod.rotation.set(-pitch, 0.5, 0);
+      // Ruce: levá drží hlavu, pravá u toho, na co se sahá.
+      this.leftHand.position.copy(toCam(new THREE.Vector3(-0.16, -1.6 + (held ? 0.45 : 0) + this.trHead, -1.2)));
+      this.rightHand.position.copy(toCam(new THREE.Vector3(0.2, -1.6 + (held ? 0.45 : 0) + this.trHead * 0.5, -1.15)));
+      this.rightHand.visible = this.stage !== 'done' && this.stage !== 'trStep';
+      (this.el.querySelector('.bench-hold') as HTMLElement).classList.remove('is-on');
+      return;
+    }
     if (this.mode.startsWith('gnss')) {
       const h = r?.height ?? 2;
       this.pole.position.set(-0.02 - this.focus.y * Math.sin(this.pole.rotation.z) * -1, -this.focus.y * Math.cos(0.1) - 0.02, -depth);
@@ -874,6 +1007,50 @@ export class Bench {
     g.fillRect(W * 0.8, edge + 4, W * 0.12, 40);
   }
 
+  /** Postava 1,78 m a stativ vedle ní: hlava stativu vůči hrudníku, zelené pásmo = okulár u oka. */
+  private drawGauge(c: HTMLCanvasElement): void {
+    const g = c.getContext('2d');
+    if (!g) return;
+    const W = c.width;
+    const H = c.height;
+    const k = (H - 16) / 1.9; // px na metr
+    const y = (m: number): number => H - 8 - m * k;
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = 'rgba(76, 175, 80, 0.25)';
+    g.fillRect(0, y(1.4), W, y(1.2) - y(1.4));
+    g.strokeStyle = '#eef1ea';
+    g.lineWidth = 3;
+    g.lineCap = 'round';
+    // Postava.
+    const px = W * 0.3;
+    g.beginPath();
+    g.arc(px, y(1.66), 9, 0, Math.PI * 2);
+    g.moveTo(px, y(1.56));
+    g.lineTo(px, y(0.9));
+    g.lineTo(px - 10, y(0));
+    g.moveTo(px, y(0.9));
+    g.lineTo(px + 10, y(0));
+    g.moveTo(px - 16, y(1.2));
+    g.lineTo(px, y(1.45));
+    g.lineTo(px + 18, y(1.25));
+    g.stroke();
+    // Stativ.
+    const tx = W * 0.72;
+    const h = this.trHead;
+    g.strokeStyle = '#c08a4a';
+    g.beginPath();
+    g.moveTo(tx - 4, y(0));
+    g.lineTo(tx, y(h));
+    g.lineTo(tx + 4, y(0));
+    g.stroke();
+    g.fillStyle = '#f2b705';
+    g.fillRect(tx - 10, y(h) - 4, 20, 6);
+    const ok = h >= 1.2 && h <= 1.4;
+    g.fillStyle = ok ? '#7fd489' : '#f0a38f';
+    g.font = 'bold 12px sans-serif';
+    g.fillText(ok ? 'akorát' : h < 1.2 ? 'nízko' : 'vysoko', tx - 18, y(h) - 8);
+  }
+
   private render(): void {
     const s = this.stage;
     (this.el.querySelector('.bench-hint') as HTMLElement).textContent = HINT[s];
@@ -884,7 +1061,9 @@ export class Bench {
           ? ['off', 'ctOut', 'brUnscrew', 'brOut', 'rxUnscrew', 'rxOut']
           : this.mode === 'ts-mount'
             ? ['tsSeat', 'tsScrew']
-            : ['tsUnscrew', 'tsLift'];
+            : this.mode === 'tripod'
+              ? ['trUnlock', 'trExtend', 'trLock', 'trSpread', 'trStep']
+              : ['tsUnscrew', 'tsLift'];
     const alias: Partial<Record<Stage, Stage>> = { rxTake: 'rxSeat', brTake: 'brSeat', ctTake: 'ctSeat' };
     const cur = order.indexOf(alias[s] ?? s);
     (this.el.querySelector('.bench-steps') as HTMLElement).innerHTML = order
@@ -897,6 +1076,8 @@ export class Bench {
     if (s === 'ctTake') acts.push(['ctTake', 'Vyndat kontroler z kufru']);
     if ((s === 'ctOut' && this.ctHand) || (s === 'brOut' && this.brHand) || (s === 'rxOut' && this.rxHand)) acts.push(['store', 'Uložit do kufru']);
     if (s === 'tsLift' && this.tsPos.y > 0.12) acts.push(['tsStore', 'Uložit do kufru']);
+    if (s === 'trExtend') acts.push(['trLenOk', 'Délka nohou OK']);
+    if (s === 'trStep') acts.push(['trDone', 'Hotovo (bez sešlápnutí)']);
     (this.el.querySelector('.bench-actions') as HTMLElement).innerHTML = acts.map(([id, l]) => `<button data-b="${id}">${l}</button>`).join('');
     const needHold = s === 'rxScrew' || s === 'rxUnscrew' || s === 'brScrew' || s === 'brUnscrew' || s === 'tsScrew' || s === 'tsUnscrew';
     const hold = this.el.querySelector('.bench-hold') as HTMLElement;

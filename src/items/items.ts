@@ -59,6 +59,7 @@ export interface WorldItem {
   location: 'kancelar' | 'stavba' | 'louka' | 'servis'; // kde leží / stojí (u held a stored nerozhoduje); servis = na opravě
   home?: { x: number; y: number; z: number }; // místo ve skladu (sem se vrací ze servisu)
   secured?: boolean; // stativ: nohy sešlápnuté do země
+  legLen?: number; // stativ: vysunutí nohou [m] (výška hlavy)
   pos: Vec3;
   yaw: number;
   hand: Hand | null;
