@@ -11,6 +11,7 @@ export interface CareerState {
   jobs: Record<string, CareerJob>;
   stats: { jobsDone: number; km: number; points: number; okJobs?: number };
   upgrades?: string[]; // koupené vybavení
+  urgentDone?: number; // den, kdy už byla spěšná zakázka zaplacena
 }
 
 export interface Upgrade {

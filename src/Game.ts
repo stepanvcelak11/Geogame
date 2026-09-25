@@ -1658,6 +1658,7 @@ export class Game {
 
   /** Spěšná zakázka dnešního dne (příplatek, když se odevzdá bez vady ještě dnes). */
   private urgentToday(): string | null {
+    if (this.career.urgentDone === this.career.day) return null; // příplatek jen jednou za den
     return urgentJob(
       this.career.day,
       JOBS.filter((j) => this.jobUnlocked(j)).map((j) => j.id),
@@ -2580,6 +2581,7 @@ export class Game {
     const rankBefore = rankIndex(this.career);
     const extra = extraPay(run.spec.pay, ok, RANKS[rankBefore], run.spec.id === this.urgentToday());
     this.lastExtra = { ...extra, rankName: RANKS[rankBefore].name };
+    if (extra.urgent) this.career.urgentDone = this.career.day;
     this.career.money += pay + bonus + extra.rank + extra.urgent;
     this.dayEarned += pay + bonus + extra.rank + extra.urgent;
     this.career.stats.okJobs = okJobs(this.career) + (ok ? 1 : 0);
