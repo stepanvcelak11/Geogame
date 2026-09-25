@@ -971,5 +971,18 @@ const world = generateWorld('stavba');
   check('GP: výstup je geometrický plán', job.output === 'gp');
 }
 
+// --- Krajina se silnicemi
+{
+  const w = generateWorld('kraj');
+  check('krajina: 4 výjezdy (kancelář, stavba, louka, les)', (w.exits ?? []).map((e) => e.location).sort().join() === 'kancelar,les,louka,stavba');
+  const bad = (w.lanes ?? []).flatMap((l) => l.pts.filter((_, i) => i % 10 === 0).filter((p) => Math.abs(w.heightmap.heightAt(p.x, p.z) - p.y) > 0.25));
+  check('krajina: terén pod silnicí sedí s vozovkou', bad.length === 0, `${bad.length} bodů mimo`);
+  let grade = 0;
+  for (const l of w.lanes ?? []) for (let i = 1; i < l.pts.length; i++) grade = Math.max(grade, Math.abs(l.pts[i].y - l.pts[i - 1].y) / Math.hypot(l.pts[i].x - l.pts[i - 1].x, l.pts[i].z - l.pts[i - 1].z));
+  check('krajina: stoupání silnic nejvýš 9 %', grade < 0.09, `${(grade * 100).toFixed(1)} %`);
+  const e = w.exits![1];
+  check('krajina: na ose silnice je asfalt, vedle tráva/krajnice', w.surfaceAt(w.lanes![1].pts[50].x, w.lanes![1].pts[50].z) === 'road' && w.surfaceAt(e.x + 60, e.z + 60) !== 'road');
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

@@ -84,7 +84,7 @@ import { GrassView } from './render/GrassView';
 import { createScenery } from './render/SceneryView';
 import { cloudShadow, createTerrainMesh, createWater, type TerrainTiles } from './render/TerrainView';
 import { Vegetation } from './render/VegetationView';
-import { createBuilding, createFence, createRoad } from './render/WorldFeaturesView';
+import { createBuilding, createFence, createLanes, createRoad } from './render/WorldFeaturesView';
 import { InstrumentSetup } from './survey/InstrumentSetup';
 import { solveResection, type ResectionObs } from './survey/FreeStation';
 import { closureLimit, LevelLine, readRod, type LevelInstrument, type LevelShot } from './survey/Leveling';
@@ -568,6 +568,7 @@ export class Game {
     this.vegetation = new Vegetation(world.trees, quality.shadows);
     g.add(this.vegetation.group);
     statics.add(createRoad(world.road, world.heightmap));
+    if (world.lanes) g.add(createLanes(world.lanes, world.heightmap));
     if (world.building) statics.add(createBuilding(world.building));
     if (world.fence) statics.add(createFence(world.fence));
     for (const m of world.marks) statics.add(createMarkMesh(m));
@@ -653,7 +654,7 @@ export class Game {
     return this.items.filter((i) => (i.state === 'ground' || i.state === 'deployed') && i.location === this.world.location);
   }
 
-  private depart(dest: LocationId, force: boolean): void {
+  private depart(dest: LocationId, force: boolean, self = false): void {
     if (!this.driving || Math.abs(this.world.vehicle.speed) > 0.5) return;
     if (this.helper.carryId) {
       const it = this.items.find((i) => i.id === this.helper.carryId);
@@ -676,6 +677,7 @@ export class Game {
       return;
     }
     this.departConfirm = null;
+    if (self) return this.startDrive(dest);
     this.tablet.close();
     this.traveling = true;
     this.helper.follow();
@@ -691,6 +693,56 @@ export class Game {
       this.traveling = false;
       this.bus.emit('toast', { text: `Jsi na místě: ${LOCATIONS[dest].name}` });
     });
+  }
+
+  // ================================================================ jízda po krajině
+
+  /** Cesta, kterou hráč jede sám: odkud, kam a jestli už opustil výjezd, ze kterého vyjel. */
+  private driveTrip: { from: LocationId; dest: LocationId; left: boolean } | null = null;
+
+  /** Vyjet sám: načte krajinu se silnicemi, dodávka stojí na výjezdu z výchozí lokality. */
+  private startDrive(dest: LocationId): void {
+    const from = this.world.location;
+    this.tablet.close();
+    this.helper.follow();
+    this.helper.inVan = true;
+    this.driveTrip = { from: from === 'kraj' ? (this.driveTrip?.from ?? 'kancelar') : from, dest, left: from === 'kraj' };
+    if (from !== 'kraj') {
+      this.loadLocation('kraj', 'van');
+      const e = this.world.exits?.find((x) => x.location === from);
+      if (e) {
+        const v = this.world.vehicle;
+        const x = e.x - Math.sin(e.yaw) * 28;
+        const z = e.z - Math.cos(e.yaw) * 28;
+        Object.assign(v, { x, z, yaw: e.yaw, speed: 0, steer: 0, groundY: this.world.heightmap.heightAt(x, z) });
+        this.enterVan(true);
+      }
+    }
+    const e = this.world.exits?.find((x) => x.location === dest);
+    this.bus.emit('toast', { text: `Jedeš sám: ${LOCATIONS[dest].name}. Na křižovatce se drž směrovky „${e?.label ?? LOCATIONS[dest].short}“, šipka nahoře ukazuje směr.` });
+  }
+
+  /** V krajině: dojetí na konec silnice načte lokalitu. */
+  private checkExits(): void {
+    const trip = this.driveTrip;
+    const exits = this.world.exits;
+    if (this.world.location !== 'kraj' || !exits || !this.driving) return;
+    const v = this.world.vehicle;
+    for (const e of exits) {
+      const d = Math.hypot(v.x - e.x, v.z - e.z);
+      if (trip && e.location === trip.from && !trip.left) {
+        if (d > e.r + 25) trip.left = true;
+        continue;
+      }
+      if (d < e.r) {
+        const km = trip ? 1.5 : 1;
+        this.career.stats.km += km;
+        this.driveTrip = null;
+        this.loadLocation(e.location, 'van');
+        this.bus.emit('toast', { text: `Dojel jsi: ${LOCATIONS[e.location].name}` });
+        return;
+      }
+    }
   }
 
   // ================================================================ interakce
@@ -2302,6 +2354,10 @@ export class Game {
 
   /** Kam má hráč teď jít (pro šipku a světelný sloup). */
   private goalTarget(): { x: number; y: number; z: number } | null {
+    if (this.started && this.world.location === 'kraj') {
+      const e = this.world.exits?.find((x) => x.location === this.driveTrip?.dest);
+      return e ? { x: e.x, y: this.world.heightmap.heightAt(e.x, e.z), z: e.z } : null;
+    }
     if (this.driving || !this.started) return null;
     const here = this.world.location;
     const v = this.world.vehicle;
@@ -2371,6 +2427,12 @@ export class Game {
 
   /** Další krok podle situace – od nástěnky přes sklad a dodávku až po konkrétní měření. */
   private goalText(): string | null {
+    if (this.world.location === 'kraj') {
+      const dest = this.driveTrip?.dest;
+      const e = this.world.exits?.find((x) => x.location === dest);
+      if (!dest || !e) return 'Jsi na silnici mezi lokalitami. V tabletu vyber, kam jet.';
+      return this.driving ? `Jeď do: ${LOCATIONS[dest].name}. Drž se směrovky „${e.label}“, šipka ukazuje směr.` : 'Nastup zpátky do dodávky a pokračuj v jízdě.';
+    }
     const run = this.activeJobId ? this.jobs.get(this.activeJobId) : undefined;
     if (run?.buried && !run.mapping?.complete) {
       if (this.world.location === 'kancelar') return 'Výkop je zasypaný. V dispečinku odevzdej, co máš – objednatel bude reklamovat.';
@@ -4111,6 +4173,12 @@ export class Game {
       case 'departForce':
         this.depart(arg as LocationId, true);
         break;
+      case 'drive':
+        this.depart(arg as LocationId, false, true);
+        break;
+      case 'driveForce':
+        this.depart(arg as LocationId, true, true);
+        break;
       case 'showmap': {
         const t = this.goalTarget();
         if (t) this.tablet.focus(t.x, t.z);
@@ -4415,11 +4483,17 @@ export class Game {
     const departActions = (): JobPanel['actions'] => {
       if (!this.driving || Math.abs(this.world.vehicle.speed) > 0.5) return [];
       return (Object.keys(LOCATIONS) as LocationId[])
-        .filter((l) => l !== here)
-        .map((l) =>
+        .filter((l) => l !== here && !LOCATIONS[l].transit)
+        .flatMap((l) =>
           this.departConfirm === l
-            ? { id: `departForce:${l}`, label: `Odjet i bez nich: ${LOCATIONS[l].short}` }
-            : { id: `depart:${l}`, label: `Odjet: ${LOCATIONS[l].short} (${travelMinutes(here, l)} min)`, primary: true },
+            ? [
+                { id: `driveForce:${l}`, label: `Jet sám i bez nich: ${LOCATIONS[l].short}` },
+                { id: `departForce:${l}`, label: `Rychlý přesun i bez nich: ${LOCATIONS[l].short}` },
+              ]
+            : [
+                { id: `drive:${l}`, label: `Jet sám: ${LOCATIONS[l].short}`, primary: true },
+                { id: `depart:${l}`, label: `Rychlý přesun: ${LOCATIONS[l].short} (${travelMinutes(here, l)} min)` },
+              ],
         );
     };
     const run = this.activeJobId ? this.jobs.get(this.activeJobId) : undefined;
@@ -4891,6 +4965,7 @@ export class Game {
     this.syncHelperCarry();
     if (this.driving) {
       this.vehicle.step(dt, { throttle: this.intent.forward, steer: this.intent.right }, this.world);
+      this.checkExits();
       return;
     }
     this.intent.jump = this.jumpQueued;
@@ -5025,9 +5100,11 @@ export class Game {
       const tgt = this.settings.guide ? this.goalTarget() : null;
       let pointer: { angle: number; dist: number } | null = null;
       if (tgt) {
-        const dx = tgt.x - this.player.pos.x;
-        const dz = tgt.z - this.player.pos.z;
-        const y = this.player.yaw;
+        const v = this.world.vehicle;
+        const ref = this.driving ? { x: v.x, z: v.z } : this.player.pos;
+        const dx = tgt.x - ref.x;
+        const dz = tgt.z - ref.z;
+        const y = this.driving ? v.yaw : this.player.yaw;
         const fwd = dx * -Math.sin(y) + dz * -Math.cos(y);
         const rt = dx * Math.cos(y) + dz * -Math.sin(y);
         pointer = { angle: Math.atan2(rt, fwd), dist: Math.hypot(dx, dz) };

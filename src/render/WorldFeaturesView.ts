@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { BuildingInfo, FenceInfo, RoadInfo } from '../world/World';
+import type { BuildingInfo, FenceInfo, RoadInfo, Lane } from '../world/World';
 import type { Heightmap } from '../world/Heightmap';
 import { lambert, matte } from './materials';
 import { canvasTexture as proceduralTexture } from './textures';
@@ -225,3 +225,71 @@ export function createFence(f: FenceInfo): THREE.Group {
   return g;
 }
 
+
+/**
+ * Silnice krajiny: asfaltový pás po ose (výška z vozovky, ne z terénu), štěrková krajnice,
+ * bílé vodicí čáry po krajích a přerušovaná středová čára. Vše v pár meshích.
+ */
+export function createLanes(lanes: readonly Lane[], hm: Heightmap): THREE.Group {
+  const g = new THREE.Group();
+  const tex = proceduralTexture('asphalt', 256);
+  const asphaltMat = matte({ vertexColors: true, map: tex ?? undefined, polygonOffset: true, polygonOffsetFactor: -1 });
+  const shoulderMat = matte({ color: 0x8d8472, polygonOffset: true, polygonOffsetFactor: -1 });
+  const paint = matte({ color: 0xe8e8e2, polygonOffset: true, polygonOffsetFactor: -2 });
+  const ribbon = (l: Lane, off0: number, off1: number, lift: number, dash: boolean, color: boolean): THREE.BufferGeometry => {
+    const pos: number[] = [];
+    const col: number[] = [];
+    const uv: number[] = [];
+    const idx: number[] = [];
+    let along = 0;
+    const P = l.pts;
+    for (let i = 0; i < P.length; i++) {
+      const a = P[Math.max(0, i - 1)];
+      const b = P[Math.min(P.length - 1, i + 1)];
+      const tx = b.x - a.x;
+      const tz = b.z - a.z;
+      const tl = Math.hypot(tx, tz) || 1;
+      const nx = -tz / tl;
+      const nz = tx / tl;
+      if (i > 0) along += Math.hypot(P[i].x - P[i - 1].x, P[i].z - P[i - 1].z);
+      for (const off of [off0, off1]) {
+        const x = P[i].x + nx * off;
+        const z = P[i].z + nz * off;
+        // Vozovka podle své výšky, krajnice sjíždí k terénu.
+        const y = Math.abs(off) <= l.halfWidth + 0.01 ? P[i].y : Math.min(P[i].y, hm.heightAt(x, z) + 0.02);
+        pos.push(x, y + lift, z);
+        uv.push(along / 6, off / 6);
+        if (color) {
+          const v = 0.9 + 0.1 * Math.sin(along * 0.37 + off);
+          col.push(0.35 * v, 0.36 * v, 0.37 * v);
+        }
+      }
+      if (i + 1 < P.length && (!dash || Math.floor(along / 3) % 2 === 0)) {
+        const k = i * 2;
+        idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    if (color) geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    return geo;
+  };
+  const merge = (geos: THREE.BufferGeometry[], mat: THREE.Material): void => {
+    for (const geo of geos) {
+      const m = new THREE.Mesh(geo, mat);
+      m.receiveShadow = true;
+      m.matrixAutoUpdate = false;
+      g.add(m);
+    }
+  };
+  merge(lanes.map((l) => ribbon(l, -l.halfWidth, l.halfWidth, 0.02, false, true)), asphaltMat);
+  merge(lanes.flatMap((l) => [ribbon(l, -l.halfWidth - 1.1, -l.halfWidth, 0.01, false, false), ribbon(l, l.halfWidth, l.halfWidth + 1.1, 0.01, false, false)]), shoulderMat);
+  merge(
+    lanes.flatMap((l) => [ribbon(l, -l.halfWidth + 0.15, -l.halfWidth + 0.3, 0.03, false, false), ribbon(l, l.halfWidth - 0.3, l.halfWidth - 0.15, 0.03, false, false), ribbon(l, -0.06, 0.06, 0.03, true, false)]),
+    paint,
+  );
+  return g;
+}
