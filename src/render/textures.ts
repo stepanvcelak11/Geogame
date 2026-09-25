@@ -15,6 +15,26 @@ function hash(i: number): number {
 
 /** Kreslení textur – veřejné, aby šly zkontrolovat jako obrázky i bez WebGL. */
 export const DRAW: Record<string, (g: CanvasRenderingContext2D, s: number) => void> = {
+  /** Stíny mraků: měkké tmavé skvrny, dlaždicově navazující (kreslí se i přes okraje). */
+  cloudShadow(g, s) {
+    g.fillStyle = '#000';
+    g.fillRect(0, 0, s, s);
+    let k = 77;
+    for (let i = 0; i < 16; i++) {
+      const x = hash(k++) * s;
+      const y = hash(k++) * s;
+      const r = s * (0.08 + hash(k++) * 0.16);
+      for (const ox of [-s, 0, s])
+        for (const oy of [-s, 0, s]) {
+          const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+          gr.addColorStop(0, 'rgba(255,255,255,0.9)');
+          gr.addColorStop(0.6, 'rgba(255,255,255,0.45)');
+          gr.addColorStop(1, 'rgba(255,255,255,0)');
+          g.fillStyle = gr;
+          g.fillRect(x + ox - r, y + oy - r, r * 2, r * 2);
+        }
+    }
+  },
   /** Detail trávníku: šedé skvrny a stébla, násobí se barvou terénu (průměr ≈ 1). */
   grass(g, s) {
     g.fillStyle = '#d8d8d8';

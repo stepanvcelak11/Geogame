@@ -5,8 +5,12 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import type { Vec3 } from '../core/math';
 
+/** Výkonnostní třída zařízení: slabý telefon / běžný telefon / počítač. */
+export type Tier = 'low' | 'mid' | 'high';
+
 export interface Quality {
   mobile: boolean;
+  tier: Tier;
   pixelRatioMax: number;
   pixelRatioMin: number;
   shadows: boolean;
@@ -14,11 +18,40 @@ export interface Quality {
   drawDistance: number;
 }
 
+/** Slabé mobilní GPU (staré Mali, Adreno 3xx–5xx, PowerVR, starší Apple). */
+const WEAK_GPU = /mali-(4|t[6-8])|mali-g(31|51|52|57|68|71|72)\b|adreno[^0-9]*(3\d\d|4\d\d|50\d|51\d|52\d|53\d|60\d|61\d)\b|powervr|sgx|apple a(7|8|9|10|11)\b|swiftshader|llvmpipe/i;
+
+/** Název GPU z WebGL (pokud ho prohlížeč prozradí). */
+export function gpuName(): string {
+  try {
+    const c = document.createElement('canvas');
+    const gl = (c.getContext('webgl2') ?? c.getContext('webgl')) as WebGLRenderingContext | null;
+    if (!gl) return '';
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return name;
+  } catch {
+    return '';
+  }
+}
+
+export function detectTier(mobile: boolean, gpu = gpuName()): Tier {
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  const mem = nav.deviceMemory ?? 8;
+  const cores = nav.hardwareConcurrency ?? 8;
+  if (mobile && (mem <= 3 || cores <= 4 || WEAK_GPU.test(gpu))) return 'low';
+  if (!mobile && (mem <= 2 || cores <= 2)) return 'low';
+  return mobile ? 'mid' : 'high';
+}
+
 export function detectQuality(): Quality {
   const mobile = matchMedia('(pointer: coarse)').matches;
+  const tier = detectTier(mobile);
+  if (tier === 'low') return { mobile, tier, pixelRatioMax: 1, pixelRatioMin: 0.6, shadows: true, antialias: false, drawDistance: 240 };
   return mobile
-    ? { mobile, pixelRatioMax: 1.5, pixelRatioMin: 0.75, shadows: true, antialias: false, drawDistance: 300 }
-    : { mobile, pixelRatioMax: 2, pixelRatioMin: 1, shadows: true, antialias: true, drawDistance: 460 };
+    ? { mobile, tier, pixelRatioMax: 1.5, pixelRatioMin: 0.75, shadows: true, antialias: false, drawDistance: 300 }
+    : { mobile, tier, pixelRatioMax: 2, pixelRatioMin: 1, shadows: true, antialias: true, drawDistance: 460 };
 }
 
 export const SKY_HORIZON = 0xa9c4d6;
@@ -52,6 +85,7 @@ export class RenderContext {
   private composer: EffectComposer | null = null;
   private gtao: GTAOPass | null = null;
   private realistic = true;
+  private readonly vignette: HTMLElement;
 
   constructor(
     private readonly container: HTMLElement,
@@ -68,6 +102,10 @@ export class RenderContext {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.domElement.className = 'view';
     container.appendChild(this.renderer.domElement);
+    // Jemná vinětace (jen CSS vrstva nad plátnem, GPU ji skoro nepocítí).
+    this.vignette = document.createElement('div');
+    this.vignette.className = 'vignette';
+    container.appendChild(this.vignette);
 
     this.scene.background = new THREE.Color(SKY);
     this.scene.fog = new THREE.Fog(SKY, quality.drawDistance * 0.3, quality.drawDistance);
@@ -81,7 +119,8 @@ export class RenderContext {
     this.sun = new THREE.DirectionalLight(0xfff0d6, 2.4);
     if (quality.shadows) {
       this.sun.castShadow = true;
-      this.sun.shadow.mapSize.set(quality.mobile ? 1024 : 2048, quality.mobile ? 1024 : 2048);
+      const ms = quality.tier === 'low' ? 512 : quality.mobile ? 1024 : 2048;
+      this.sun.shadow.mapSize.set(ms, ms);
       const cam = this.sun.shadow.camera;
       cam.left = -45;
       cam.right = 45;
@@ -130,6 +169,7 @@ export class RenderContext {
    */
   setGraphics(level: 0 | 1 | 2): void {
     this.realistic = level >= 1;
+    this.vignette.hidden = level === 0;
     this.scene.environment = this.realistic ? (this.envTarget?.texture ?? null) : null;
     this.envKey = '';
     const wantAo = level >= 2;
@@ -252,7 +292,7 @@ export class RenderContext {
   }
 
   /** Dynamické rozlišení: při dlouhodobě nízkém FPS sníží pixel ratio, při rezervě ho vrátí. */
-  adapt(dt: number): void {
+  adapt(dt: number, targetFps = 60): void {
     this.fpsAvg += (1 / Math.max(dt, 1e-3) - this.fpsAvg) * 0.05;
     this.adaptTimer += dt;
     if (this.adaptTimer < 2) return;
@@ -260,8 +300,8 @@ export class RenderContext {
     const q = this.quality;
     const max = Math.min(devicePixelRatio, this.pixelCap);
     let next = this.pixelRatio;
-    if (this.fpsAvg < 42) next = Math.max(q.pixelRatioMin, this.pixelRatio - 0.25);
-    else if (this.fpsAvg > 57) next = Math.min(max, this.pixelRatio + 0.125);
+    if (this.fpsAvg < targetFps * 0.7) next = Math.max(q.pixelRatioMin, this.pixelRatio - 0.25);
+    else if (this.fpsAvg > targetFps * 0.95) next = Math.min(max, this.pixelRatio + 0.125);
     if (next !== this.pixelRatio) {
       this.pixelRatio = next;
       this.renderer.setPixelRatio(next);
@@ -292,7 +332,16 @@ export class RenderContext {
     }
   };
 
+  private frame = 0;
+
   render(): void {
+    // Na telefonu se stínová mapa překresluje jen každý druhý snímek (stíny se hýbou pomalu).
+    this.frame++;
+    const sm = this.renderer.shadowMap;
+    if (this.quality.mobile && sm.enabled) {
+      sm.autoUpdate = false;
+      if (this.frame % 2 === 0) sm.needsUpdate = true;
+    } else sm.autoUpdate = true;
     if (this.composer) this.composer.render();
     else this.renderer.render(this.scene, this.camera);
   }

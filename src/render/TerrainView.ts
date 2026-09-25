@@ -127,7 +127,7 @@ export function terrainColor(x: number, z: number, h: number, slope: number, pai
 }
 
 /** Mesh terénu ze stejné mříže a triangulace jako logika (Heightmap.heightAt), s detailní texturou. */
-export function createTerrainMesh(hm: Heightmap, paint: TerrainPaint): THREE.Mesh {
+export function createTerrainMesh(hm: Heightmap, paint: TerrainPaint): TerrainTiles {
   const n = hm.n;
   // Mřížka zastiňujících objektů (buňky 8 m) – rychlé dotazy pro každý vrchol.
   const CELL = 8;
@@ -188,6 +188,19 @@ export function createTerrainMesh(hm: Heightmap, paint: TerrainPaint): THREE.Mes
     }
   }
 
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.setIndex(new THREE.BufferAttribute(fullIndex(n), 1));
+  geo.computeVertexNormals();
+
+  const map = canvasTexture('grass', 256);
+  const mat = withCloudShadows(matte({ vertexColors: true, map: map ?? undefined, bumpMap: map ?? undefined, bumpScale: 1.2 }));
+  return new TerrainTiles(geo, mat, n, hm);
+}
+
+function fullIndex(n: number): Uint32Array {
   const idx = new Uint32Array((n - 1) * (n - 1) * 6);
   let k = 0;
   for (let iz = 0; iz < n - 1; iz++) {
@@ -204,23 +217,151 @@ export function createTerrainMesh(hm: Heightmap, paint: TerrainPaint): THREE.Mes
       idx[k++] = d;
     }
   }
+  return idx;
+}
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  geo.setIndex(new THREE.BufferAttribute(idx, 1));
-  geo.computeVertexNormals();
-  geo.computeBoundingSphere();
+/** Stíny mraků na terénu: sdílené uniformy (posun s větrem a síla podle oblačnosti). */
+export const cloudShadow = {
+  uShadowTex: { value: null as THREE.Texture | null },
+  uShadowOff: { value: new THREE.Vector2() },
+  uShadowK: { value: 0 },
+};
 
-  const map = canvasTexture('grass', 256);
-  const mesh = new THREE.Mesh(
-    geo,
-    matte({ vertexColors: true, map: map ?? undefined, bumpMap: map ?? undefined, bumpScale: 1.2 }),
-  );
-  mesh.receiveShadow = true;
-  mesh.matrixAutoUpdate = false;
-  return mesh;
+/** Přidá do materiálu tmavé skvrny od mraků, které plují po krajině (jedno čtení textury). */
+export function withCloudShadows(mat: THREE.Material): THREE.Material {
+  cloudShadow.uShadowTex.value ??= canvasTexture('cloudShadow', 128);
+  if (!cloudShadow.uShadowTex.value) return mat;
+  const prev = mat.onBeforeCompile;
+  const prevKey = mat.customProgramCacheKey();
+  mat.onBeforeCompile = (shader, r) => {
+    prev.call(mat, shader, r);
+    Object.assign(shader.uniforms, cloudShadow);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vCsXZ;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCsXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vCsXZ;\nuniform sampler2D uShadowTex;\nuniform vec2 uShadowOff;\nuniform float uShadowK;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 - uShadowK * texture2D(uShadowTex, vCsXZ / 340.0 + uShadowOff).r;');
+  };
+  mat.customProgramCacheKey = () => `${prevKey}+cloudShadow`;
+  return mat;
+}
+
+const TILE = 64; // buněk na stranu dlaždice (2 m → 128 m)
+const COARSE = 4; // hrubá dlaždice: vrchol každé 4. buňky (8 m)
+const DETAIL_DIST = 56; // do této vzdálenosti od kamery plné rozlišení [m]
+const SKIRT = 2.5; // „sukně“ po obvodu dlaždice zakryje spáry mezi úrovněmi detailu [m]
+
+/**
+ * Terén po dlaždicích se dvěma úrovněmi detailu. Blízko hráče plné rozlišení (přesně
+ * podle Heightmap), dál každý 4. vrchol. Na hranách mezi úrovněmi by vznikly škvíry –
+ * zakrývá je svislý pruh („sukně“) spuštěný po obvodu každé dlaždice.
+ */
+export class TerrainTiles {
+  readonly group = new THREE.Group();
+  private readonly tiles: { cx: number; cz: number; half: number; fine: THREE.Mesh; coarse: THREE.Mesh }[] = [];
+  private timer = 0;
+
+  constructor(geo: THREE.BufferGeometry, mat: THREE.Material, n: number, hm: Heightmap) {
+    const cells = n - 1;
+    for (let tz = 0; tz < cells; tz += TILE) {
+      for (let tx = 0; tx < cells; tx += TILE) {
+        const w = Math.min(TILE, cells - tx);
+        const h = Math.min(TILE, cells - tz);
+        const mk = (step: number): THREE.Mesh => {
+          const m = new THREE.Mesh(tileGeometry(geo, n, tx, tz, w, h, step), mat);
+          m.receiveShadow = true;
+          m.matrixAutoUpdate = false;
+          return m;
+        };
+        const fine = mk(1);
+        const coarse = mk(w % COARSE || h % COARSE ? 1 : COARSE);
+        coarse.visible = false;
+        this.group.add(fine, coarse);
+        this.tiles.push({ cx: hm.vertexCoord(tx) + (w * hm.cell) / 2, cz: hm.vertexCoord(tz) + (h * hm.cell) / 2, half: (Math.max(w, h) * hm.cell) / 2, fine, coarse });
+      }
+    }
+  }
+
+  /** Blízké dlaždice jemně, vzdálené hrubě (kontrola jen několikrát za sekundu). */
+  update(dt: number, eye: { x: number; z: number }): void {
+    this.timer -= dt;
+    if (this.timer > 0) return;
+    this.timer = 0.2;
+    for (const t of this.tiles) {
+      const d = Math.hypot(Math.max(0, Math.abs(eye.x - t.cx) - t.half), Math.max(0, Math.abs(eye.z - t.cz) - t.half));
+      const near = d < DETAIL_DIST;
+      t.fine.visible = near;
+      t.coarse.visible = !near;
+    }
+  }
+}
+
+/** Geometrie jedné dlaždice (mříž po `step` buňkách) se sukní po obvodu. */
+function tileGeometry(src: THREE.BufferGeometry, n: number, tx: number, tz: number, w: number, h: number, step: number): THREE.BufferGeometry {
+  const P = src.getAttribute('position') as THREE.BufferAttribute;
+  const C = src.getAttribute('color') as THREE.BufferAttribute;
+  const N = src.getAttribute('normal') as THREE.BufferAttribute;
+  const U = src.getAttribute('uv') as THREE.BufferAttribute;
+  const gw = w / step + 1;
+  const gh = h / step + 1;
+  const border = 2 * (gw + gh) - 4;
+  const count = gw * gh + border;
+  const pos = new Float32Array(count * 3);
+  const col = new Float32Array(count * 3);
+  const nor = new Float32Array(count * 3);
+  const uv = new Float32Array(count * 2);
+  let v = 0;
+  const copy = (si: number, drop: number): number => {
+    pos[v * 3] = P.getX(si);
+    pos[v * 3 + 1] = P.getY(si) - drop;
+    pos[v * 3 + 2] = P.getZ(si);
+    col[v * 3] = C.getX(si) * (drop ? 0.7 : 1);
+    col[v * 3 + 1] = C.getY(si) * (drop ? 0.7 : 1);
+    col[v * 3 + 2] = C.getZ(si) * (drop ? 0.7 : 1);
+    nor[v * 3] = N.getX(si);
+    nor[v * 3 + 1] = N.getY(si);
+    nor[v * 3 + 2] = N.getZ(si);
+    uv[v * 2] = U.getX(si);
+    uv[v * 2 + 1] = U.getY(si);
+    return v++;
+  };
+  const src_ = (gx: number, gz: number): number => (tz + gz * step) * n + tx + gx * step;
+  for (let gz = 0; gz < gh; gz++) for (let gx = 0; gx < gw; gx++) copy(src_(gx, gz), 0);
+  const at = (gx: number, gz: number): number => gz * gw + gx;
+  const idx: number[] = [];
+  for (let gz = 0; gz < gh - 1; gz++) {
+    for (let gx = 0; gx < gw - 1; gx++) {
+      const a = at(gx, gz);
+      const b = at(gx + 1, gz);
+      const cc = at(gx, gz + 1);
+      const d = at(gx + 1, gz + 1);
+      idx.push(a, d, b, a, cc, d);
+    }
+  }
+  // Obvod po směru: horní hrana, pravá, dolní, levá – ke každému vrcholu spuštěná kopie.
+  const ring: [number, number][] = [];
+  for (let gx = 0; gx < gw; gx++) ring.push([gx, 0]);
+  for (let gz = 1; gz < gh; gz++) ring.push([gw - 1, gz]);
+  for (let gx = gw - 2; gx >= 0; gx--) ring.push([gx, gh - 1]);
+  for (let gz = gh - 2; gz >= 1; gz--) ring.push([0, gz]);
+  const low = ring.map(([gx, gz]) => copy(src_(gx, gz), SKIRT));
+  for (let i = 0; i < ring.length; i++) {
+    const j = (i + 1) % ring.length;
+    const a = at(ring[i][0], ring[i][1]);
+    const b = at(ring[j][0], ring[j][1]);
+    // Oboustranně – sukně je vidět z obou stran spáry.
+    idx.push(a, b, low[i], b, low[j], low[i], a, low[i], b, b, low[i], low[j]);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeBoundingSphere();
+  g.computeBoundingBox();
+  return g;
 }
 
 /** Hladina rybníka a rákosí kolem. */

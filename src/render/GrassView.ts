@@ -2,9 +2,23 @@ import * as THREE from 'three';
 import type { World } from '../world/World';
 import { FOREST, inPolygon } from '../world/WorldGen';
 import { canvasTexture } from './textures';
+import { swaying } from './VegetationView';
+import { withCloudShadows } from './TerrainView';
 
 const CELL = 4; // strana buňky rozmístění [m]
 const RADIUS = 34; // tráva jen kolem hráče [m]
+
+/** Oboustranné plošky bez otočení normály na zadní straně (normála trávy míří nahoru). */
+function upNormals(mat: THREE.Material): THREE.Material {
+  const prev = mat.onBeforeCompile;
+  const key = mat.customProgramCacheKey();
+  mat.onBeforeCompile = (shader, r) => {
+    prev.call(mat, shader, r);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nnormal = normalize(vNormal);');
+  };
+  mat.customProgramCacheKey = () => `${key}+up`;
+  return mat;
+}
 
 function hash(a: number, b: number, k: number): number {
   let x = Math.imul(a * 73856093 ^ b * 19349663 ^ k * 83492791, 0x27d4eb2d);
@@ -35,14 +49,19 @@ export class GrassView {
     parent: THREE.Object3D,
     private readonly world: World,
     mobile: boolean,
+    low = false,
   ) {
-    this.max = mobile ? 4200 : 9000;
+    this.max = low ? 2000 : mobile ? 4200 : 9000;
     const plane = new THREE.PlaneGeometry(0.7, 0.5).translate(0, 0.25, 0);
     const a = plane.clone();
     const b = plane.clone().rotateY(Math.PI / 2);
     const geo = mergeTwo(a, b);
+    // Normály nahoru: trsy se osvětlí jako zem pod nimi, ne jako svislé plochy (jinak jsou skoro černé).
+    const nrm = geo.getAttribute('normal') as THREE.BufferAttribute;
+    for (let i = 0; i < nrm.count; i++) nrm.setXYZ(i, 0, 1, 0);
     const map = canvasTexture('blades', 128, false);
     const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, map: map ?? undefined, alphaTest: 0.45, side: THREE.DoubleSide }); // tisíce stébel: levný materiál
+    upNormals(withCloudShadows(swaying(mat, 0.22, 0, 'swayGrass')));
     this.mesh = new THREE.InstancedMesh(geo, mat, this.max);
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
@@ -50,6 +69,7 @@ export class GrassView {
     parent.add(this.mesh);
     const fmap = canvasTexture('flowers', 128, false);
     const fmat = new THREE.MeshLambertMaterial({ color: 0xffffff, map: fmap ?? undefined, alphaTest: 0.4, side: THREE.DoubleSide });
+    upNormals(withCloudShadows(swaying(fmat, 0.22, 0, 'swayGrass')));
     this.flowers = new THREE.InstancedMesh(geo, fmat, Math.round(this.max / 4));
     this.flowers.count = 0;
     this.flowers.frustumCulled = false;
@@ -99,7 +119,7 @@ export class GrassView {
           if (field?.crop === 'wheat') col.setHSL(0.13, 0.55, 0.55 + hash(ix, iz, k) * 0.08);
           else if (field?.crop === 'rapeseed') col.setHSL(0.16, 0.8, 0.5);
           else if (forest) col.setHSL(0.27 + hash(ix, iz, k + 3) * 0.05, 0.45, 0.2 + hash(ix, iz, k + 4) * 0.06);
-          else col.setHSL(0.24 + hash(ix, iz, k + 3) * 0.06, 0.5, 0.32 + hash(ix, iz, k + 4) * 0.1);
+          else col.setHSL(0.22 + hash(ix, iz, k + 3) * 0.07, 0.46, 0.26 + hash(ix, iz, k + 4) * 0.12);
           this.mesh.setColorAt(n, col);
           n++;
           // Kvítí na louce (ne na polích).

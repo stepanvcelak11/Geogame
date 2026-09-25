@@ -16,6 +16,8 @@ export class GameLoop {
   private last = -1;
   private raf = 0;
   private running = false;
+  /** Nejkratší doba snímku [ms]; 0 = bez omezení (úspora baterie: 30 FPS ≈ 33 ms). */
+  minFrameMs = 0;
 
   constructor(
     private readonly fixedDt: number,
@@ -38,6 +40,8 @@ export class GameLoop {
   private readonly tick = (now: number): void => {
     if (!this.running) return;
     this.raf = requestAnimationFrame(this.tick);
+    // Omezení snímků: vynechat, dokud neuplyne minimální doba (s tolerancí na nepřesný rAF).
+    if (this.minFrameMs && this.last >= 0 && now - this.last < this.minFrameMs - 3) return;
     // Po návratu z pozadí (zamčený telefon) nesmí simulace „doskočit“ sekundy.
     const dt = this.last < 0 ? this.fixedDt : Math.min((now - this.last) / 1000, 0.25);
     this.last = now;

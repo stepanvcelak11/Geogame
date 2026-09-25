@@ -70,6 +70,7 @@ import { PlayerController, type MoveIntent } from './player/PlayerController';
 import { Flashlight } from './render/Flashlight';
 import { ItemsView } from './render/ItemsView';
 import { TrenchView } from './render/TrenchView';
+import { mergeStatic } from './render/mergeStatic';
 import { createMarkMesh, createVehicleMesh, DRIVER_EYE, syncVehicle } from './render/PropsView';
 import { setRealisticMaterials } from './render/materials';
 import { detectQuality, RenderContext, SKY_HORIZON, SUN_DIR } from './render/RenderContext';
@@ -78,8 +79,8 @@ import { StakesView } from './render/StakesView';
 import { TargetMarker } from './render/TargetMarker';
 import { GrassView } from './render/GrassView';
 import { createScenery } from './render/SceneryView';
-import { createTerrainMesh, createWater } from './render/TerrainView';
-import { createVegetation } from './render/VegetationView';
+import { cloudShadow, createTerrainMesh, createWater, type TerrainTiles } from './render/TerrainView';
+import { Vegetation } from './render/VegetationView';
 import { createBuilding, createFence, createRoad } from './render/WorldFeaturesView';
 import { InstrumentSetup } from './survey/InstrumentSetup';
 import { solveResection, type ResectionObs } from './survey/FreeStation';
@@ -241,6 +242,8 @@ export class Game {
   private interaction!: InteractionSystem;
   private locGroup: THREE.Group | null = null;
   private trench: TrenchView | null = null;
+  private vegetation: Vegetation | null = null;
+  private terrain: TerrainTiles | null = null;
   private vanMesh!: THREE.Group;
   private stakesView!: StakesView;
   private marker!: TargetMarker;
@@ -342,7 +345,7 @@ export class Game {
 
     // --- Render (trvalé části)
     const quality = detectQuality();
-    setRealisticMaterials(loadSettings(quality.mobile).gfx >= 1); // materiály se staví se scénou
+    setRealisticMaterials(loadSettings(quality.mobile, quality.tier).gfx >= 1); // materiály se staví se scénou
     this.touchMode = quality.mobile;
     this.gfx = new RenderContext(root, quality);
     this.sky = new Sky(this.gfx.scene, quality.drawDistance * 0.95, SKY_HORIZON, SUN_DIR);
@@ -456,7 +459,8 @@ export class Game {
       this.cargoSheet.hide();
     };
     this.loadLocation(first.location, 'spawn');
-    this.applySettings(loadSettings(quality.mobile), false);
+    this.settingsScreen.tier = quality.tier;
+    this.applySettings(loadSettings(quality.mobile, quality.tier), false);
     this.refreshHands();
 
     this.loop = new GameLoop(CONFIG.loop.fixedDt, CONFIG.loop.maxSubSteps, {
@@ -464,6 +468,7 @@ export class Game {
       step: (dt) => this.step(dt),
       render: (alpha, dt) => this.render(alpha, dt),
     });
+    this.loop.minFrameMs = this.settings.fps30 ? 1000 / 30 : 0;
   }
 
   start(): void {
@@ -533,25 +538,28 @@ export class Game {
         .filter((s) => s.h > 1)
         .map((s) => ({ x: s.x, z: s.z - 0.6, r: Math.hypot(s.w, s.d) / 2 + 1.6, k: s.kind === 'powerPole' ? 0.1 : 0.38 })),
     ];
-    g.add(
-      createTerrainMesh(world.heightmap, {
+    this.terrain = createTerrainMesh(world.heightmap, {
         occluders,
         flatRadius: world.flatRadius,
         gravelYard: world.location === 'kancelar',
         forestEdgeX: world.location === 'les' ? FOREST.edgeX : undefined,
         fields: world.fields,
         water: world.water,
-      }),
-    );
+      });
+    g.add(this.terrain.group);
     g.add(createWater(world.water));
-    g.add(createScenery(world, quality.mobile));
-    this.grass = new GrassView(g, world, quality.mobile);
+    const statics = new THREE.Group();
+    statics.add(createScenery(world, quality.mobile));
+    this.grass = new GrassView(g, world, quality.mobile, quality.tier === 'low');
     if (this.settings) this.grass.setDensity([0, 0.5, 1][this.settings.grass]);
-    g.add(createVegetation(world.trees, quality.shadows));
-    g.add(createRoad(world.road, world.heightmap));
-    if (world.building) g.add(createBuilding(world.building));
-    if (world.fence) g.add(createFence(world.fence));
-    for (const m of world.marks) g.add(createMarkMesh(m));
+    this.vegetation = new Vegetation(world.trees, quality.shadows);
+    g.add(this.vegetation.group);
+    statics.add(createRoad(world.road, world.heightmap));
+    if (world.building) statics.add(createBuilding(world.building));
+    if (world.fence) statics.add(createFence(world.fence));
+    for (const m of world.marks) statics.add(createMarkMesh(m));
+    // Statické kusy sloučené podle materiálu: z desítek draw callů pár.
+    g.add(mergeStatic(statics));
     this.trench = world.trench ? new TrenchView(world.trench, world.heightmap) : null;
     if (this.trench) g.add(this.trench.group);
     this.vanMesh = createVehicleMesh(world.vehicle);
@@ -2043,6 +2051,7 @@ export class Game {
     this.sfx.setVolume(s.volume);
     this.sfx.ambienceOn = s.ambience;
     this.hud.setFpsVisible(s.fps);
+    if (this.loop) this.loop.minFrameMs = s.fps30 ? 1000 / 30 : 0;
     if (persist) saveSettings(s);
   }
 
@@ -4601,6 +4610,16 @@ export class Game {
     const hp = this.helper.pos;
     this.helperView.sync(hp, this.helper.body.yaw, this.helper.walkPhase, !this.helper.inVan, this.world.location === 'stavba', !!this.helper.carryId);
     this.grass.update(this.eye.x, this.eye.z);
+    this.terrain?.update(dt, this.eye);
+    // Stíny mraků plují s větrem; nejvýraznější při polojasnu, v noci a pod souvislou oblačností mizí.
+    {
+      const c = this.weather.cloud;
+      cloudShadow.uShadowK.value = this.settings.gfx === 0 ? 0 : Math.max(0, 0.34 * Math.sin(Math.PI * Math.min(1, 0.15 + c)) * (1 - this.night) * (1 - this.weather.rain));
+      const o2 = cloudShadow.uShadowOff.value;
+      o2.x += dt * (0.0012 + this.weather.wind * 0.004);
+      o2.y += dt * (0.0005 + this.weather.wind * 0.0015);
+    }
+    this.vegetation?.update(dt, this.eye, drawDistanceFor(this.settings, this.gfx.quality.mobile), this.weather.wind);
     this.gfx.followSun(this.eye);
     this.itemsView.sync(this.items, this.world.location);
     this.stakesView.sync(this.stakes.filter((s) => s.location === this.world.location));
@@ -4612,7 +4631,7 @@ export class Game {
     if (placing && this.aim) this.marker.show(this.aim.x, this.aim.y, this.aim.z, this.aim.valid || active.kind !== 'tripod', !!(this.aim.mark || this.aim.feature));
     else this.marker.hide();
 
-    this.gfx.adapt(dt);
+    this.gfx.adapt(dt, this.settings.fps30 ? 30 : 60);
     this.autoQuality(dt);
     this.gfx.render();
 

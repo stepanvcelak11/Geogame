@@ -1,4 +1,4 @@
-import type { Settings } from '../settings/Settings';
+import { preset, type Settings, type Tier } from '../settings/Settings';
 
 type Opt<T> = { v: T; label: string };
 
@@ -8,6 +8,8 @@ export class SettingsScreen {
   private s: Settings | null = null;
   private resetArmed = false;
   onChange: ((s: Settings) => void) | null = null;
+  /** Zjištěná třída zařízení (pro popisek a doporučení). */
+  tier: Tier = 'mid';
   onResetCareer: (() => void) | null = null;
   onClose: (() => void) | null = null;
 
@@ -28,6 +30,12 @@ export class SettingsScreen {
         }
         this.onResetCareer?.();
         this.resetArmed = false;
+        return this.render();
+      }
+      const pb = t.closest<HTMLButtonElement>('[data-preset]');
+      if (pb) {
+        this.s = { ...this.s, ...preset(pb.dataset.preset as Tier) };
+        this.onChange?.(this.s);
         return this.render();
       }
       const b = t.closest<HTMLButtonElement>('[data-k]');
@@ -81,6 +89,16 @@ export class SettingsScreen {
     this.el.innerHTML = `<div class="set-body">
       <h2>Nastavení</h2>
       <h3>Grafika</h3>
+      <div class="set-row"><span>Předvolba</span><div class="set-seg">${(
+        [
+          ['low', 'Slabý telefon'],
+          ['mid', 'Běžný'],
+          ['high', 'Výkonný'],
+        ] as const
+      )
+        .map(([k, l]) => `<button data-preset="${k}">${l}${this.tier === k ? ' ✓' : ''}</button>`)
+        .join('')}</div></div>
+      <p class="set-note">Zjištěno: ${{ low: 'slabší telefon – doporučená úsporná grafika', mid: 'běžný telefon', high: 'počítač nebo výkonné zařízení' }[this.tier]}. Předvolba nastaví všechno níže najednou.</p>
       ${seg('gfx', 'Kvalita', [
         { v: 0, label: 'Úsporná' },
         { v: 1, label: 'Realistická' },
@@ -99,6 +117,7 @@ export class SettingsScreen {
         { v: 2, label: 'Dlouhý' },
       ])}
       ${onoff('saver', 'Úsporné rozlišení')}
+      ${onoff('fps30', 'Úspora baterie (30 FPS)')}
       <p class="set-note">Když se hra seká: vypni stíny, zřeď trávu a zkrať dohled.</p>
       <h3>Ovládání</h3>
       ${range('lookSens', 'Citlivost rozhlížení', 0.4, 2, 0.1)}
