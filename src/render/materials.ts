@@ -1,13 +1,53 @@
 import * as THREE from 'three';
 
-const cache = new Map<string, THREE.MeshLambertMaterial>();
+/**
+ * Kvalita materiálů. Realistická = fyzikální (PBR) materiály, které odrážejí oblohu
+ * (scene.environment); úsporná = levné Lambert materiály pro slabé telefony.
+ * Nastavuje se jednou před stavbou scény (změna se projeví po restartu).
+ */
+let realistic = true;
 
-/** Sdílené Lambert materiály – levné pro mobilní GPU a bez zbytečných kompilací shaderů. */
-export function lambert(color: number, key = String(color)): THREE.MeshLambertMaterial {
+export function setRealisticMaterials(on: boolean): void {
+  realistic = on;
+}
+
+export function realisticMaterials(): boolean {
+  return realistic;
+}
+
+export type MatteMaterial = THREE.MeshStandardMaterial | THREE.MeshLambertMaterial;
+type MatteParams = THREE.MeshStandardMaterialParameters & THREE.MeshLambertMaterialParameters;
+
+/** Matný materiál (omítka, tráva, dřevo, plast): PBR s vysokou drsností, nebo Lambert. */
+export function matte(p: MatteParams = {}): MatteMaterial {
+  if (!realistic) return new THREE.MeshLambertMaterial(p);
+  return new THREE.MeshStandardMaterial({ roughness: 0.9, metalness: 0, ...p });
+}
+
+const cache = new Map<string, MatteMaterial>();
+
+/** Sdílené matné materiály podle barvy (bez zbytečných kompilací shaderů). */
+export function lambert(color: number, key = String(color)): MatteMaterial {
   let m = cache.get(key);
   if (!m) {
-    m = new THREE.MeshLambertMaterial({ color });
+    m = matte({ color });
     cache.set(key, m);
+  }
+  return m;
+}
+
+/**
+ * Materiál s vlastní drsností a kovovostí (lakovaný plast přístrojů, hliník, sklo).
+ * V úsporném režimu Phong s odleskem, ať kov pořád trochu svítí.
+ */
+export function pbr(color: number, roughness: number, metalness = 0, extra: THREE.MeshStandardMaterialParameters = {}): THREE.Material {
+  const key = `pbr:${color}:${roughness}:${metalness}:${JSON.stringify(extra)}`;
+  let m = cache.get(key) as THREE.Material | undefined;
+  if (!m) {
+    m = realistic
+      ? new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra })
+      : new THREE.MeshPhongMaterial({ color, shininess: Math.round((1 - roughness) * 90), specular: metalness > 0.5 ? 0x999999 : 0x333333 });
+    cache.set(key, m as MatteMaterial);
   }
   return m;
 }

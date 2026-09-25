@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { ControlMark } from '../world/World';
-import { lambert, PALETTE } from './materials';
+import { lambert, matte, PALETTE } from './materials';
 
 function box(w: number, h: number, d: number, color: number): THREE.Mesh {
   return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lambert(color));
@@ -67,7 +67,7 @@ export function createMarkMesh(mark: ControlMark): THREE.Group {
           seg.position.y = 0.25 + i * 0.5;
           pole.add(seg);
         }
-        const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.25), new THREE.MeshLambertMaterial({ map: triangulationSign() }));
+        const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.25), matte({ map: triangulationSign() }));
         sign.position.set(0, 1.75, 0.04);
         const back = box(0.4, 0.25, 0.01, PALETTE.white);
         back.position.set(0, 1.75, 0.03);
@@ -80,7 +80,7 @@ export function createMarkMesh(mark: ControlMark): THREE.Group {
       const missing = mark.condition === 'missing';
       const ring = new THREE.Mesh(
         new THREE.RingGeometry(0.07, 0.1, 20, 1, 0, missing ? Math.PI * 1.2 : Math.PI * 2).rotateX(-Math.PI / 2),
-        new THREE.MeshLambertMaterial({
+        matte({
           color: missing ? 0x9a5a48 : PALETTE.stakeRed,
           transparent: missing,
           opacity: missing ? 0.55 : 1,
@@ -139,7 +139,7 @@ export function createVehicleMesh(v: { length: number; width: number; height: nu
   const body = new THREE.Group(); // náklon karoserie
   g.add(body);
   const clearance = 0.42;
-  const glass = new THREE.MeshLambertMaterial({ color: 0x9fb7c4, transparent: true, opacity: 0.22, depthWrite: false });
+  const glass = matte({ color: 0x9fb7c4, transparent: true, opacity: 0.22, depthWrite: false });
 
   const cargo = box(v.length * 0.74, v.height - clearance, v.width, PALETTE.white);
   cargo.position.set(v.length * 0.13, clearance + (v.height - clearance) / 2, 0);

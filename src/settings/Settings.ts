@@ -1,6 +1,7 @@
 /** Nastavení hráče (grafika, ovládání, zvuk). Ukládá se do localStorage, když jde. */
 export interface Settings {
   v: 1;
+  gfx: 0 | 1 | 2; // úsporná / realistická (PBR) / vysoká (PBR + AO)
   shadows: boolean;
   grass: 0 | 1 | 2; // vypnutá / řídká / plná
   draw: 0 | 1 | 2; // dohled krátký / střední / dlouhý
@@ -16,7 +17,7 @@ export interface Settings {
 const KEY = 'geodet-nastaveni-v1';
 
 export function defaultSettings(mobile: boolean): Settings {
-  return { v: 1, shadows: true, grass: mobile ? 1 : 2, draw: 1, saver: false, lookSens: 1, invertY: false, volume: 0.8, ambience: true, guide: true, fps: false };
+  return { v: 1, gfx: mobile ? 1 : 2, shadows: true, grass: mobile ? 1 : 2, draw: 1, saver: false, lookSens: 1, invertY: false, volume: 0.8, ambience: true, guide: true, fps: false };
 }
 
 export function loadSettings(mobile: boolean): Settings {

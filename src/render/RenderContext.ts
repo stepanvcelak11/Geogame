@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import type { Vec3 } from '../core/math';
 
 export interface Quality {
@@ -38,6 +42,16 @@ export class RenderContext {
   private drawDist: number;
   private fpsAvg = 60;
   private adaptTimer = 0;
+  // Okolní světlo z oblohy (odrazy na PBR materiálech) a zastínění AO.
+  private readonly pmrem: THREE.PMREMGenerator;
+  private readonly envScene = new THREE.Scene();
+  private readonly envSky: THREE.Mesh;
+  private envTarget: THREE.WebGLRenderTarget | null = null;
+  private envKey = '';
+  private envTimer = 0;
+  private composer: EffectComposer | null = null;
+  private gtao: GTAOPass | null = null;
+  private realistic = true;
 
   constructor(
     private readonly container: HTMLElement,
@@ -49,7 +63,7 @@ export class RenderContext {
     this.pixelRatio = Math.min(devicePixelRatio, quality.pixelRatioMax);
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = quality.shadows;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.domElement.className = 'view';
@@ -80,9 +94,96 @@ export class RenderContext {
     }
     this.scene.add(this.sun, this.sun.target);
 
+    // Obloha pro mapu okolí: koule s přechodem zenit → horizont → zem a jasným místem slunce.
+    this.pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.envSky = new THREE.Mesh(
+      new THREE.SphereGeometry(10, 32, 16),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        uniforms: {
+          zenith: { value: new THREE.Color() },
+          horizon: { value: new THREE.Color() },
+          ground: { value: new THREE.Color() },
+          sun: { value: new THREE.Color() },
+          sunDir: { value: new THREE.Vector3(0, 1, 0) },
+        },
+        vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: `uniform vec3 zenith; uniform vec3 horizon; uniform vec3 ground; uniform vec3 sun; uniform vec3 sunDir; varying vec3 vD;
+          void main(){
+            float h = vD.y;
+            vec3 c = h > 0.0 ? mix(horizon, zenith, pow(h, 0.6)) : mix(horizon, ground, pow(-h, 0.35));
+            c += sun * pow(max(dot(vD, normalize(sunDir)), 0.0), 64.0) * 6.0;
+            gl_FragColor = vec4(c, 1.0);
+          }`,
+      }),
+    );
+    this.envScene.add(this.envSky);
+
     this.resize();
     addEventListener('resize', this.resize);
     screen.orientation?.addEventListener?.('change', this.resize);
+  }
+
+  /**
+   * Úroveň grafiky: 0 úsporná (Lambert, bez odrazů), 1 realistická (PBR + mapa okolí),
+   * 2 vysoká (navíc zastínění GTAO a vyhlazení).
+   */
+  setGraphics(level: 0 | 1 | 2): void {
+    this.realistic = level >= 1;
+    this.scene.environment = this.realistic ? (this.envTarget?.texture ?? null) : null;
+    this.envKey = '';
+    const wantAo = level >= 2;
+    if (wantAo && !this.composer) {
+      const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+      const target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
+      this.composer = new EffectComposer(this.renderer, target);
+      this.composer.addPass(new RenderPass(this.scene, this.camera));
+      this.gtao = new GTAOPass(this.scene, this.camera, size.x, size.y);
+      // Průhledné plošky (tráva, mraky, déšť, obloha) by v normálovém průchodu kreslily plné
+      // čtverce – z AO je vyřadíme (userData.noAO nebo sprite).
+      const gtao = this.gtao as unknown as { overrideVisibility: () => void; _visibilityCache: Map<THREE.Object3D, boolean> };
+      const base = gtao.overrideVisibility.bind(gtao);
+      gtao.overrideVisibility = () => {
+        base();
+        this.scene.traverse((o) => {
+          if (!o.visible) return;
+          if ((o as THREE.Sprite).isSprite || o.userData.noAO) {
+            if (!gtao._visibilityCache.has(o)) gtao._visibilityCache.set(o, o.visible);
+            o.visible = false;
+          }
+        });
+      };
+      this.gtao.blendIntensity = 0.65;
+      this.gtao.updateGtaoMaterial({ radius: 0.45, distanceExponent: 1.6, thickness: 1, scale: 1, samples: 12 });
+      this.composer.addPass(this.gtao);
+      this.composer.addPass(new OutputPass());
+      this.resize();
+    } else if (!wantAo && this.composer) {
+      this.composer.dispose();
+      this.gtao?.dispose();
+      this.composer = null;
+      this.gtao = null;
+    }
+  }
+
+  /** Přepočítá mapu okolí, když se obloha změnila (nejvýš jednou za pár sekund). */
+  private updateEnvironment(d: { sunDir: Vec3; sunColor: number; sunIntensity: number; skyLight: number; groundLight: number; horizon: number; zenith?: number }, dt: number): void {
+    if (!this.realistic) return;
+    this.envTimer -= dt;
+    const key = [d.horizon, d.skyLight, d.groundLight, d.sunColor, Math.round(d.sunIntensity * 10), Math.round(d.sunDir.y * 20), Math.round(d.sunDir.x * 20)].join();
+    if (key === this.envKey || this.envTimer > 0) return;
+    this.envKey = key;
+    this.envTimer = 3;
+    const u = (this.envSky.material as THREE.ShaderMaterial).uniforms;
+    (u.zenith.value as THREE.Color).setHex(d.zenith ?? d.skyLight).convertSRGBToLinear();
+    (u.horizon.value as THREE.Color).setHex(d.horizon).convertSRGBToLinear();
+    (u.ground.value as THREE.Color).setHex(d.groundLight).convertSRGBToLinear().multiplyScalar(0.6);
+    (u.sun.value as THREE.Color).setHex(d.sunColor).convertSRGBToLinear().multiplyScalar(Math.min(1, d.sunIntensity / 2.4));
+    (u.sunDir.value as THREE.Vector3).set(d.sunDir.x, d.sunDir.y, d.sunDir.z);
+    const rt = this.pmrem.fromScene(this.envScene, 0, 0.1, 50);
+    this.envTarget?.dispose();
+    this.envTarget = rt;
+    this.scene.environment = rt.texture;
   }
 
   /** Slunce (a stínová kamera) jde s hráčem. */
@@ -95,8 +196,9 @@ export class RenderContext {
     groundLight: number;
     hemiIntensity: number;
     horizon: number;
+    zenith?: number;
     fogScale?: number;
-  }): void {
+  }, dt = 0): void {
     const fog = this.scene.fog as THREE.Fog;
     const k = Math.max(0.12, d.fogScale ?? 1);
     fog.near = this.drawDist * 0.3 * k;
@@ -107,7 +209,10 @@ export class RenderContext {
     this.sun.intensity = d.sunIntensity;
     this.hemi.color.setHex(d.skyLight);
     this.hemi.groundColor.setHex(d.groundLight);
-    this.hemi.intensity = d.hemiIntensity;
+    // S mapou okolí svítí obloha i odrazy – polokoule jen doplňuje.
+    this.hemi.intensity = d.hemiIntensity * (this.realistic ? 0.8 : 1);
+    this.scene.environmentIntensity = this.realistic ? 0.5 : 0;
+    this.updateEnvironment(d, dt);
     (this.scene.background as THREE.Color).setHex(d.horizon);
     (this.scene.fog as THREE.Fog).color.setHex(d.horizon);
   }
@@ -180,9 +285,15 @@ export class RenderContext {
     // Na výšku by byl vodorovný záběr moc úzký – rozšíříme svislé FOV.
     this.camera.fov = w < h ? 88 : 72;
     this.camera.updateProjectionMatrix();
+    if (this.composer) {
+      const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+      this.composer.setPixelRatio(1);
+      this.composer.setSize(size.x, size.y);
+    }
   };
 
   render(): void {
-    this.renderer.render(this.scene, this.camera);
+    if (this.composer) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 }

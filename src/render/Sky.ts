@@ -45,6 +45,7 @@ export class Sky {
     this.mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 24, 12), mat);
     this.mesh.renderOrder = -1;
     this.mesh.frustumCulled = false;
+    this.mesh.userData.noAO = true;
     scene.add(this.mesh);
   }
 

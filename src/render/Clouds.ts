@@ -60,9 +60,10 @@ function cloudTexture(): THREE.Texture | null {
     return k / 2147483647;
   };
   for (let i = 0; i < 26; i++) {
-    const x = 40 + rnd() * 176;
-    const y = 50 + rnd() * 40 - Math.abs(x - 128) * 0.12;
-    const r = 18 + rnd() * 30;
+    // Kapky drž uvnitř plátna, ať okraje sprite plynule mizí (žádné rovné hrany).
+    const r = 16 + rnd() * 24;
+    const x = 56 + rnd() * 144;
+    const y = Math.min(128 - r - 2, Math.max(r + 2, 58 + rnd() * 26 - Math.abs(x - 128) * 0.1));
     const grd = g.createRadialGradient(x, y, 0, x, y, r);
     grd.addColorStop(0, 'rgba(255,255,255,0.9)');
     grd.addColorStop(0.6, 'rgba(245,247,250,0.55)');
