@@ -2,7 +2,9 @@ import { PlayerController, type MoveIntent } from '../player/PlayerController';
 import type { World } from '../world/World';
 
 export type HelperState = 'follow' | 'wait' | 'goto' | 'hold' | 'instrument';
-export type HelperEvent = { kind: 'arrived'; purpose: 'hold' | 'instrument' } | { kind: 'detour' } | null;
+/** Proč Pepa někam jde: držet na bodě, stát u přístroje, vzít věc z auta, donést ji, uložit do auta, dojít pro dodávku. */
+export type HelperPurpose = 'hold' | 'instrument' | 'fetch' | 'deliver' | 'stow' | 'van';
+export type HelperEvent = { kind: 'arrived'; purpose: HelperPurpose } | { kind: 'detour' } | null;
 
 /**
  * Pomocník (figurant): chodí po terénu stejnou fyzikou jako hráč, nosí výtyčku nebo lať,
@@ -13,7 +15,7 @@ export class Helper {
   readonly body: PlayerController;
   state: HelperState = 'follow';
   target: { x: number; z: number } | null = null;
-  purpose: 'hold' | 'instrument' = 'hold';
+  purpose: HelperPurpose = 'hold';
   carryId: string | null = null; // co nese (výtyčka / lať)
   instrumentId: string | null = null;
   inVan = false;
@@ -48,7 +50,7 @@ export class Helper {
     this.target = null;
   }
 
-  goTo(x: number, z: number, purpose: 'hold' | 'instrument'): void {
+  goTo(x: number, z: number, purpose: HelperPurpose): void {
     this.state = 'goto';
     this.target = { x, z };
     this.purpose = purpose;
@@ -66,7 +68,7 @@ export class Helper {
       stopAt = 2.2;
     } else if (this.state === 'goto' && this.target) {
       goal = this.target;
-      stopAt = this.purpose === 'hold' ? 0.75 : 1.1; // stojí vedle výtyčky / u stativu
+      stopAt = { hold: 0.5, instrument: 1.1, fetch: 1.2, stow: 1.2, van: 1.4, deliver: 1.7 }[this.purpose]; // stojí u výtyčky / u stativu / u auta / u tebe
     }
     const intent: MoveIntent = { forward: 0, right: 0, sprint: false, jump: false };
     if (goal) {
@@ -102,7 +104,7 @@ export class Helper {
         this.stuck = 0;
         this.lastDist = Infinity;
         if (this.state === 'goto') {
-          this.state = this.purpose === 'hold' ? 'hold' : 'instrument';
+          this.state = this.purpose === 'hold' ? 'hold' : this.purpose === 'instrument' ? 'instrument' : 'wait';
           ev = { kind: 'arrived', purpose: this.purpose };
           this.body.yaw = Math.atan2(-dx, -dz);
         }
