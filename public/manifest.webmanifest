@@ -1,0 +1,10 @@
+{
+  "name": "Geodet – terénní simulátor",
+  "short_name": "Geodet",
+  "lang": "cs",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#1f2428",
+  "theme_color": "#1f2428"
+}
