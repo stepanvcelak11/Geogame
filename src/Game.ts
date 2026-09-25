@@ -23,6 +23,8 @@ import {
   type CrsId,
   type ImportFile,
 } from './gnss/FieldController';
+import { TsSoftware, type TsSoftView } from './ui/TsSoftware';
+import { atmPpm, defaultTsConfig, distanceError, pressureAt, PRISMS, REAL_TARGET_H, tsMissing, type TsConfig } from './survey/TsConfig';
 import { ControllerScreen, type ControllerView } from './ui/ControllerScreen';
 import { Bench } from './ui/Bench';
 import {
@@ -153,6 +155,7 @@ interface JobRun {
   deadline?: { day: number; min: number }; // do kdy je výkop otevřený
   buried?: boolean; // bagr výkop zasypal dřív, než bylo zaměřeno
   tape?: Map<string, number>; // oměrné míry pásmem: „a|b“ → délka [m]
+  tsIssues?: Set<'prism' | 'target' | 'atm'>; // chyby nastavení stanice, se kterými se měřilo
 }
 
 const CHECK_TOL = { xy: 0.03, h: 0.05 };
@@ -206,6 +209,9 @@ export class Game {
   private readonly proc: ProcessingScreen;
   private procJob: string | null = null;
   private readonly ctrlScreen: ControllerScreen;
+  private readonly tsSoft: TsSoftware;
+  private tsCfg: TsConfig = defaultTsConfig();
+  private tsGate: (() => void) | null = null; // po nastavení programu pokračovat na zadání stanoviska
   private rigCase: WorldItem | null = null; // kufr, u kterého se rover skládá
   /** Probíhající observace bodu GNSS (měří se po epochách, hráč musí stát). */
   private obs: { t: number; need: number; aim: AimPoint; helper?: string } | null = null;
@@ -409,6 +415,12 @@ export class Game {
       this.help.show(this.helpTopic());
     };
     this.ctrlScreen = new ControllerScreen(root);
+    this.tsSoft = new TsSoftware(root);
+    this.tsSoft.onAction = (id, v) => this.tsAction(id, v);
+    this.tsSoft.onClose = () => {
+      this.tsGate = null;
+      this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    };
     this.ctrlScreen.onAction = (id, v) => this.controllerAction(id, v);
     this.ctrlScreen.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     this.hud.onOpenController = () => this.openController();
@@ -700,6 +712,7 @@ export class Game {
       this.stationDialog.isOpen ||
       this.proc.isOpen ||
       this.ctrlScreen.isOpen ||
+      this.tsSoft.isOpen ||
       this.traveling
     );
   }
@@ -1176,6 +1189,14 @@ export class Game {
       this.bus.emit('toast', { text: 'Stanice hlásí chybu 5001: kompenzátor mimo rozsah. Po pádu potřebuje servis.', tone: 'warn' });
       return;
     }
+    // Bez zakázky a nahraných bodů stanice neví, kde stojí: nejdřív program stanice.
+    const miss = this.tsMissingNow();
+    if (miss.includes('job') || miss.includes('import')) {
+      this.openTsSoft(() => this.setupDone(), mark ? `Pokračovat: stanovisko ${mark.number}` : 'Pokračovat: volné stanovisko');
+      this.bus.emit('toast', { text: mark ? `Stanice nezná bod ${mark.number}: v programu založ zakázku a nahraj bodové pole.` : 'Pro volné stanovisko potřebuje stanice nahrané známé body: založ zakázku a importuj bodové pole.', tone: 'warn' });
+      return;
+    }
+    if (miss.length) setTimeout(() => this.bus.emit('toast', { text: `Program stanice: ${this.tsMissText(miss[0])}`, tone: 'warn' }), 1800);
     if (known && mark) {
       // Na známém bodě: výška přístroje se odečte pásmem a zadá do stanice ručně.
       this.stationDialog.onConfirm = (vp) => this.createStation(tripod, known, vp, s.instrumentHeight, mark.number);
@@ -1219,6 +1240,7 @@ export class Game {
     };
     sc.onMeasure = () => (this.scope?.kind === 'level' ? this.levelMeasure() : this.scopeMeasure());
     sc.onAtr = () => this.scopeAtr();
+    sc.onProgram = () => this.openTsSoft();
     sc.onFaces = () => {
       this.twoFaces = !this.twoFaces;
       this.sfx.click();
@@ -1275,6 +1297,27 @@ export class Game {
 
   /** Měření stanicí v jedné nebo obou polohách; u obou poloh ohlídá rozdíl 2c. */
   private tsShoot(ts: TotalStation, stationId: string, dir: Vec3, prisms: Prism[], mode: TsMode): ShotResult {
+    return this.tsApplyConfig(this.tsShootRaw(ts, stationId, dir, prisms, mode));
+  }
+
+  /** Nastavení programu stanice se propíše do měření: konstanta hranolu, atmosféra, výška cíle. */
+  private tsApplyConfig(r: ShotResult): ShotResult {
+    if (!r.ok) return r;
+    const { temp, press } = this.realAtm();
+    const e = distanceError(this.tsCfg, r.shot.mode === 'prism', temp, press);
+    const shot = { ...r.shot, sd: (r.shot.sd + e.addM) * (1 + e.ppm * 1e-6) };
+    if (shot.prism) shot.prism = { ...shot.prism, height: this.tsCfg.targetH };
+    const run = this.activeRun();
+    if (run && run.spec.location === this.world.location) {
+      const iss = (run.tsIssues ??= new Set());
+      if (Math.abs(e.addM) > 0.001) iss.add('prism');
+      if (shot.prism && Math.abs(this.tsCfg.targetH - REAL_TARGET_H) > 0.005) iss.add('target');
+      if (Math.abs(e.ppm) > 15) iss.add('atm');
+    }
+    return { ok: true, shot };
+  }
+
+  private tsShootRaw(ts: TotalStation, stationId: string, dir: Vec3, prisms: Prism[], mode: TsMode): ShotResult {
     if (!this.twoFaces) return ts.shoot(dir, this.world, prisms, mode, this.stationRanges());
     const r = ts.shootBoth(dir, this.world, prisms, mode, this.stationRanges());
     this.sfx.servo(1.6); // proložení dalekohledu a otočení o 200 gon
@@ -1418,7 +1461,7 @@ export class Game {
     const ddmm = o.dDist * 1000;
     this.sfx.success();
     this.bus.emit('toast', {
-      text: Math.abs(o.dDist) > 0.01 ? `Orientováno, ale délka nesedí o ${Math.abs(ddmm).toFixed(0)} mm. Zkontroluj cíl.` : `Stanice orientována na bod ${mark.number}`,
+      text: Math.abs(o.dDist) > 0.01 ? `Orientováno, ale kontrolní délka nesedí o ${ddmm >= 0 ? '+' : '−'}${Math.abs(ddmm).toFixed(0)} mm. Zkontroluj v programu stanice konstantu hranolu (a atmosféru), případně jestli stojíš na správném bodě.` : `Stanice orientována na bod ${mark.number}, kontrolní délka sedí.`,
       tone: Math.abs(o.dDist) > 0.01 ? 'warn' : 'info',
     });
     return `Orientace na ${mark.number}: kontrola délky ${ddmm >= 0 ? '+' : '−'}${Math.abs(ddmm).toFixed(1).replace('.', ',')} mm`;
@@ -2195,6 +2238,11 @@ export class Game {
             steps.push(...this.gnssSetupSteps(have > 0));
             steps.push({ text: `Mimo les stabilizuj GNSS pomocné body ${spec.helperPoints.map((_, k) => 8001 + k).join(' a ')} (${Math.min(have, need)} z ${need})`, done: have >= need });
           }
+          {
+            const a = this.realAtm();
+            const miss = tsMissing(this.tsCfg, spec.location, a.temp, a.press);
+            steps.push({ text: 'Program stanice: zakázka, import bodového pole, hranol GPR1, výška cíle 2,000 m, teplota a tlak', done: miss.length === 0 || !!c });
+          }
           if (spec.traverse?.length) {
             const tn = this.nextTraverse(spec);
             const total = spec.traverse.length;
@@ -2383,6 +2431,10 @@ export class Game {
               return `Přestav stanici na ${this.markNo(ph.at)}: s kufrem zamiř na stativ a sundej stanici, stativ slož, rozlož ho nad ${this.markNo(ph.at)} a stanici znovu nasaď a ustav.`;
             if (t?.state === 'deployed' && !t.secured) return 'Sešlápni nohy stativu (s prázdnýma rukama zamiř na stativ), pak nasaď stanici z kufru.';
             return `Rozlož stativ nad ${this.markNo(ph.at)}, sešlápni nohy, nasaď stanici z kufru a ustav ji.`;
+          }
+          {
+            const miss = this.tsMissingNow();
+            if (miss.length) return `V programu stanice (v dalekohledu tlačítko Program): ${this.tsMissText(miss[0])}`;
           }
           if (!pc.ts.station) return 'Volné stanovisko: připoj ho výtyčkou na dva známé body, pak ho přijmi v tabletu (Stanice).';
           if (pc.ts.orientation === null) return `Orientuj stanici: výtyčku s hranolem postav na ${this.markNo(ph.on)}, namiř, Cílit (ATR) a Orientovat.`;
@@ -3428,6 +3480,128 @@ export class Game {
     }
   }
 
+  // ================================================================ program stanice
+
+  private realAtm(): { temp: number; press: number } {
+    return { temp: this.weather.temp, press: Math.round(pressureAt(LOCATIONS[this.world.location].sjtsk.originH)) };
+  }
+
+  private tsMissingNow(): ReturnType<typeof tsMissing> {
+    const a = this.realAtm();
+    return tsMissing(this.tsCfg, this.world.location, a.temp, a.press);
+  }
+
+  private tsMissText(k: ReturnType<typeof tsMissing>[number]): string {
+    return {
+      job: 'založ nebo otevři zakázku.',
+      import: 'importuj bodové pole této lokality (souřadnice stanoviska a orientace).',
+      prism: 'nastav hranol, který je na výtyčce: kruhový GPR1 (konstanta 0,0 mm).',
+      target: 'zadej výšku cíle podle výtyčky: 2,000 m.',
+      atm: 'zadej teplotu a tlak (teploměr a výškoměr v autě), ať sedí délky.',
+    }[k];
+  }
+
+  private openTsSoft(gate?: () => void, label?: string): void {
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.sfx.click();
+    this.tsGate = gate ?? null;
+    this.tsGateLabel = label ?? null;
+    this.tsSoft.show('home');
+    this.tsSoft.update(this.tsView());
+  }
+
+  private tsGateLabel: string | null = null;
+
+  private tsView(): TsSoftView {
+    const c = this.tsCfg;
+    const miss = this.tsMissingNow();
+    const pageOf = { job: 'job', import: 'import', prism: 'prism', target: 'prism', atm: 'atm' } as const;
+    const a = this.realAtm();
+    const conn = this.connected();
+    const ppmNow = atmPpm(c.tempC, c.pressHpa);
+    const tripod = this.items.find((i) => i.kind === 'tripod' && i.mounted);
+    const mark = tripod?.overMarkId ? this.world.marks.find((m) => m.id === tripod.overMarkId) : undefined;
+    const station: string[] = [];
+    if (!tripod) station.push('Stanice není nasazená na stativu.');
+    else {
+      station.push(mark ? `Stojí nad bodem ${mark.number} (${MARK_TYPE_SHORT[mark.type]}).` : 'Nestojí nad známým bodem: volné stanovisko (připojit aspoň 2 známé body).');
+      if (!conn) station.push('Přístroj není ustavený: Ustavení (olovnice, libely), pak zadej výšku přístroje v_p.');
+      else {
+        station.push(conn.ts.station ? `Stanovisko: Y ${conn.ts.station.Y.toFixed(3)}, X ${conn.ts.station.X.toFixed(3)}, v_p ${conn.ts.instrumentHeight.toFixed(3)} m.` : 'Volné stanovisko se teprve připojuje.');
+        station.push(conn.ts.orientation === null ? 'Neorientováno: zamiř na hranol na jiném známém bodě a Orientuj.' : `Orientováno na ${conn.ts.orientedOn}.`);
+      }
+    }
+    return {
+      status: {
+        clock: clockText(this.clockMin),
+        battery: this.bat.ts.main,
+        station: conn?.ts.orientation !== null && conn ? `Orient. ${conn.ts.orientedOn}` : conn ? 'Stanovisko' : 'Bez stanoviska',
+        ppm: `${ppmNow >= 0 ? '+' : ''}${ppmNow.toFixed(1).replace('.', ',')} ppm`,
+      },
+      job: c.job,
+      jobs: c.jobs,
+      suggestedName: `${LOCATIONS[this.world.location].short.replace(/\s+/g, '')}_TS_den${this.career.day}`,
+      next: miss.length ? { page: pageOf[miss[0]], text: this.tsMissText(miss[0]).replace(/^./, (x) => x.toUpperCase()) } : this.tsGate ? { page: 'station', text: 'Program je nastavený – pokračuj na zadání stanoviska.' } : null,
+      files: this.importFiles()
+        .filter((f) => f.id.startsWith('bp-'))
+        .map((f) => ({ id: f.location, name: f.name, desc: f.desc, count: f.points.length, imported: c.imported.includes(f.location) })),
+      prisms: PRISMS.map((p) => ({ id: p.id, label: p.label, constMm: p.constMm })),
+      prism: c.prism,
+      targetH: c.targetH,
+      atm: {
+        temp: c.tempC,
+        press: c.pressHpa,
+        ppm: `${ppmNow >= 0 ? '+' : ''}${ppmNow.toFixed(1).replace('.', ',')} ppm`,
+        hint: `Teploměr v autě ukazuje ${a.temp} °C, výškoměr ${a.press} hPa.`,
+      },
+      station,
+      canContinue: this.tsGate ? (this.tsGateLabel ?? 'Pokračovat') : null,
+    };
+  }
+
+  private tsAction(id: string, v?: string): void {
+    const c = this.tsCfg;
+    this.sfx.click();
+    switch (id) {
+      case 'job:create': {
+        const name = (v ?? '').trim() || 'Zakazka_TS';
+        if (!c.jobs.includes(name)) c.jobs.push(name);
+        c.job = name;
+        c.imported = []; // nová zakázka je prázdná
+        return;
+      }
+      case 'job:open':
+        c.job = v ?? c.job;
+        return;
+      case 'import:toggle': {
+        const loc = v ?? '';
+        if (!c.job) return;
+        c.imported = c.imported.includes(loc) ? c.imported.filter((x) => x !== loc) : [...c.imported, loc];
+        return;
+      }
+      case 'prism:set':
+        c.prism = (v as TsConfig['prism']) ?? c.prism;
+        return;
+      case 'target:set': {
+        const h = Number((v ?? '').replace(',', '.'));
+        if (Number.isFinite(h) && h > 0 && h < 5) c.targetH = h;
+        return;
+      }
+      case 'atm:set': {
+        const [t, p] = (v ?? '').split('|').map((x) => Number(x.replace(',', '.')));
+        if (Number.isFinite(t) && t > -40 && t < 50) c.tempC = Math.round(t);
+        if (Number.isFinite(p) && p > 800 && p < 1100) c.pressHpa = Math.round(p);
+        return;
+      }
+      case 'continue': {
+        const g = this.tsGate;
+        this.tsGate = null;
+        g?.();
+        return;
+      }
+    }
+  }
+
   /** Známý bod, na který se má stanice právě orientovat (nebo null). */
   private orientationMark(): ControlMark | null {
     const c = this.connected();
@@ -4143,6 +4317,19 @@ export class Game {
       if (tapeTxt && !tapeTxt.ok) ok = false;
       text = (tapeTxt ? `${tapeTxt.text} ` : '') + `Zaměřeno ${run.mapping.found.size} ${run.mapping.found.size === 1 ? "prvek" : run.mapping.found.size <= 4 && run.mapping.found.size > 0 ? "prvky" : "prvků"}.${run.mapping.wrongCode ? ` Chybně kódovaná měření: ${run.mapping.wrongCode}.` : ' Kódy v pořádku.'}`;
     }
+    // Chyby v nastavení stanice, se kterými se měřilo.
+    if (run.tsIssues?.size) {
+      const t = run.tsIssues;
+      if (t.has('prism')) {
+        ok = false;
+        text += ' Délky na hranol jsou zatížené chybnou konstantou hranolu (v programu stanice byl nastavený jiný hranol, než byl na výtyčce).';
+      }
+      if (t.has('target')) {
+        ok = false;
+        text += ' Výšky bodů jsou posunuté: v programu stanice byla špatná výška cíle.';
+      }
+      if (t.has('atm')) text += ' Pozor: atmosférická korekce neodpovídala počasí (délky mírně zkreslené).';
+    }
     // Měření GNSS musí být ověřené připojením na bod bodového pole.
     if (run.spec.kit.includes('gnssRover') && run.spec.type !== 'rekognoskace') {
       const c = run.check;
@@ -4825,6 +5012,7 @@ export class Game {
     if (this.tablet.isOpen) this.tablet.update(this.tabletState());
     if (this.officeScreen.isOpen) this.officeScreen.update(this.officeView());
     if (this.ctrlScreen.isOpen) this.ctrlScreen.update(this.controllerView());
+    if (this.tsSoft.isOpen) this.tsSoft.update(this.tsView());
     this.bench.update(dt);
     this.setupScreen.render();
 

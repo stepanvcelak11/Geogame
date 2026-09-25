@@ -27,6 +27,7 @@ export class ScopeScreen {
   onMeasure: (() => void) | null = null;
   onMode: (() => void) | null = null;
   onFaces: (() => void) | null = null;
+  onProgram: (() => void) | null = null;
   onZoom: (() => void) | null = null;
   onAtr: (() => void) | null = null;
   onCode: (() => void) | null = null;
@@ -64,7 +65,7 @@ export class ScopeScreen {
         <button class="sc-mode"></button>
         <div class="sc-row sc-row-auto"><button class="sc-zoom"></button><button class="sc-faces" hidden title="Měřit v I. i II. poloze dalekohledu"></button></div>
         <button class="sc-code"></button>
-        <div class="sc-row"><button class="sc-setup">Ustavení</button><button class="sc-close">Zavřít</button></div>
+        <div class="sc-row sc-row-3"><button class="sc-setup">Ustavení</button><button class="sc-prog">Program</button><button class="sc-close">Zavřít</button></div>
       </nav>`;
     root.appendChild(this.el);
 
@@ -79,6 +80,7 @@ export class ScopeScreen {
     btn('.sc-atr', () => this.onAtr?.());
     btn('.sc-code', () => this.onCode?.());
     btn('.sc-faces', () => this.onFaces?.());
+    btn('.sc-prog', () => this.onProgram?.());
     btn('.sc-setup', () => this.onSetup?.());
     btn('.sc-close', () => this.hide());
 

@@ -97,6 +97,10 @@ export const MANUAL: ManualChapter[] = [
     title: 'Totální stanice: orientace a měření',
     intro: 'Stanice zná jen úhly od sebe. Aby měřila v S-JTSK, musí vědět, kde stojí a kam míří (orientace).',
     steps: [
+      {
+        do: 'Program stanice (otevře se sám po ustavení, jinak v dalekohledu tlačítko Program): založ zakázku, importuj bodové pole, nastav hranol, který je na výtyčce (kruhový GPR1, konstanta 0,0 mm), výšku cíle 2,000 m a teplotu s tlakem.',
+        why: 'Bez nahraných bodů stanice neví, kde stojí. Špatná konstanta hranolu posune každou délku (360° hranol +23 mm), špatná výška cíle všechny výšky – odhalí to kontrolní délka při orientaci.',
+      },
       { do: 'Po ustavení odečti výšku přístroje na pásmu a zadej ji na displeji stanice (Stanovisko).', why: 'Výška přístroje vstupuje do všech výšek; chyba o 1 cm = všechny body o 1 cm vedle.' },
       { do: 'Orientace: namiř dalekohled zhruba na hranol na druhém známém bodě, dej Cílit (ATR) a Orientovat.', why: 'ATR (automatické cílení) dotočí stanici přesně na střed hranolu. Kontrolní délka ověří, že stojíš na správném bodě.' },
       { do: 'Volné stanovisko: stanici postav kamkoli a změř aspoň dva známé body; v tabletu (Stanice) přijmi výsledek.', why: 'Opravy vYX a σ0 ukazují kvalitu – velká oprava = špatný bod nebo špatné měření.' },
