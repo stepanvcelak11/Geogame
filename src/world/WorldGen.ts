@@ -49,6 +49,14 @@ export const LAYOUT = {
   parcel: { x: 4, z: -8, halfU: 20, halfV: 15, rotDeg: 12, name: '1254/3' },
 } as const;
 
+/** Výkop vodovodní přípojky na stavbě: od domu k řadu v ulici (lomy = měřené body). */
+export const TRENCH = [
+  { x: 12, z: 6 },
+  { x: 12, z: 25 },
+  { x: 16, z: 33 },
+  { x: 16, z: 40.3 },
+] as const;
+
 /** Rozvržení louky. */
 export const MEADOW = {
   road: { z: 34, halfWidth: 1.8, xMin: -150, xMax: 150 },
@@ -438,6 +446,10 @@ function generateSite(): World {
     (Math.abs(z - F.z) < 3.5 && x > F.xFrom - 3 && x < F.xTo + 3);
   const trees = scatterTrees(c, forestNoise, blocked, (_x, _z, forest) => 0.03 + 0.92 * forest);
 
+  const pipeLabels = ['Konec přípojky u domu', 'Lom přípojky 1', 'Lom přípojky 2', 'Napojení na řad (navrtávací pas)'];
+  TRENCH.forEach((q, k) =>
+    features.push({ id: `vodovod-${k + 1}`, code: 'VODOVOD', label: pipeLabels[k], pos: { x: q.x, y: heightmap.heightAt(q.x, q.z) + 0.04, z: q.z } }),
+  );
   return new World({
     location: 'stavba',
     name: loc.name,
@@ -458,6 +470,7 @@ function generateSite(): World {
     fields: [],
     spawn: { x: -13.5, z: 34.8, yaw: Math.PI },
     itemSpawns,
+    trench: TRENCH,
   });
 }
 

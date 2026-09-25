@@ -69,6 +69,7 @@ import { BUBBLE_LIMIT, MAX_TILT, PoleBalance } from './player/PoleBalance';
 import { PlayerController, type MoveIntent } from './player/PlayerController';
 import { Flashlight } from './render/Flashlight';
 import { ItemsView } from './render/ItemsView';
+import { TrenchView } from './render/TrenchView';
 import { createMarkMesh, createVehicleMesh, DRIVER_EYE, syncVehicle } from './render/PropsView';
 import { setRealisticMaterials } from './render/materials';
 import { detectQuality, RenderContext, SKY_HORIZON, SUN_DIR } from './render/RenderContext';
@@ -147,6 +148,8 @@ interface JobRun {
   result?: { ok: boolean; text: string };
   check?: { mark: string; dPos: number; dH: number }; // kontrolní měření GNSS na bodu bodového pole
   firstPoint?: number; // index v zápisníku, od kterého jsou body této zakázky
+  deadline?: { day: number; min: number }; // do kdy je výkop otevřený
+  buried?: boolean; // bagr výkop zasypal dřív, než bylo zaměřeno
 }
 
 const CHECK_TOL = { xy: 0.03, h: 0.05 };
@@ -161,6 +164,7 @@ const CODES: { code: FeatureCode; label: string }[] = [
   { code: 'HRANICE', label: 'Hranice' },
   { code: 'PROPUSTEK', label: 'Propustek' },
   { code: 'STUDANKA', label: 'Studánka' },
+  { code: 'VODOVOD', label: 'Vodovod' },
 ];
 const GAME_MIN_PER_SEC = 10 / 60; // herní čas běží 10× rychleji
 const INSURANCE = 12000; // jednorázové pojištění vybavení [Kč]
@@ -235,6 +239,7 @@ export class Game {
   private vehicle!: VehicleController;
   private interaction!: InteractionSystem;
   private locGroup: THREE.Group | null = null;
+  private trench: TrenchView | null = null;
   private vanMesh!: THREE.Group;
   private stakesView!: StakesView;
   private marker!: TargetMarker;
@@ -546,6 +551,8 @@ export class Game {
     if (world.building) g.add(createBuilding(world.building));
     if (world.fence) g.add(createFence(world.fence));
     for (const m of world.marks) g.add(createMarkMesh(m));
+    this.trench = world.trench ? new TrenchView(world.trench, world.heightmap) : null;
+    if (this.trench) g.add(this.trench.group);
     this.vanMesh = createVehicleMesh(world.vehicle);
     g.add(this.vanMesh);
     this.stakesView = new StakesView(g);
@@ -1392,7 +1399,8 @@ export class Game {
         setTimeout(() => this.bus.emit('toast', { text: `Znak ${t.id} ověřen, sedí s projektem` }), 1800);
       }
     }
-    if (run.mapping) {
+    if (run.mapping && run.buried) this.buriedToast();
+    else if (run.mapping) {
       const f = run.mapping.onMeasured(p.id, code, truePos);
       if (f) setTimeout(() => this.bus.emit('toast', { text: `${f.label} zaměřen` }), 1800);
       else {
@@ -1918,7 +1926,8 @@ export class Game {
     }
     if (run.mapping && run.spec.requireStation) {
       if (!mark) setTimeout(() => this.bus.emit('toast', { text: 'Tuhle zakázku měř totální stanicí.', tone: 'warn' }), 1800);
-    } else if (run.mapping) {
+    } else if (run.mapping && run.buried) this.buriedToast();
+    else if (run.mapping) {
       // Prvek se pozná podle odevzdaných souřadnic, ne podle toho, kde hráč stál.
       const f = run.mapping.onMeasured(p.id, code, this.world.frame.toWorld(c));
       if (f) setTimeout(() => this.bus.emit('toast', { text: `${f.label} zaměřena` }), 1800);
@@ -2136,6 +2145,7 @@ export class Game {
           steps.push(...this.gnssSetupSteps(f > 0));
           steps.push({ text: 'Vyber správný kód (kontroler: Měřit body, nebo růžové tlačítko)', done: f > 0 });
           steps.push({ text: `Změř všechny prvky${cnt}`, done: f === n && n > 0 });
+          if (run.deadline) steps.push({ text: `Stihni to do ${clockText(run.deadline.min)} – pak bagr výkop zasype`, done: f === n && n > 0 });
         }
         break;
       }
@@ -2239,6 +2249,17 @@ export class Game {
 
   /** Další krok podle situace – od nástěnky přes sklad a dodávku až po konkrétní měření. */
   private goalText(): string | null {
+    const run = this.activeJobId ? this.jobs.get(this.activeJobId) : undefined;
+    if (run?.buried && !run.mapping?.complete) {
+      if (this.world.location === 'kancelar') return 'Výkop je zasypaný. V dispečinku odevzdej, co máš – objednatel bude reklamovat.';
+      return 'Výkop je zasypaný – potrubí už nezaměříš. Sbal vybavení a jeď do kanceláře odevzdat, co máš.';
+    }
+    const base = this.goalTextBase();
+    const dl = run && run.status === 'aktivni' && !this.jobComplete(run) ? this.deadlineText(run) : null;
+    return base && dl ? `${base} (${dl})` : base;
+  }
+
+  private goalTextBase(): string | null {
     const here = this.world.location;
     const run = this.activeJobId ? this.jobs.get(this.activeJobId) : undefined;
     const late = this.clockMin > 17 * 60;
@@ -3709,6 +3730,7 @@ export class Game {
       const nz = w.marks.find((m) => m.id === run.spec.levelFrom);
       if (nz) run.level = new LevelLine(nz.id, nz.number, nz.catalog.H);
     }
+    if (run.spec.deadlineMin) run.deadline = { day: this.career.day, min: this.clockMin + run.spec.deadlineMin };
     if (run.spec.type === 'polohopis') {
       const ids = run.spec.featureIds;
       run.mapping = new MappingTask(w.features.filter((f) => (ids ? ids.includes(f.id) : run.spec.featureCodes?.includes(f.code))));
@@ -3717,7 +3739,36 @@ export class Game {
 
   private jobComplete(run: JobRun): boolean {
     if (run.level) return run.level.closure !== null && run.level.heights.points.has(run.spec.levelTo ?? '');
-    return !!(run.recon?.complete || run.stake?.complete || run.mapping?.complete);
+    return !!(run.recon?.complete || run.stake?.complete || run.mapping?.complete || run.buried);
+  }
+
+  /** Zakázky s termínem: po něm bagr výkop zasype a potrubí už zaměřit nejde. */
+  private checkDeadlines(): void {
+    for (const run of this.jobs.values()) {
+      const d = run.deadline;
+      if (!d || run.buried || run.status !== 'aktivni' || run.mapping?.complete) continue;
+      if (this.career.day === d.day && this.clockMin <= d.min) continue;
+      run.buried = true;
+      this.sfx.lost();
+      this.bus.emit('toast', {
+        text: `${run.spec.title}: bagr zasypal výkop. Nezaměřené potrubí už nikdo nezjistí – objednatel bude reklamovat.`,
+        tone: 'warn',
+      });
+    }
+    this.trench?.setBuried([...this.jobs.values()].some((r) => r.buried && r.spec.location === this.world.location && !!r.spec.deadlineMin));
+  }
+
+  private buriedToast(): void {
+    setTimeout(() => this.bus.emit('toast', { text: 'Výkop je zasypaný – potrubí pod zeminou už zaměřit nejde.', tone: 'warn' }), 1200);
+  }
+
+  /** „do 10:40, zbývá 1 h 12 min“ */
+  private deadlineText(run: JobRun): string | null {
+    const d = run.deadline;
+    if (!d || run.buried) return null;
+    const left = d.day === this.career.day ? Math.max(0, Math.round(d.min - this.clockMin)) : 0;
+    const h = Math.floor(left / 60);
+    return `zásyp v ${clockText(d.min)}, zbývá ${h ? `${h} h ` : ''}${left % 60} min`;
   }
 
   /** Protokol po odevzdání: hlavička, tabulka bodů, verdikt, odměna. */
@@ -3822,6 +3873,9 @@ export class Game {
       ok = Math.abs(cl) <= lim && Math.abs(err) <= run.spec.tolerance.xy && cont;
       const f = mmTxt;
       text = `${(run.spec.levelTo ?? '').toUpperCase()} ${h.toFixed(3).replace('.', ',')} m (kontrola ${f(err)} mm), uzávěr ${f(cl)} mm při mezi ${f(lim)} mm.${cont ? '' : ' Pořad nenavazuje: lať se mezi záměrami přesunula.'}${ok ? ' V pořádku.' : ' Nevyhovuje.'}`;
+    } else if (run.mapping && run.buried && !run.mapping.complete) {
+      ok = false;
+      text = `Výkop byl zasypán dřív, než se potrubí zaměřilo: zaměřeno ${run.mapping.found.size} z ${run.mapping.required.length} bodů. Skutečné provedení přípojky nejde doložit.`;
     } else if (run.mapping) {
       ok = run.mapping.wrongCode === 0;
       text = `Zaměřeno ${run.mapping.found.size} ${run.mapping.found.size === 1 ? "prvek" : run.mapping.found.size <= 4 && run.mapping.found.size > 0 ? "prvky" : "prvků"}.${run.mapping.wrongCode ? ` Chybně kódovaná měření: ${run.mapping.wrongCode}.` : ' Kódy v pořádku.'}`;
@@ -4373,6 +4427,7 @@ export class Game {
   private step(dt: number): void {
     if (!this.traveling) this.clockMin += dt * GAME_MIN_PER_SEC;
     if (this.started && !this.traveling) this.batteryTick(dt * GAME_MIN_PER_SEC);
+    if (this.started) this.checkDeadlines();
     if (this.started && !this.traveling) this.windCheck(dt);
     if (this.started && !this.traveling && !this.helper.inVan) {
       const ev = this.helper.update(dt, this.world, this.player.pos);

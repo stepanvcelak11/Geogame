@@ -23,7 +23,9 @@ export interface JobSpec {
   /** Kolik pomocných bodů si má měřič stabilizovat GNSS (čísla 8001, 8002…) a doporučená místa. */
   helperPoints?: { x: number; z: number }[];
   /** Polygonový pořad: body stabilizované stanicí (8101, 8102…) a doporučená místa; poslední je konečné stanovisko. */
-  traverse?: { x: number; z: number }[]; // popis měření stanicí pro kroky zakázky
+  traverse?: { x: number; z: number }[];
+  /** Za kolik herních minut od převzetí bagr výkop zasype. */
+  deadlineMin?: number; // popis měření stanicí pro kroky zakázky
   levelFrom?: string; // nivelace: výchozí značka (ID)
   levelTo?: string; // nivelace: určovaný bod (ID prvku)
   pay: number; // odměna [Kč]
@@ -218,6 +220,21 @@ export const JOBS: JobSpec[] = [
     pay: 14600,
     kit: ['gnssCase', 'gnssRover', 'tripod', 'tsCase', 'prismPole'],
     difficulty: 3,
+  },
+  {
+    id: 'stavba-pripojka',
+    title: 'Vodovodní přípojka před zásypem',
+    client: 'Vodovody a kanalizace Polabí',
+    location: 'stavba',
+    type: 'polohopis',
+    brief:
+      'Na stavbě je otevřený výkop nové vodovodní přípojky. Zaměř skutečné provedení: konec u domu, oba lomy a napojení na řad (kód Vodovod), hrot na vrch modré trubky. Bagrista zasype výkop dvě hodiny po převzetí zakázky – co nestihneš, už nikdo nezjistí.',
+    tolerance: { xy: 0.1 },
+    featureIds: ['vodovod-1', 'vodovod-2', 'vodovod-3', 'vodovod-4'],
+    deadlineMin: 120,
+    pay: 5600,
+    kit: ['gnssCase', 'gnssRover'],
+    difficulty: 2,
   },
   {
     id: 'louka-hranice',

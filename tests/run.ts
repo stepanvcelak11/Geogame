@@ -947,5 +947,18 @@ const world = generateWorld('stavba');
   check('u studánky GNSS FIX nedá', sky < 0.66, `obloha ${(sky * 100).toFixed(0)} %`);
 }
 
+// --- Přípojka před zásypem
+{
+  const { JOBS } = await import('../src/jobs/JobCatalog');
+  const { GnssReceiver } = await import('../src/gnss/GnssReceiver');
+  const w = generateWorld('stavba');
+  const job = JOBS.find((j) => j.id === 'stavba-pripojka')!;
+  const pts = job.featureIds!.map((id) => w.features.find((f) => f.id === id));
+  check('přípojka: 4 body vodovodu s kódem Vodovod', pts.every((f) => f?.code === 'VODOVOD') && (w.trench?.length ?? 0) === 4);
+  const sky = pts.map((f) => GnssReceiver.skyOpenness(w, { x: f!.pos.x, y: f!.pos.y + 2, z: f!.pos.z }));
+  check('u výkopu je FIX (otevřená obloha)', sky.every((o) => o >= 0.66), sky.map((o) => o.toFixed(2)).join(','));
+  check('zakázka má termín zásypu', (job.deadlineMin ?? 0) >= 60);
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

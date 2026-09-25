@@ -189,6 +189,7 @@ export interface WorldSpec {
   fields: readonly FieldInfo[];
   spawn: { x: number; z: number; yaw: number };
   itemSpawns: readonly ItemSpawn[];
+  trench?: readonly { x: number; z: number }[]; // výkop vodovodní přípojky (lomená čára)
 }
 
 /** Čistá data jedné lokality + dotazy. Nic z toho neví o vykreslování. */
@@ -212,6 +213,7 @@ export class World implements WorldSpec {
   readonly fields!: readonly FieldInfo[];
   readonly spawn!: { x: number; z: number; yaw: number };
   readonly itemSpawns!: readonly ItemSpawn[];
+  readonly trench?: readonly { x: number; z: number }[];
 
   constructor(spec: WorldSpec) {
     Object.assign(this, spec);
