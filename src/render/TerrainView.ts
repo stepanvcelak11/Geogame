@@ -28,6 +28,8 @@ const PAL = {
   wheat: C(0xcdb25c),
   plowed: C(0x6e5337),
   rapeseed: C(0xd8cc2e),
+  needles: C(0x6a5236),
+  moss: C(0x4c5f2a),
 };
 const lerpTo = (o: RGB, t: RGB, a: number): void => {
   o[0] += (t[0] - o[0]) * a;
@@ -70,6 +72,7 @@ export interface TerrainPaint {
   gravelYard: boolean; // kancelář: štěrkový dvůr místo hlíny
   fields: readonly FieldInfo[];
   water: readonly WaterInfo[];
+  forestEdgeX?: number; // les: od této x na východ jehličí a mech místo trávy
 }
 
 /** Barva terénu v bodě (lineární RGB) – čistá funkce, dá se vykreslit i bez WebGL. */
@@ -88,6 +91,16 @@ export function terrainColor(x: number, z: number, h: number, slope: number, pai
   // Svahy: hlína, na strmých kámen.
   lerpTo(c, PAL.dirt, smoothstep(0.38, 0.6, slope));
   lerpTo(c, PAL.rock, smoothstep(0.62, 0.85, slope) * 0.8);
+  // Lesní půda: jehličí, mech, u okraje přechod do trávy.
+  if (paint.forestEdgeX !== undefined) {
+    const w = smoothstep(paint.forestEdgeX - 4, paint.forestEdgeX + 10, x + (fbm(x / 9, z / 9) - 0.5) * 10);
+    if (w > 0) {
+      const f: RGB = [...PAL.needles];
+      lerpTo(f, PAL.moss, smoothstep(0.5, 0.8, fbm(x / 7 + 3, z / 7 - 9)) * 0.7);
+      scale(f, 0.8 + 0.35 * vnoise(x * 1.3, z * 1.3));
+      lerpTo(c, f, w);
+    }
+  }
   // Pole.
   for (const f of paint.fields) {
     if (!inPolygon(x, z, f.corners)) continue;

@@ -159,6 +159,17 @@ export class Sfx {
       }
       return;
     }
+    if (place === 'les' && Math.random() < 0.4) {
+      if (Math.random() < 0.55) {
+        // datel: rychlé bubnování do kmene
+        for (let i = 0; i < 14; i++) setTimeout(() => this.burst(700 + Math.random() * 200, 3, 0.05 * (1 - i / 20), 0.018), i * 48);
+      } else {
+        // kukačka v dálce
+        this.tone(660, 650, 0.03, 0.22, 'sine');
+        setTimeout(() => this.tone(540, 530, 0.03, 0.3, 'sine'), 260);
+      }
+      return;
+    }
     // ptáci: dva až čtyři krátké cvrkoty
     const base = 2600 + Math.random() * 1800;
     const n = 2 + Math.floor(Math.random() * 3);

@@ -830,10 +830,11 @@ const world = generateWorld('stavba');
   check('objednávky se den ode dne liší', titles.size >= 10, `${titles.size} různých`);
   const sw = generateWorld('stavba');
   const lw = generateWorld('louka');
+  const fw = generateWorld('les');
   let okAll = true;
   for (let d = 1; d <= 40; d++)
     for (const o of ordersForDay(d)) {
-      const w = o.location === 'stavba' ? sw : lw;
+      const w = o.location === 'stavba' ? sw : o.location === 'les' ? fw : lw;
       if (o.featureIds && !o.featureIds.every((id) => w.features.some((f) => f.id === id))) okAll = false;
       if (o.reconMarks && !o.reconMarks.every((id) => w.marks.some((m) => m.id === id))) okAll = false;
       if (o.stake === 'dum') {

@@ -119,7 +119,7 @@ import { clockText, TravelScreen } from './ui/TravelScreen';
 import { VehicleController } from './vehicle/VehicleController';
 import { LOCATIONS, travelMinutes } from './world/locations';
 import { MARK_TYPE_SHORT, type ControlMark, type FeatureInfo, type LocationId, type World } from './world/World';
-import { generateWorld } from './world/WorldGen';
+import { FOREST, generateWorld } from './world/WorldGen';
 
 /** Bod na zemi, kam míří hráč (pro stativ, výtyčku, hrot roveru). */
 interface AimPoint {
@@ -531,6 +531,7 @@ export class Game {
         occluders,
         flatRadius: world.flatRadius,
         gravelYard: world.location === 'kancelar',
+        forestEdgeX: world.location === 'les' ? FOREST.edgeX : undefined,
         fields: world.fields,
         water: world.water,
       }),

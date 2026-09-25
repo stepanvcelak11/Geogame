@@ -22,6 +22,8 @@ const STAVBA_MARKS = ['TB-0321-014', 'ZhB-4021', 'PBPP-4001', 'PBPP-4002', 'HZ-1
 const LOUKA_MARKS = ['TB-0418-022', 'PBPP-5101', 'PBPP-5102', 'HZ-301', 'HZ-302', 'NZ-Kn-15'];
 const STAVBA_FEATURES = ['vpust-1', 'vpust-2', 'vpust-3', 'roh-SV', 'roh-JV', 'roh-JZ'];
 const KULNA = ['kulna-SZ', 'kulna-SV', 'kulna-JV', 'kulna-JZ'];
+const LES = ['propustek-vtok', 'propustek-vytok', 'les-hranice', 'les-dub'];
+const LES_NAME: Record<string, string> = { 'propustek-vtok': 'vtok propustku', 'propustek-vytok': 'výtok propustku', 'les-hranice': 'hraniční kámen', 'les-dub': 'patu dubu' };
 
 function pick<T>(rng: Rng, list: readonly T[], n: number): T[] {
   const a = [...list];
@@ -93,6 +95,32 @@ const TEMPLATES: Template[] = [
       pay: round100(2400 + ids.length * 400 + rng.next() * 400),
       kit: ['gnssCase', 'gnssRover'],
       difficulty: 1,
+      issued: day,
+    };
+  },
+  // Les: jen některé prvky (pomocné body 8001, 8002 zůstávají, pokud už stojí).
+  (rng, id, day) => {
+    const ids = pick(rng, LES, 2 + Math.floor(rng.next() * 2));
+    return {
+      id,
+      title: `Doměření ${ids.length} prvků v lese`,
+      client: 'Lesy obce Hrušov',
+      location: 'les',
+      type: 'polohopis',
+      brief: `Nová objednávka: zaměř ${ids.map((f) => LES_NAME[f]).join(', ')}. V lese GNSS nedá FIX – pomocné body 8001 a 8002 před lesem (když ještě nejsou, stabilizuj je), stanice na 8001, orientace na 8002.`,
+      tolerance: { xy: 0.06 },
+      featureIds: ids,
+      requireStation: true,
+      helperPoints: [
+        { x: -62, z: 0 },
+        { x: -140, z: 0 },
+      ],
+      stationAt: 'PB-8001',
+      orientOn: 'PB-8002',
+      stationTask: 'Zaměř zadané prvky v lese (hranol na prvek, správný kód)',
+      pay: round100(6800 + ids.length * 900 + rng.next() * 600),
+      kit: ['gnssCase', 'gnssRover', 'tripod', 'tsCase', 'prismPole'],
+      difficulty: 3,
       issued: day,
     };
   },
