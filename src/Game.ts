@@ -1677,10 +1677,11 @@ export class Game {
         const st = run.stake;
         const d = st?.doneCount ?? 0;
         const n = st?.targets.length ?? 0;
+        const cnt = n > 0 ? ` (${d} z ${n})` : '';
         steps.push({ text: 'Vezmi do ruky GNSS rover', done: has('gnssRover') || d > 0 });
         steps.push({ text: 'Jdi po šipce k bodu. U bodu se sám zpomalíš, dole uvidíš Vpřed / Vpravo v cm', done: d > 0 });
         steps.push({
-          text: `${this.hasUpgrade('imu') ? 'Až bude navigace do 2 cm' : 'Opři výtyčku o Dvojnožku (tlačítko nad libelou)'}, pak Zatlouct kolík (${d} z ${n})`,
+          text: `${this.hasUpgrade('imu') ? 'Až bude navigace do 2 cm' : 'Opři výtyčku o Dvojnožku (tlačítko nad libelou)'}, pak Zatlouct kolík${cnt}`,
           done: d === n && n > 0,
         });
         break;
@@ -1688,16 +1689,17 @@ export class Game {
       case 'polohopis': {
         const m = run.mapping;
         const f = m?.found.size ?? 0;
-        const n = m?.required.length ?? 0;
+        const n = m?.required.length ?? spec.featureIds?.length ?? 0;
+        const cnt = n > 0 ? ` (${f} z ${n})` : '';
         if (spec.requireStation) {
           const c = this.connected();
           steps.push({ text: 'Rozlož stativ nad bodem 4001, nasaď stanici a ustav ji', done: !!c });
           steps.push({ text: 'Orientuj stanici: výtyčku s hranolem postav na 4021', done: !!c && c.ts.orientation !== null });
-          steps.push({ text: `Změř rohy trafostanice, SZ z volného stanoviska (${f} z ${n})`, done: f === n && n > 0 });
+          steps.push({ text: `Změř rohy trafostanice, SZ z volného stanoviska${cnt}`, done: f === n && n > 0 });
         } else {
           steps.push({ text: 'Vezmi do ruky GNSS rover', done: has('gnssRover') || f > 0 });
           steps.push({ text: 'Vyber správný kód (růžové tlačítko vlevo)', done: f > 0 });
-          steps.push({ text: `Změř všechny prvky (${f} z ${n})`, done: f === n && n > 0 });
+          steps.push({ text: `Změř všechny prvky${cnt}`, done: f === n && n > 0 });
         }
         break;
       }

@@ -300,6 +300,29 @@ const world = generateWorld('stavba');
   check('kontrola vytyčení odhalí kolík mimo toleranci', ev.rows[0].ok && !ev.rows[1].ok && !ev.allOk);
   const fence = designTargets(JOBS.find((j) => j.id === 'louka-hranice')!, meadow);
   check('hranice louky: 301 a 302 dochované, 303 a 304 chybí', fence.filter((t) => t.existingMarkId).map((t) => t.id).join() === '301,302');
+  const parcel = designTargets(JOBS.find((j) => j.id === 'stavba-hranice')!, world);
+  check('hranice 1254/3: ověřit 101, 102, 104, vyvrácený 103 vytyčit', parcel.filter((t) => t.existingMarkId).map((t) => t.id).join() === '101,102,104' && parcel.length === 4);
+  const hz = world.marks.find((m) => m.id === 'HZ-101')!;
+  check('hranice 1254/3: projekt sedí na katalog mezníku', Math.hypot(parcel[0].design.Y - hz.catalog.Y, parcel[0].design.X - hz.catalog.X) < 0.015);
+  const shedCorners = meadow.features.filter((f) => f.id.startsWith('kulna-'));
+  check('kůlna na louce: 4 rohy s kódem roh budovy', shedCorners.length === 4 && shedCorners.every((f) => f.code === 'ROH_BUDOVY'));
+  const kulnaJob = JOBS.find((j) => j.id === 'louka-kulna')!;
+  check('zakázka kůlny míří na existující prvky', kulnaJob.featureIds!.every((id) => meadow.features.some((f) => f.id === id)));
+  {
+    const { GnssReceiver } = await import('../src/gnss/GnssReceiver');
+    const { Rng } = await import('../src/core/Rng');
+    const sc = meadow.scenery.find((q) => q.kind === 'shed')!;
+    const sols = shedCorners.map((f) => {
+      const ox = Math.sign(f.pos.x - sc.x) * 0.1;
+      const oz = Math.sign(f.pos.z - sc.z) * 0.1;
+      const g = new GnssReceiver(new Rng(3));
+      g.powerOn();
+      const a = { x: f.pos.x + ox, y: meadow.heightmap.heightAt(f.pos.x, f.pos.z) + 2, z: f.pos.z + oz };
+      for (let t = 0; t < 15; t += 1 / 30) g.update(1 / 30, a, meadow);
+      return g.solution;
+    });
+    check('rohy kůlny jdou změřit GNSS s FIXem', sols.every((x) => x === 'fix'), sols.join(','));
+  }
 
   const { MappingTask } = await import('../src/jobs/MappingTask');
   const mt = new MappingTask([...world.features]);
