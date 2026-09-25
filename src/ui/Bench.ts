@@ -498,6 +498,9 @@ export class Bench {
     this.camera.updateMatrixWorld();
     this.ray.setFromCamera(ndc, this.camera);
     const hits = this.ray.intersectObject(this.group, true);
+    // Tlačítka a páčky mají přednost před neviditelnými oblastmi pro uchopení dílů.
+    const small = hits.find((h) => ['rxPower', 'ctPower', 'clamp'].includes(h.object.name));
+    if (small) return { name: small.object.name, point: small.point };
     for (const h of hits) {
       let o: THREE.Object3D | null = h.object;
       while (o && !o.name) o = o.parent;
@@ -711,8 +714,11 @@ export class Bench {
       case 'brOut':
         return new THREE.Vector3(0, BRACKET_Y + 0.03, 0);
       case 'power':
-      case 'off':
-        return new THREE.Vector3(0, (h + BRACKET_Y) / 2, 0);
+      case 'off': {
+        // Nejdřív přijímač nahoře, pak kontroler v držáku – tlačítko musí být vidět.
+        const rxTodo = s === 'power' ? !this.rig?.receiverOn : !!this.rig?.receiverOn;
+        return new THREE.Vector3(0, rxTodo ? h : BRACKET_Y + 0.05, 0);
+      }
       case 'tsSeat':
       case 'tsScrew':
       case 'tsUnscrew':
