@@ -960,5 +960,16 @@ const world = generateWorld('stavba');
   check('zakázka má termín zásypu', (job.deadlineMin ?? 0) >= 60);
 }
 
+// --- Geometrický plán: oměrné míry
+{
+  const { JOBS } = await import('../src/jobs/JobCatalog');
+  const w = generateWorld('louka');
+  const job = JOBS.find((j) => j.id === 'louka-gp')!;
+  const pos = (id: string) => w.features.find((f) => f.id === id)!.pos;
+  const sides = job.tape!.map(([a, b]) => Math.hypot(pos(a).x - pos(b).x, pos(a).z - pos(b).z));
+  check('GP: oměrné míry jsou strany kůlny (6 a 4 m)', sides.map((d) => d.toFixed(1)).join() === '6.0,4.0,6.0,4.0', sides.map((d) => d.toFixed(2)).join());
+  check('GP: výstup je geometrický plán', job.output === 'gp');
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

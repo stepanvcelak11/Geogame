@@ -25,7 +25,11 @@ export interface JobSpec {
   /** Polygonový pořad: body stabilizované stanicí (8101, 8102…) a doporučená místa; poslední je konečné stanovisko. */
   traverse?: { x: number; z: number }[];
   /** Za kolik herních minut od převzetí bagr výkop zasype. */
-  deadlineMin?: number; // popis měření stanicí pro kroky zakázky
+  deadlineMin?: number;
+  /** Oměrné míry pásmem: dvojice prvků (sousední rohy budovy). */
+  tape?: [string, string][];
+  /** Výstup pro objednatele, když se liší od výchozího pro typ zakázky. */
+  output?: string; // popis měření stanicí pro kroky zakázky
   levelFrom?: string; // nivelace: výchozí značka (ID)
   levelTo?: string; // nivelace: určovaný bod (ID prvku)
   pay: number; // odměna [Kč]
@@ -233,6 +237,27 @@ export const JOBS: JobSpec[] = [
     featureIds: ['vodovod-1', 'vodovod-2', 'vodovod-3', 'vodovod-4'],
     deadlineMin: 120,
     pay: 5600,
+    kit: ['gnssCase', 'gnssRover'],
+    difficulty: 2,
+  },
+  {
+    id: 'louka-gp',
+    title: 'Geometrický plán: kůlna na louce',
+    client: 'Zemědělské družstvo Kněžívka',
+    location: 'louka',
+    type: 'polohopis',
+    brief:
+      'Družstvo chce kůlnu zapsat do katastru. Zaměř GNSS všechny čtyři rohy (kód Roh budovy) a pásmem změř oměrné míry všech čtyř stran – s prázdnýma rukama zamiř na roh, přilož pásmo (Pepa drží nulu) a u sousedního rohu odečti. Oměrné míry musí sedět se souřadnicemi do 8 cm. Výstup: geometrický plán.',
+    tolerance: { xy: 0.08 },
+    featureIds: ['kulna-SZ', 'kulna-SV', 'kulna-JV', 'kulna-JZ'],
+    tape: [
+      ['kulna-SZ', 'kulna-SV'],
+      ['kulna-SV', 'kulna-JV'],
+      ['kulna-JV', 'kulna-JZ'],
+      ['kulna-JZ', 'kulna-SZ'],
+    ],
+    output: 'gp',
+    pay: 8600,
     kit: ['gnssCase', 'gnssRover'],
     difficulty: 2,
   },
