@@ -77,10 +77,10 @@ export const MOUNTPOINTS: Mountpoint[] = [
 ];
 
 /** Vzdálenost nejbližší referenční stanice od lokality [km]. Síťová řešení ji nepotřebují. */
-export const NEAREST_BASE_KM: Record<LocationId, number> = { kancelar: 12, stavba: 31, louka: 38 };
+export const NEAREST_BASE_KM: Record<LocationId, number> = { kancelar: 12, stavba: 31, louka: 38, les: 44 };
 
 /** Síla mobilního signálu pro NTRIP (0…1). Na louce za kopcem slabší, korekce občas vypadnou. */
-export const DATA_SIGNAL: Record<LocationId, number> = { kancelar: 1, stavba: 0.9, louka: 0.55 };
+export const DATA_SIGNAL: Record<LocationId, number> = { kancelar: 1, stavba: 0.9, louka: 0.55, les: 0.5 };
 
 /** Typy antén v kontroleru. Jen jedna odpovídá přijímači v kufru. */
 export const ANTENNA_TYPES: { id: string; label: string; phaseOffset: number }[] = [

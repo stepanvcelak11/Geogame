@@ -19,7 +19,9 @@ export interface JobSpec {
   requireStation?: boolean; // měřit jen totální stanicí
   stationAt?: string; // doporučené stanovisko (ID bodu)
   orientOn?: string; // orientační bod (ID bodu)
-  stationTask?: string; // popis měření stanicí pro kroky zakázky
+  stationTask?: string;
+  /** Kolik pomocných bodů si má měřič stabilizovat GNSS (čísla 8001, 8002…) a doporučená místa. */
+  helperPoints?: { x: number; z: number }[]; // popis měření stanicí pro kroky zakázky
   levelFrom?: string; // nivelace: výchozí značka (ID)
   levelTo?: string; // nivelace: určovaný bod (ID prvku)
   pay: number; // odměna [Kč]
@@ -168,6 +170,28 @@ export const JOBS: JobSpec[] = [
     stationTask: 'Zaměř tři kameny na mezi (hranol na kámen, kód Hranice)',
     pay: 7800,
     kit: ['tripod', 'tsCase', 'prismPole'],
+    difficulty: 3,
+  },
+  {
+    id: 'les-cesta',
+    title: 'Zaměření propustku na lesní cestě',
+    client: 'Lesy obce Hrušov',
+    location: 'les',
+    type: 'polohopis',
+    brief:
+      'V lese pod korunami GNSS nedá ani FLOAT a bodové pole tam není. Na cestě před lesem si GNSS stabilizuj dva pomocné body (8001 blíž k lesu, 8002 dál), zkontroluj se na bodu 6101. Pak postav stanici na 8001, orientuj ji na 8002 a do lesa zaměř oba konce propustku (kód Propustek), hraniční kámen u cesty (Hranice) a patu památného dubu (Strom).',
+    tolerance: { xy: 0.06 },
+    featureIds: ['propustek-vtok', 'propustek-vytok', 'les-hranice', 'les-dub'],
+    requireStation: true,
+    helperPoints: [
+      { x: -62, z: 0 },
+      { x: -140, z: 0 },
+    ],
+    stationAt: 'PB-8001',
+    orientOn: 'PB-8002',
+    stationTask: 'Zaměř propustek, kámen a dub (hranol na prvek, správný kód)',
+    pay: 12400,
+    kit: ['gnssCase', 'gnssRover', 'tripod', 'tsCase', 'prismPole'],
     difficulty: 3,
   },
   {

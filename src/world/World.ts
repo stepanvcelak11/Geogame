@@ -5,7 +5,7 @@ import type { ItemKind } from '../items/items';
 import { rayObb, resolveCircleObb, type ColliderSet, type ColliderTag, type Obb } from './Colliders';
 import type { Heightmap } from './Heightmap';
 
-export type LocationId = 'kancelar' | 'stavba' | 'louka';
+export type LocationId = 'kancelar' | 'stavba' | 'louka' | 'les';
 
 export interface TreeInstance {
   x: number;
@@ -20,7 +20,7 @@ export interface TreeInstance {
 }
 
 /** TB trigonometrický, ZhB zhušťovací, PBPP podrobné pole, HZ hraniční znak, NZ nivelační značka. */
-export type MarkType = 'TB' | 'ZhB' | 'PBPP' | 'HZ' | 'NZ';
+export type MarkType = 'TB' | 'ZhB' | 'PBPP' | 'HZ' | 'NZ' | 'PB';
 
 export const MARK_TYPE_NAME: Record<MarkType, string> = {
   TB: 'Trigonometrický bod',
@@ -28,10 +28,11 @@ export const MARK_TYPE_NAME: Record<MarkType, string> = {
   PBPP: 'Bod podrobného polohového pole',
   HZ: 'Hraniční znak',
   NZ: 'Nivelační značka',
+  PB: 'Pomocný měřický bod',
 };
 
 /** Zkratky, které geodet zná z katalogu. */
-export const MARK_TYPE_SHORT: Record<MarkType, string> = { TB: 'TB', ZhB: 'ZhB', PBPP: 'PBPP', HZ: 'HZ', NZ: 'NZ' };
+export const MARK_TYPE_SHORT: Record<MarkType, string> = { TB: 'TB', ZhB: 'ZhB', PBPP: 'PBPP', HZ: 'HZ', NZ: 'NZ', PB: 'PB' };
 
 /** Skutečný stav značky v terénu – katalog o něm neví. */
 export type MarkCondition = 'ok' | 'damaged' | 'missing';
@@ -108,7 +109,8 @@ export type SceneryKind =
   | 'car'
   | 'bench'
   | 'sign'
-  | 'post';
+  | 'post'
+  | 'culvert';
 
 export interface SceneryItem {
   kind: SceneryKind;
@@ -173,7 +175,7 @@ export interface WorldSpec {
   heightmap: Heightmap;
   colliders: ColliderSet;
   trees: readonly TreeInstance[];
-  marks: readonly ControlMark[];
+  marks: ControlMark[];
   vehicle: VehicleState;
   road: RoadInfo;
   building: BuildingInfo | null;
@@ -196,7 +198,7 @@ export class World implements WorldSpec {
   readonly heightmap!: Heightmap;
   readonly colliders!: ColliderSet;
   readonly trees!: readonly TreeInstance[];
-  readonly marks!: readonly ControlMark[];
+  readonly marks!: ControlMark[];
   readonly vehicle!: VehicleState;
   readonly road!: RoadInfo;
   readonly building!: BuildingInfo | null;
