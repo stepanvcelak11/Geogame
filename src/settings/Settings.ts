@@ -12,16 +12,26 @@ export interface Settings {
   ambience: boolean;
   guide: boolean;
   fps: boolean;
+  fps30?: boolean; // úspora baterie: nejvýš 30 snímků za sekundu
 }
 
 const KEY = 'geodet-nastaveni-v1';
 
-export function defaultSettings(mobile: boolean): Settings {
-  return { v: 1, gfx: mobile ? 1 : 2, shadows: true, grass: mobile ? 1 : 2, draw: 1, saver: false, lookSens: 1, invertY: false, volume: 0.8, ambience: true, guide: true, fps: false };
+export type Tier = 'low' | 'mid' | 'high';
+
+/** Grafické předvolby podle výkonu zařízení. */
+export function preset(tier: Tier): Pick<Settings, 'gfx' | 'shadows' | 'grass' | 'draw' | 'saver' | 'fps30'> {
+  if (tier === 'low') return { gfx: 0, shadows: false, grass: 1, draw: 0, saver: true, fps30: true };
+  if (tier === 'mid') return { gfx: 1, shadows: true, grass: 1, draw: 1, saver: false, fps30: false };
+  return { gfx: 2, shadows: true, grass: 2, draw: 1, saver: false, fps30: false };
 }
 
-export function loadSettings(mobile: boolean): Settings {
-  const d = defaultSettings(mobile);
+export function defaultSettings(mobile: boolean, tier: Tier = mobile ? 'mid' : 'high'): Settings {
+  return { v: 1, ...preset(tier), lookSens: 1, invertY: false, volume: 0.8, ambience: true, guide: true, fps: false };
+}
+
+export function loadSettings(mobile: boolean, tier?: Tier): Settings {
+  const d = defaultSettings(mobile, tier);
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return d;

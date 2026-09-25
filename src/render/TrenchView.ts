@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Heightmap } from '../world/Heightmap';
 import { lambert } from './materials';
+import { mergeStatic } from './mergeStatic';
 
 /** Val zeminy: zaoblený průřez vytažený podél osy z (délka len, střed v počátku). */
 function moundGeometry(len: number): THREE.BufferGeometry {
@@ -20,8 +21,8 @@ function moundGeometry(len: number): THREE.BufferGeometry {
  */
 export class TrenchView {
   readonly group = new THREE.Group();
-  private readonly open = new THREE.Group();
-  private readonly filled = new THREE.Group();
+  private open = new THREE.Group();
+  private filled = new THREE.Group();
 
   constructor(line: readonly { x: number; z: number }[], hm: Heightmap) {
     const dark = lambert(0x3b2f22, 'trenchfloor');
@@ -61,6 +62,9 @@ export class TrenchView {
         this.filled.add(f);
       }
     }
+    // Stovky kousků → pár meshí.
+    this.open = mergeStatic(this.open);
+    this.filled = mergeStatic(this.filled);
     this.group.add(this.open, this.filled);
     this.setBuried(false);
   }

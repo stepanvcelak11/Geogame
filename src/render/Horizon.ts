@@ -12,7 +12,7 @@ export class Horizon {
   constructor(scene: THREE.Scene, radius: number) {
     this.far = new THREE.MeshBasicMaterial({ color: 0x8aa0ae, fog: false });
     this.near = new THREE.MeshBasicMaterial({ color: 0x5d7460, fog: false });
-    this.group.add(ring(radius, 26, 58, 7, this.far), ring(radius * 0.93, 12, 34, 23, this.near));
+    this.group.add(ring(radius, 26, 58, 7, this.far, 0.5), ring(radius * 0.93, 12, 34, 23, this.near, 1));
     this.group.renderOrder = -0.5;
     scene.add(this.group);
   }
@@ -29,8 +29,8 @@ export class Horizon {
   }
 }
 
-function ring(r: number, hMin: number, hMax: number, seed: number, mat: THREE.Material): THREE.Mesh {
-  const seg = 128;
+function ring(r: number, hMin: number, hMax: number, seed: number, mat: THREE.Material, trees: number): THREE.Mesh {
+  const seg = 720;
   const pos: number[] = [];
   const idx: number[] = [];
   const wave = (a: number): number =>
@@ -39,7 +39,10 @@ function ring(r: number, hMin: number, hMax: number, seed: number, mat: THREE.Ma
     const a = (i / seg) * Math.PI * 2;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r;
-    pos.push(x, -40, z, x, hMin + (hMax - hMin) * wave(a), z);
+    // Na hřbetech zubatá linka lesa (střídá se s holými úseky).
+    const forest = Math.max(0, Math.sin(a * 5 + seed * 1.3) * 0.7 + Math.sin(a * 11.7 + seed) * 0.5);
+    const spikes = (Math.abs(Math.sin(a * 190 + seed)) * 0.7 + Math.abs(Math.sin(a * 331 + seed * 3)) * 0.5) * forest * trees;
+    pos.push(x, -40, z, x, hMin + (hMax - hMin) * wave(a) + spikes * 4.2, z);
     if (i < seg) {
       const b = i * 2;
       idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);

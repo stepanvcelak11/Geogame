@@ -78,7 +78,16 @@ Mobilní FPV simulátor zeměměřiče. Three.js + Vite + TypeScript, běží v 
 
 ## Nastavení
 
-Ozubené kolečko v HUD (nebo „Nastavení grafiky a ovládání“ na úvodní obrazovce): stíny, hustota trávy a kvítí, dohled, úsporné rozlišení, citlivost rozhlížení, obrácená osa Y, hlasitost, zvuky okolí, průvodce „Co dál?“, ukazatel FPS, smazání uložené kariéry. Ukládá se do telefonu.
+Ozubené kolečko v HUD (nebo „Nastavení grafiky a ovládání“ na úvodní obrazovce): **předvolba Slabý telefon / Běžný / Výkonný** (hra při prvním spuštění sama odhadne výkon podle GPU, paměti a počtu jader), úspora baterie (30 FPS), stíny, hustota trávy a kvítí, dohled, úsporné rozlišení, citlivost rozhlížení, obrácená osa Y, hlasitost, zvuky okolí, průvodce „Co dál?“, ukazatel FPS, smazání uložené kariéry. Ukládá se do telefonu.
+
+### Výkon a grafika
+
+- Stromy: celý les hrubě po dlaždicích (kreslí se jen dlaždice v záběru a v dohledu; smrk z dálky jako jeden kužel, listnáč jako jedna koruna), detailní stromy se stíny jen v okruhu ~45 m kolem hráče.
+- Terén po dlaždicích se dvěma úrovněmi detailu (blízko přesně podle logiky, dál každý 4. vrchol, spáry zakrývá „sukně“).
+- Statická scenérie sloučená podle materiálu (barvy zapečené do vrcholů) – z desítek draw callů pár.
+- Na telefonu se stínová mapa překresluje každý druhý snímek; slabý telefon má menší stínovou mapu, kratší dohled, méně trávy a nižší rozlišení.
+- Výsledek: v otevřených lokalitách ~60–80 tisíc trojúhelníků na snímek místo ~650 tisíc, v lese ~190 tisíc i s 2,7× hustším lesem.
+- Vzhled: koruny stromů a tráva se hýbou ve větru, po krajině plují stíny mraků, na obzoru zubaté siluety lesů, jemná vinětace, tráva osvětlená jako zem (už ne černé trsy), hustší les u Hrušova.
 
 ## Ovládání
 

@@ -199,6 +199,7 @@ function scatterTrees(
   blocked: (x: number, z: number) => boolean,
   density: (x: number, z: number, forest: number) => number,
   extra: TreeInstance[] = [],
+  maxTrees = 950,
 ): TreeInstance[] {
   const hm = c.heightmap;
   const half = hm.half;
@@ -229,7 +230,8 @@ function scatterTrees(
     remember(t.x, t.z);
     addCollider(t);
   }
-  for (let attempt = 0; attempt < 16000 && trees.length < 950; attempt++) {
+  for (let attempt = 0, tries = maxTrees === 950 ? 16000 : maxTrees * 17; attempt < tries; attempt++) {
+    if (trees.length >= maxTrees) break;
     const x = c.rng.range(-half + 8, half - 8);
     const z = c.rng.range(-half + 8, half - 8);
     if (blocked(x, z)) continue;
@@ -752,6 +754,7 @@ function generateForest(): World {
     blocked,
     (x, _z, forest) => (inForest(x) ? 0.75 + 0.25 * forest : 0.004 + 0.02 * forest),
     rows,
+    2600,
   );
 
   return new World({

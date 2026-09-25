@@ -5,16 +5,22 @@ import { lambert, matte, PALETTE, type MatteMaterial } from './materials';
 import { canvasTexture, signTexture } from './textures';
 
 const texMat = new Map<string, MatteMaterial>();
-/** Materiál s procedurální texturou (sdílený podle klíče). */
+const texRep = new Map<string, THREE.Texture | null>();
+/** Materiál s procedurální texturou (sdílený podle klíče; textura sdílená podle vzoru a opakování). */
 function tmat(name: Parameters<typeof canvasTexture>[0], color: number, repeat: [number, number] = [1, 1]): MatteMaterial {
   const key = `${name}:${color}:${repeat.join('x')}`;
   let m = texMat.get(key);
   if (!m) {
-    const base = canvasTexture(name, 256);
-    const t = base ? base.clone() : null;
-    if (t) {
-      t.repeat.set(repeat[0], repeat[1]);
-      t.needsUpdate = true;
+    const tk = `${name}:${repeat.join('x')}`;
+    let t = texRep.get(tk);
+    if (t === undefined) {
+      const base = canvasTexture(name, 256);
+      t = base ? base.clone() : null;
+      if (t) {
+        t.repeat.set(repeat[0], repeat[1]);
+        t.needsUpdate = true;
+      }
+      texRep.set(tk, t);
     }
     m = matte({ color, map: t ?? undefined });
     texMat.set(key, m);
