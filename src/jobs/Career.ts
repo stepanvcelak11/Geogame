@@ -1,3 +1,5 @@
+import type { EquipId, EquipState } from './Equipment';
+
 /** Postup hráče: den, účet a výsledky zakázek. Ukládá se do localStorage (když jde). */
 export interface CareerJob {
   status: 'nova' | 'aktivni' | 'odevzdana';
@@ -12,10 +14,12 @@ export interface CareerState {
   stats: { jobsDone: number; km: number; points: number; okJobs?: number };
   upgrades?: string[]; // koupené vybavení
   urgentDone?: number; // den, kdy už byla spěšná zakázka zaplacena
+  equipment?: Record<EquipId, EquipState>; // stav přístrojů
+  insured?: boolean; // pojištění vybavení (spoluúčast 2 000 Kč)
 }
 
 export interface Upgrade {
-  id: 'imu' | 'antena' | 'nivelak' | 'dalkomer';
+  id: 'imu' | 'antena' | 'nivelak' | 'dalkomer' | 'destnik';
   name: string;
   desc: string;
   price: number;
@@ -45,6 +49,12 @@ export const UPGRADES: Upgrade[] = [
     name: 'Totální stanice s výkonným dálkoměrem',
     desc: 'Bez hranolu dosáhne dvakrát dál, na hranol i v mlze až 400 m.',
     price: 22000,
+  },
+  {
+    id: 'destnik',
+    name: 'Deštník na přístroj',
+    desc: 'V dešti chrání stanici a nivelák: optika nemokne a přístroj se neopotřebí dvojnásob.',
+    price: 1800,
   },
 ];
 

@@ -35,6 +35,8 @@ export interface OfficeView {
   } | null;
   note: string;
   shop: { id: string; name: string; desc: string; price: string; owned: boolean; canBuy: boolean }[];
+  service: { id: string; name: string; state: string; tone: 'ok' | 'worn' | 'bad' | 'away'; cost: string; canRepair: boolean }[];
+  insured: boolean;
 }
 
 /**
@@ -110,6 +112,21 @@ export class OfficeScreen {
         </button></li>`,
       )
       .join('') +
+      `<li class="office-shop-h">Servis přístrojů</li>` +
+      v.service
+        .map(
+          (e) => `<li><button class="office-card is-service is-${e.tone}" data-act="repair:${e.id}" ${e.canRepair ? '' : 'disabled'}>
+          <span class="oc-title">${esc(e.name)}</span>
+          <span class="oc-place">${esc(e.state)}</span>
+          <span class="oc-row"><span class="oc-pay">${e.tone === 'away' || (e.tone === 'ok' && !e.canRepair) ? '' : esc(e.cost)}</span><span class="oc-status">${e.tone === 'away' ? 'v opravě' : e.canRepair ? 'Opravit a zkalibrovat' : e.tone === 'ok' ? '' : 'Málo peněz'}</span></span>
+        </button></li>`,
+        )
+        .join('') +
+      `<li><button class="office-card is-shop${v.insured ? ' is-owned' : ''}" data-act="insure" ${v.insured ? 'disabled' : ''}>
+          <span class="oc-title">Pojištění vybavení</span>
+          <span class="oc-place">Oprava po pádu nebo opotřebení za spoluúčast nejvýš 2 000 Kč.</span>
+          <span class="oc-row"><span class="oc-pay">${v.insured ? 'Sjednáno' : '12 000 Kč'}</span><span class="oc-status">${v.insured ? '✓' : 'Sjednat'}</span></span>
+        </button></li>` +
       `<li class="office-shop-h">Vybavení k zakoupení</li>` +
       v.shop
         .map(

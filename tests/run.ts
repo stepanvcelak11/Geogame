@@ -765,5 +765,27 @@ const world = generateWorld('stavba');
   check('vzdálená báze = horší přesnost FIXu (1 ppm)', g.solution === 'fix' && far - g.sigmaH > 0.03, `${(far * 1000).toFixed(0)} vs ${(g.sigmaH * 1000).toFixed(0)} mm`);
 }
 
+// --- Montáž: závit
+{
+  const { Thread, dragAngle } = await import('../src/bench/Thread');
+  const t = new Thread(4);
+  t.rotate(Math.PI * 2, false);
+  check('bez přidržení se závit jen protočí', t.turns === 0 && t.slipped > 6);
+  for (let i = 0; i < 10; i++) t.rotate(Math.PI, true);
+  check('4 otáčky po směru = dotaženo, dál nejde', t.tight && t.turns === 4);
+  t.rotate(-Math.PI * 8, true);
+  check('proti směru povolí až na nulu', t.loose);
+  check('krouživý tah po směru hodinových ručiček = kladný úhel', dragAngle(0, 0, 10, 0, 0, 10) > 0);
+}
+
+// --- Stav vybavení
+{
+  const { noiseFactor, repairCost, dropDamage, stateLabel, equipOf, BROKEN } = await import('../src/jobs/Equipment');
+  check('nový přístroj měří podle výrobce', noiseFactor(1) === 1 && noiseFactor(0.6) > 1.9);
+  check('pojištění: oprava nejvýš 2 000 Kč', repairCost('ts', 0.2, true) === 2000 && repairCost('ts', 0.2, false) > 20000);
+  check('pád za běhu rozbije stanici', 1 - dropDamage('ts', true) < BROKEN + 0.2 && stateLabel(0.3) === 'porucha');
+  check('kufr i rover nesou stav GNSS', equipOf('gnssCase') === 'gnss' && equipOf('gnssRover') === 'gnss' && equipOf('rod') === null);
+}
+
 if (failed) throw new Error(`Selhalo testů: ${failed}`);
 console.log('\nVšechny testy prošly.');

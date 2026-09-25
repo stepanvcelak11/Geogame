@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { ItemKind, WorldItem } from '../items/items';
-import { buildCase, buildLevel, buildPole, buildTripod } from './InstrumentModels';
+import { buildCase, buildLevel, buildPole, buildTripod, glove } from './InstrumentModels';
 import { lambert, matte, PALETTE } from './materials';
 
 type Triple = [number, number, number];
@@ -90,14 +90,27 @@ function buildModel(kind: ItemKind): THREE.Group {
       g.add(rod, foot, bubble);
       return g;
     }
-    case 'prismPole':
-      return buildPole('prism').root;
+    case 'prismPole': {
+      const p = buildPole('prism').root;
+      p.userData = { glove: withGlove(p) };
+      return p;
+    }
     case 'gnssRover': {
       const p = buildPole('gnss');
-      p.root.userData = { pole: p.pole, receiver: p.receiver, controller: p.controller };
+      p.root.userData = { pole: p.pole, receiver: p.receiver, controller: p.controller, glove: withGlove(p.root) };
       return p.root;
     }
   }
+}
+
+/** Rukavice na rukojeti výtyčky – vidět jen, když ji držíš. */
+function withGlove(pole: THREE.Group): THREE.Object3D {
+  const g = glove();
+  g.position.set(-0.03, 1.1, 0.03);
+  g.rotation.set(0, Math.PI / 2, Math.PI / 2);
+  g.visible = false;
+  pole.add(g);
+  return g;
 }
 
 const FOLDED = { spread: 0.035, len: 1.0 };
@@ -175,6 +188,10 @@ export class ItemsView {
         const station = (e.model.userData as { station: THREE.Object3D }).station;
         station.visible = it.state === 'deployed' && !!it.mounted;
         (station.userData as { alidade: THREE.Object3D }).alidade.rotation.y = (it.stationYaw ?? it.yaw) - it.yaw;
+      }
+      if (it.kind === 'gnssRover' || it.kind === 'prismPole') {
+        const gl = (e.model.userData as { glove?: THREE.Object3D }).glove;
+        if (gl) gl.visible = it.state === 'held';
       }
       if (it.kind === 'gnssRover') {
         const u = e.model.userData as { pole: THREE.Object3D; receiver: THREE.Object3D; controller: THREE.Object3D };

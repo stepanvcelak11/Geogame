@@ -317,3 +317,27 @@ export function buildCase(kind: 'ts' | 'gnss'): THREE.Group {
   g.add(part(new THREE.TorusGeometry(0.05, 0.01, 8, 16, Math.PI), M.rubber(), 0, h + 0.005, 0));
   return g;
 }
+
+/** Pracovní rukavice (stylizovaná). */
+export function glove(): THREE.Group {
+  const g = new THREE.Group();
+  const mat = pbr(0x3b4247, 0.85, 0);
+  const cuff = pbr(0xe07b16, 0.8, 0);
+  g.add(part(new THREE.BoxGeometry(0.085, 0.04, 0.1), mat));
+  const thumb = part(new THREE.CapsuleGeometry(0.012, 0.04, 4, 8), mat);
+  thumb.position.set(0.05, 0, 0.01);
+  thumb.rotation.z = 0.8;
+  g.add(thumb);
+  for (let i = 0; i < 4; i++) {
+    const f = part(new THREE.CapsuleGeometry(0.01, 0.045, 4, 8), mat);
+    f.position.set(-0.03 + i * 0.02, 0, -0.07);
+    f.rotation.x = Math.PI / 2;
+    g.add(f);
+  }
+  const c = part(new THREE.CylinderGeometry(0.045, 0.05, 0.06, 12), cuff);
+  c.rotation.x = Math.PI / 2;
+  c.position.z = 0.08;
+  g.add(c);
+  return g;
+}
+

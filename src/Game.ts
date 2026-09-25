@@ -24,7 +24,22 @@ import {
   type ImportFile,
 } from './gnss/FieldController';
 import { ControllerScreen, type ControllerView } from './ui/ControllerScreen';
-import { RigScreen, type RigMode } from './ui/RigScreen';
+import { Bench } from './ui/Bench';
+import {
+  BROKEN,
+  collimationArcsec,
+  dropDamage,
+  EQUIP_NAME,
+  equipOf,
+  newEquipment,
+  noiseFactor,
+  repairCost,
+  stateLabel,
+  WEAR_PER_JOB,
+  type EquipId,
+} from './jobs/Equipment';
+import { HelpScreen } from './ui/HelpScreen';
+import { StationDialog } from './ui/StationDialog';
 import { Input } from './input/Input';
 import { TouchControls } from './input/TouchControls';
 import { InteractionSystem, type InteractionPrompt } from './interaction/InteractionSystem';
@@ -140,6 +155,7 @@ const CODES: { code: FeatureCode; label: string }[] = [
   { code: 'STROM', label: 'Strom' },
 ];
 const GAME_MIN_PER_SEC = 10 / 60; // herní čas běží 10× rychleji
+const INSURANCE = 12000; // jednorázové pojištění vybavení [Kč]
 /** „Roh trafostanice SV“ → „roh trafostanice SV“ (zkratky zůstanou velké). */
 const lowerFirst = (s: string): string => s.charAt(0).toLowerCase() + s.slice(1);
 /** Metry → „−0,6“ mm s typografickým minus. */
@@ -169,7 +185,9 @@ export class Game {
   private readonly itemIds: Set<string>;
   private readonly gnss = new GnssReceiver(new Rng(CONFIG.seed ^ 0x9e3779b9));
   private readonly ctrl = new FieldController();
-  private readonly rigScreen: RigScreen;
+  private readonly bench: Bench;
+  private readonly help: HelpScreen;
+  private readonly stationDialog: StationDialog;
   private readonly ctrlScreen: ControllerScreen;
   private rigCase: WorldItem | null = null; // kufr, u kterého se rover skládá
   /** Probíhající observace bodu GNSS (měří se po epochách, hráč musí stát). */
@@ -278,6 +296,7 @@ export class Game {
   private night = 0;
   private helperGoal: { x: number; y: number; z: number; label: string; mark?: ControlMark; feature?: FeatureInfo } | null = null;
   private dayEarned = 0;
+  private windT = 1;
 
   constructor(
     private readonly root: HTMLElement,
@@ -296,6 +315,7 @@ export class Game {
       hand: null,
     }));
     this.itemIds = new Set(this.items.map((i) => i.id));
+    for (const it of this.items) it.home = { ...it.pos };
     // Výtyčka pro GNSS: kolega ji nechal vysunutou na 1,80 m, přijímač a kontroler jsou v kufru.
     for (const it of this.items)
       if (it.kind === 'gnssRover') it.rig = { height: 1.8, receiver: false, controller: false, receiverOn: false, controllerOn: false };
@@ -348,11 +368,14 @@ export class Game {
       this.departConfirm = null;
       this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     };
-    this.rigScreen = new RigScreen(root);
-    this.rigScreen.onChange = (ev) => this.rigChanged(ev);
-    this.rigScreen.onClose = () => {
-      this.rigCase = null;
-      this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    this.bench = new Bench(root, this.gfx.camera, this.gfx.renderer.domElement);
+    this.stationDialog = new StationDialog(root);
+    this.stationDialog.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    this.help = new HelpScreen(root);
+    this.help.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    this.hud.onHelp = () => {
+      if (this.input.pointerLocked) document.exitPointerLock();
+      this.help.show(this.helpTopic());
     };
     this.ctrlScreen = new ControllerScreen(root);
     this.ctrlScreen.onAction = (id, v) => this.controllerAction(id, v);
@@ -627,7 +650,9 @@ export class Game {
       this.settingsScreen.isOpen ||
       this.protocolScreen.isOpen ||
       this.helperSheet.isOpen ||
-      this.rigScreen.isOpen ||
+      this.bench.isOpen ||
+      this.help.isOpen ||
+      this.stationDialog.isOpen ||
       this.ctrlScreen.isOpen ||
       this.traveling
     );
@@ -736,13 +761,26 @@ export class Game {
         : { verb, target, available: false, reason: this.fullHandsReason() };
 
     if (item.state === 'deployed' && item.kind === 'tripod') {
+      // Nohy se sešlapují hned po rozložení – drží pak i ve větru.
+      if (!item.secured && !active)
+        return {
+          verb: 'Sešlápnout',
+          target: 'nohy stativu do země',
+          available: true,
+          run: () => {
+            item.secured = true;
+            this.sfx.drop();
+            navigator.vibrate?.([20, 80, 20, 80, 20]);
+            this.bus.emit('toast', { text: 'Ostruhy všech tří nohou zašlápnuté do země. Stativ drží pevně i ve větru.' });
+          },
+        };
       if (item.mounted) {
-        if (active?.kind === 'tsCase') return { verb: 'Sundat', target: 'stanici do kufru', available: true, run: () => this.unmount(item, active) };
+        if (active?.kind === 'tsCase') return { verb: 'Sundat', target: 'stanici do kufru', available: true, run: () => this.openTsBench(item, active, false) };
         if (this.stations.has(item.id)) return { verb: 'Měřit', target: 'totální stanicí', available: true, run: () => this.openScope(item) };
         return { verb: 'Ustavit', target: 'přístroj', available: true, run: () => this.openSetup(item) };
       }
       if (active?.kind === 'tsCase' && !active.empty) {
-        return { verb: 'Nasadit', target: 'stanici na stativ', available: true, run: () => this.mount(item, active) };
+        return { verb: 'Nasadit', target: 'stanici na stativ', available: true, run: () => this.openTsBench(item, active, true) };
       }
       return take('Složit', 'stativ');
     }
@@ -750,8 +788,9 @@ export class Game {
       return { verb: 'Nivelovat', target: 'přístrojem', available: true, run: () => this.openLevel(item) };
     }
     if (item.kind === 'gnssCase' && item.state === 'ground' && active?.kind === 'gnssRover' && active.rig) {
-      if (!item.empty && !active.rig.receiver) return { verb: 'Sestavit', target: 'GNSS rover z kufru', available: true, run: () => this.openRig(item, active, 'assemble') };
-      if (item.empty) return { verb: 'Rozebrat', target: 'rover do kufru', available: true, run: () => this.openRig(item, active, 'pack') };
+      if (!active.rig.receiver || !active.rig.controller || !active.rig.receiverOn || !active.rig.controllerOn)
+        return { verb: 'Sestavit', target: 'GNSS rover z kufru', available: true, run: () => this.openRig(item, active, 'assemble') };
+      return { verb: 'Rozebrat', target: 'rover do kufru', available: true, run: () => this.openRig(item, active, 'pack') };
     }
     if (item.state === 'deployed') return take('Vzít', def.nameAcc);
     return take('Zvednout', (item.kind === 'tsCase' || item.kind === 'gnssCase') && item.empty ? 'prázdný kufr' : def.nameAcc);
@@ -1014,15 +1053,38 @@ export class Game {
     if (!s || !tripod) return;
     const mark = tripod.overMarkId ? this.world.marks.find((m) => m.id === tripod.overMarkId) : undefined;
     this.sfx.success();
-    const vp = s.instrumentHeight.toFixed(3).replace('.', ',');
     // Nové ustavení = nová stanice, orientace se musí udělat znovu.
     const known = mark && mark.type !== 'NZ' ? mark.catalog : null;
-    this.stations.set(tripod.id, new TotalStation(s.instrumentCenter, known, s.instrumentHeight, this.rng));
+    const cond = this.cond('ts');
+    if (cond < BROKEN) {
+      this.bus.emit('toast', { text: 'Stanice hlásí chybu 5001: kompenzátor mimo rozsah. Po pádu potřebuje servis.', tone: 'warn' });
+      return;
+    }
+    if (known && mark) {
+      // Na známém bodě: výška přístroje se odečte pásmem a zadá do stanice ručně.
+      this.stationDialog.onConfirm = (vp) => this.createStation(tripod, known, vp, s.instrumentHeight, mark.number);
+      this.stationDialog.show({ number: mark.number, ...known }, s.instrumentHeight);
+      return;
+    }
+    this.createStation(tripod, null, s.instrumentHeight, s.instrumentHeight, null);
+  }
+
+  /** Stanice po ustavení. `vp` = zadaná výška přístroje, `trueVp` = skutečná (rozdíl se propíše do výšek). */
+  private createStation(tripod: WorldItem, known: { Y: number; X: number; H: number } | null, vp: number, trueVp: number, markNo: string | null): void {
+    const s = this.setups.get(tripod.id);
+    if (!s) return;
+    const cond = this.cond('ts');
+    const ts = new TotalStation(s.instrumentCenter, known, vp, this.rng);
+    ts.wear = noiseFactor(cond);
+    ts.bias = (collimationArcsec(cond) * Math.PI) / (180 * 3600);
+    this.stations.set(tripod.id, ts);
+    if (Math.abs(vp - trueVp) > 0.005)
+      setTimeout(() => this.bus.emit('toast', { text: `Pozor: zadaná výška přístroje ${vp.toFixed(3)} m. Zkontroluj ji na pásmu, jinak budou výšky bodů posunuté.`, tone: 'warn' }), 2500);
     this.links.set(tripod.id, new RoboticLink(this.player.yaw));
     this.resections.delete(tripod.id);
     tripod.stationYaw = this.player.yaw;
     this.bus.emit('toast', {
-      text: `${mark ? `Přístroj ustaven na bodě ${mark.number}` : 'Přístroj urovnán na volném stanovisku'}, výška přístroje ${vp} m.`,
+      text: `${markNo ? `Stanovisko ${markNo} nastaveno` : 'Přístroj urovnán na volném stanovisku'}, výška přístroje ${vp.toFixed(3).replace('.', ',')} m.`,
     });
     if (this.scope) this.scopeScreen.show();
   }
@@ -1509,7 +1571,14 @@ export class Game {
   private levelRecord(lv: WorldItem, rod: WorldItem): { ok: boolean; text: string } {
     const inst = this.levelInstrument(lv);
     const sightLen = Math.hypot(rod.pos.x - inst.center.x, rod.pos.z - inst.center.z);
-    const r = readRod(inst, rod.pos, this.world, this.rng, levelNoise(this.weather, this.clockMin, sightLen) * (this.hasUpgrade('nivelak') ? 1 / (1 + this.weather.wind) : 1));
+    if (this.cond('level') < BROKEN) return { ok: false, text: 'Kompenzátor se zasekl, obraz lati ujíždí. Nivelák po pádu potřebuje servis.' };
+    const r = readRod(
+      inst,
+      rod.pos,
+      this.world,
+      this.rng,
+      levelNoise(this.weather, this.clockMin, sightLen) * (this.hasUpgrade('nivelak') ? 1 / (1 + this.weather.wind) : 1) * noiseFactor(this.cond('level')),
+    );
     if (!r.ok) return { ok: false, text: r.reason };
     this.lastLevelRead = { reading: r.reading, dist: r.dist };
     this.sfx.success();
@@ -1786,7 +1855,7 @@ export class Game {
         const done = r?.resolvedCount ?? 0;
         const total = r?.entries.length ?? 0;
         steps.push({ text: 'Dojdi ke žlutě označenému bodu (šipka nahoře ukazuje směr)', done: done > 0 });
-        steps.push({ text: `Bod prohlédni nebo změř roverem, chybějící nahlas v tabletu (${done} z ${total})`, done: done === total && total > 0 });
+        steps.push({ text: `Bod prohlédni nebo změř roverem, chybějící nahlas v tabletu${total ? ` (${done} z ${total})` : ''}`, done: done === total && total > 0 });
         break;
       }
       case 'vytyceni': {
@@ -1936,7 +2005,11 @@ export class Game {
       case 'polohopis': {
         if (spec.requireStation) {
           const c = this.connected();
-          if (!c) return 'Rozlož stativ nad 4001, nasaď stanici z kufru a ustav ji.';
+          if (!c) {
+            const t = this.items.find((i) => i.kind === 'tripod');
+            if (t?.state === 'deployed' && !t.secured) return 'Sešlápni nohy stativu (s prázdnýma rukama zamiř na stativ), pak nasaď stanici z kufru.';
+            return 'Rozlož stativ nad 4001, sešlápni nohy, nasaď stanici z kufru a ustav ji.';
+          }
           if (!c.ts.station) return 'Volné stanovisko: připoj ho výtyčkou na dva známé body, pak ho přijmi v tabletu (Stanice).';
           if (c.ts.orientation === null) return 'Orientuj stanici: výtyčku s hranolem postav na 4021 a dej Orientovat.';
           return 'Měř rohy trafostanice: výtyčku na roh (kód Roh budovy), nebo bez hranolu dalekohledem.';
@@ -2071,12 +2144,41 @@ export class Game {
     return this.world.frame.toWorld(this.reportedSjtsk(p));
   }
 
-  private openRig(kase: WorldItem, pole: WorldItem, mode: RigMode): void {
+  private openRig(kase: WorldItem, pole: WorldItem, mode: 'assemble' | 'pack'): void {
     if (!pole.rig) return;
     if (this.input.pointerLocked) document.exitPointerLock();
     this.rigCase = kase;
     this.sfx.click();
-    this.rigScreen.show(pole.rig, mode);
+    this.itemsView.setHeldHidden(true);
+    this.root.classList.add('is-bench');
+    this.bench.openGnss(pole.rig, mode === 'pack' ? 'gnss-pack' : 'gnss-assemble', {
+      onRig: (ev) => this.rigChanged(ev === 'click' ? 'screw' : ev),
+      onTsMounted: () => {},
+      onClose: () => this.closeBench(),
+    });
+  }
+
+  /** Nasazení / sundání totální stanice rukama: posadit na hlavu stativu a přitáhnout šroubem. */
+  private openTsBench(tripod: WorldItem, kase: WorldItem, mount: boolean): void {
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.sfx.click();
+    this.itemsView.setHeldHidden(true);
+    this.itemsView.setHidden(tripod.id);
+    this.root.classList.add('is-bench');
+    this.bench.openTs(mount ? 'ts-mount' : 'ts-unmount', {
+      onRig: (ev) => (ev === 'screw' ? this.sfx.click() : this.sfx.drop()),
+      onTsMounted: (m) => (m ? this.mount(tripod, kase) : this.unmount(tripod, kase)),
+      onClose: () => this.closeBench(),
+    });
+  }
+
+  private closeBench(): void {
+    this.rigCase = null;
+    this.itemsView.setHeldHidden(false);
+    this.itemsView.setHidden(null);
+    this.root.classList.remove('is-bench');
+    this.refreshHands();
+    this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
   }
 
   private rigChanged(ev: 'height' | 'screw' | 'receiver' | 'controller' | 'power'): void {
@@ -2097,6 +2199,114 @@ export class Game {
       });
     } else this.sfx.drop();
     this.refreshHands();
+  }
+
+  // ================================================================ stav vybavení
+
+  private cond(id: EquipId): number {
+    return this.career.equipment?.[id]?.condition ?? 1;
+  }
+
+  private damage(id: EquipId, amount: number, sudden: boolean): void {
+    const e = (this.career.equipment ??= newEquipment());
+    const before = e[id].condition;
+    e[id].condition = Math.max(0, before - amount);
+    if (sudden && before >= BROKEN && e[id].condition < BROKEN)
+      setTimeout(() => this.bus.emit('toast', { text: `${EQUIP_NAME[id]} je po pádu v poruše. Bez servisu s ní neměříš.`, tone: 'warn' }), 2600);
+    // Stanice na stativu dostane nový stav hned.
+    if (id === 'ts') for (const ts of this.stations.values()) ts.wear = noiseFactor(e[id].condition);
+    this.persist();
+  }
+
+  /** Předměty v servisu: skryté, dokud nejsou opravené; hotové se vrátí do skladu. */
+  private syncRepairs(): void {
+    const e = this.career.equipment;
+    if (!e) return;
+    for (const it of this.items) {
+      const id = equipOf(it.kind);
+      if (!id) continue;
+      const st = e[id];
+      if (st.repairReady && st.repairReady > this.career.day) {
+        it.location = 'servis';
+        it.state = 'ground';
+      } else if (it.location === 'servis') {
+        st.repairReady = undefined;
+        it.location = 'kancelar';
+        it.state = 'ground';
+        it.pos = { ...(it.home ?? it.pos) };
+        if (it.kind === 'tsCase' || it.kind === 'gnssCase') it.empty = false;
+      }
+    }
+  }
+
+  /** Servis v kanceláři: oprava přístroje přes noc. */
+  private sendToRepair(id: EquipId): void {
+    const e = this.career.equipment;
+    if (!e || this.world.location !== 'kancelar') return;
+    const cost = repairCost(id, e[id].condition, !!this.career.insured);
+    const parts = this.items.filter((i) => equipOf(i.kind) === id);
+    if (parts.some((i) => i.state === 'held' || i.state === 'deployed' || (i.location !== 'kancelar' && i.state !== 'stored'))) {
+      this.bus.emit('toast', { text: 'Do servisu přines všechny díly přístroje sem do kanceláře (a nic nedrž v ruce).', tone: 'warn' });
+      return;
+    }
+    if (this.career.money < cost) {
+      this.bus.emit('toast', { text: `Oprava stojí ${kc(cost)}, na účtu nemáš dost.`, tone: 'warn' });
+      return;
+    }
+    this.career.money -= cost;
+    e[id] = { condition: 1, repairReady: this.career.day + 1 };
+    if (id === 'gnss') {
+      const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+      if (rig) Object.assign(rig, { receiver: false, controller: false, receiverOn: false, controllerOn: false });
+    }
+    this.syncRepairs();
+    this.refreshHands();
+    this.persist();
+    this.sfx.success();
+    this.bus.emit('toast', { text: `${EQUIP_NAME[id]} odeslán do servisu za ${kc(cost)}. Zítra ráno bude zpátky ve skladu, zkalibrovaný.` });
+  }
+
+  /** Vítr a nezajištěný stativ se stanicí: časem se převrhne. Kontrola jednou za herní minutu. */
+  private windCheck(dt: number): void {
+    this.windT -= dt * GAME_MIN_PER_SEC;
+    if (this.windT > 0) return;
+    this.windT = 1;
+    if (this.weather.wind < 0.6) return;
+    for (const t of this.items) {
+      if (t.kind !== 'tripod' || t.state !== 'deployed' || !t.mounted || t.secured || t.location !== this.world.location) continue;
+      if (this.rng.next() > 0.12 * this.weather.wind) continue;
+      const kase = this.items.find((i) => i.kind === 'tsCase');
+      t.mounted = false;
+      t.state = 'ground';
+      this.setups.delete(t.id);
+      this.dropStation(t.id);
+      if (kase) kase.empty = false;
+      this.damage('ts', dropDamage('ts', true), true);
+      this.damage('tripod', dropDamage('tripod', true), false);
+      this.sfx.drop();
+      navigator.vibrate?.([80, 40, 120]);
+      this.bus.emit('toast', {
+        text: `Poryv větru převrátil stativ se stanicí! Stanici jsi uložil do kufru – stav ${Math.round(this.cond('ts') * 100)} %. Ve větru nohy stativu vždycky sešlápni.`,
+        tone: 'warn',
+      });
+    }
+  }
+
+  /** Kapitola příručky podle toho, co hráč právě dělá. */
+  private helpTopic(): string {
+    const active = this.activeItem();
+    const run = this.activeRun();
+    if (active?.kind === 'gnssRover' || active?.kind === 'gnssCase') {
+      const rig = this.items.find((i) => i.kind === 'gnssRover')?.rig;
+      if (!rig?.receiver || !rig.controllerOn) return 'gnss-rig';
+      if (this.ctrl.missing().length) return 'gnss-ctrl';
+      return run?.spec.type === 'vytyceni' ? 'stakeout' : 'gnss-measure';
+    }
+    if (active?.kind === 'tripod' || active?.kind === 'tsCase') return 'tripod';
+    if (active?.kind === 'prismPole' || this.connected()) return 'ts-measure';
+    if (active?.kind === 'level' || active?.kind === 'rod' || run?.spec.type === 'nivelace') return 'level';
+    if (!run) return this.world.location === 'kancelar' ? 'start' : 'career';
+    return run.spec.kit.includes('gnssRover') ? 'gnss-rig' : run.spec.requireStation ? 'tripod' : 'start';
   }
 
   private openController(): void {
@@ -2580,6 +2790,8 @@ export class Game {
   /** Obnoví uloženou kariéru: den, účet a stavy zakázek. */
   private applyCareer(c: CareerState): void {
     this.career = c;
+    c.equipment = { ...newEquipment(), ...(c.equipment ?? {}) };
+    this.syncRepairs();
     this.applyUpgrades();
     this.weather = weatherForDay(c.day);
     for (const [id, cj] of Object.entries(c.jobs)) {
@@ -2618,9 +2830,10 @@ export class Game {
       if (!it) return { name, where: 'chybí', ok: false };
       if (it.state === 'stored') return { name, where: 'v dodávce', ok: true };
       if (it.state === 'held') return { name, where: 'v ruce', ok: true };
+      if (it.location === 'servis') return { name, where: 'v servisu', ok: false };
       const at = it.location === this.world.location;
-      if (it.location === spec.location) return { name, where: at ? 'tady na místě' : `na místě (${LOCATIONS[it.location].short})`, ok: true };
-      return { name, where: at ? (it.location === 'kancelar' ? 've skladu' : 'tady, nenaloženo') : `zůstalo: ${LOCATIONS[it.location].short}`, ok: false };
+      if (it.location === spec.location) return { name, where: at ? 'tady na místě' : `na místě (${LOCATIONS[it.location as LocationId].short})`, ok: true };
+      return { name, where: at ? (it.location === 'kancelar' ? 've skladu' : 'tady, nenaloženo') : `zůstalo: ${LOCATIONS[it.location as LocationId].short}`, ok: false };
     });
   }
 
@@ -2706,6 +2919,20 @@ export class Game {
       selected: this.officeSel,
       detail,
       shop: UPGRADES.map((u) => ({ id: u.id, name: u.name, desc: u.desc, price: kc(u.price), owned: this.hasUpgrade(u.id), canBuy: this.career.money >= u.price })),
+      service: (['ts', 'gnss', 'level', 'tripod'] as EquipId[]).map((id) => {
+        const st = this.career.equipment?.[id] ?? { condition: 1 };
+        const away = !!st.repairReady && st.repairReady > this.career.day;
+        const cost = repairCost(id, st.condition, !!this.career.insured);
+        return {
+          id,
+          name: EQUIP_NAME[id],
+          state: away ? `v servisu, zpátky den ${st.repairReady}` : `${stateLabel(st.condition)} · ${Math.round(st.condition * 100)} %`,
+          tone: away ? 'away' : st.condition < BROKEN ? 'bad' : st.condition < 0.85 ? 'worn' : 'ok',
+          cost: kc(cost),
+          canRepair: !away && st.condition < 0.99 && this.career.money >= cost,
+        };
+      }),
+      insured: !!this.career.insured,
       note: `V dodávce ${loaded} ${loaded === 1 ? 'věc' : loaded >= 2 && loaded <= 4 ? 'věci' : 'věcí'}. Vybavení je ve skladu vedle, nakládá se zadními dveřmi dodávky.`,
     };
   }
@@ -2727,6 +2954,17 @@ export class Game {
       return;
     }
     if (cmd === 'endDay') return this.endDay();
+    if (cmd === 'repair') return this.sendToRepair(arg as EquipId);
+    if (cmd === 'insure') {
+      if (this.career.insured) return;
+      if (this.career.money < INSURANCE) return void this.bus.emit('toast', { text: `Pojištění stojí ${kc(INSURANCE)}.`, tone: 'warn' });
+      this.career.money -= INSURANCE;
+      this.career.insured = true;
+      this.persist();
+      this.sfx.success();
+      this.bus.emit('toast', { text: 'Vybavení pojištěno: každá oprava tě stojí nejvýš 2 000 Kč spoluúčasti.' });
+      return;
+    }
     if (cmd === 'buy') {
       const u = UPGRADES.find((x) => x.id === arg);
       if (!u || this.hasUpgrade(u.id) || this.career.money < u.price) return;
@@ -2760,6 +2998,7 @@ export class Game {
     const day = this.career.day;
     this.career.day++;
     this.weather = weatherForDay(this.career.day);
+    this.syncRepairs();
     this.dayEarned = 0;
     this.clockMin = 7 * 60 + 30;
     this.persist();
@@ -2994,6 +3233,12 @@ export class Game {
       if (cl <= closureLimit(run.level.heights.length) / 3) bonus = Math.round((run.spec.pay * 0.2) / 100) * 100;
     } else if (ok && run.mapping && run.mapping.wrongCode === 0) bonus = Math.round((run.spec.pay * 0.1) / 100) * 100;
     this.lastBonus = bonus;
+    // Opotřebení použitého vybavení (v dešti bez deštníku víc).
+    const wet = this.weather.rain > 0.5 && !this.hasUpgrade('destnik');
+    for (const k of run.spec.kit) {
+      const id = equipOf(k);
+      if (id) this.damage(id, WEAR_PER_JOB * (wet && (id === 'ts' || id === 'level') ? 2.5 : 1), false);
+    }
     const rankBefore = rankIndex(this.career);
     const extra = extraPay(run.spec.pay, ok, RANKS[rankBefore], run.spec.id === this.urgentToday());
     this.lastExtra = { ...extra, rankName: RANKS[rankBefore].name };
@@ -3220,6 +3465,11 @@ export class Game {
   }
 
   private pickUp(item: WorldItem): void {
+    if (item.kind === 'tripod' && item.mounted) {
+      this.bus.emit('toast', { text: 'Stanici na stativu nepřenášej – spadne a rozbije se. Nejdřív ji sundej do kufru.', tone: 'warn' });
+      return;
+    }
+    item.secured = false;
     const hand = this.hands.put(item.id);
     if (!hand) return;
     if (this.helper?.carryId === item.id) {
@@ -3277,6 +3527,23 @@ export class Game {
     item.location = this.world.location;
     item.hand = null;
     this.sfx.drop();
+    // Upuštěno za chůze = pád na zem. Kufr s přístrojem i sestavený rover to odnesou.
+    const speed = Math.hypot(this.player.vel.x, this.player.vel.z);
+    const eq = equipOf(item.kind);
+    const full = (item.kind === 'tsCase' || item.kind === 'gnssCase') && !item.empty;
+    const fragile = full || (item.kind === 'gnssRover' && !!item.rig?.receiver) || item.kind === 'level' || item.kind === 'tripod';
+    if (eq && fragile && speed > 1.2) {
+      const hard = speed > 3;
+      this.damage(eq, full ? dropDamage(eq, hard) * 0.4 : dropDamage(eq, hard), true);
+      setTimeout(
+        () =>
+          this.bus.emit('toast', {
+            text: `Upustil jsi ${ITEM_DEFS[item.kind].nameAcc} za ${hard ? 'běhu' : 'chůze'}! ${EQUIP_NAME[eq]}: ${stateLabel(this.cond(eq))} (${Math.round(this.cond(eq) * 100)} %). Věci pokládej vestoje.`,
+            tone: 'warn',
+          }),
+        400,
+      );
+    }
     this.bus.emit('toast', { text: `${this.itemName(item)} položen${item.kind === 'prismPole' ? 'a' : ''}` });
     this.refreshHands();
   }
@@ -3460,7 +3727,10 @@ export class Game {
     }
     if (rover.location !== this.world.location && rover.state !== 'held') return;
     this.ctrl.updateCorrections(dt, this.world.location, () => this.rng.next());
-    this.gnss.corrections = this.ctrl.correctionsOk ? { baseKm: this.ctrl.baseKm(this.world.location) } : null;
+    const gc = this.cond('gnss');
+    this.gnss.degrade = noiseFactor(gc);
+    // Rozbitá anténa po pádu: RTK nevyřeší ambiguity.
+    this.gnss.corrections = this.ctrl.correctionsOk && gc >= BROKEN ? { baseKm: this.ctrl.baseKm(this.world.location) } : null;
     const h = rover.rig?.height ?? 2;
     const base = rover.state === 'held' ? this.player.pos : rover.pos;
     const lift = rover.state === 'ground' ? 0.15 : h; // položená výtyčka: anténa u země
@@ -3470,6 +3740,7 @@ export class Game {
 
   private step(dt: number): void {
     if (!this.traveling) this.clockMin += dt * GAME_MIN_PER_SEC;
+    if (this.started && !this.traveling) this.windCheck(dt);
     if (this.started && !this.traveling && !this.helper.inVan) {
       const ev = this.helper.update(dt, this.world, this.player.pos);
       if (ev?.kind === 'arrived') this.helperArrived(ev.purpose);
@@ -3570,6 +3841,7 @@ export class Game {
     if (this.tablet.isOpen) this.tablet.update(this.tabletState());
     if (this.officeScreen.isOpen) this.officeScreen.update(this.officeView());
     if (this.ctrlScreen.isOpen) this.ctrlScreen.update(this.controllerView());
+    this.bench.update(dt);
     this.setupScreen.render();
 
     this.updateBubble(); // libela každý snímek – jinak by se nedala plynule srovnávat

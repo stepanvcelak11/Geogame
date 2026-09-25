@@ -43,7 +43,8 @@ export function poleTremor(w: Weather): number {
 /** Směrodatná odchylka čtení latě [m]: vítr rozechvěje přístroj, horké poledne tetelí dlouhé záměry. */
 export function levelNoise(w: Weather, minutes: number, dist: number): number {
   const shimmer = w.kind === 'jasno' && minutes > 11 * 60 && minutes < 16 * 60 ? dist * 0.00003 : 0;
-  return 0.0003 * (1 + w.wind * 2.5) + shimmer;
+  // Déšť: kapky na objektivu a mokrá lať – čtení je neklidnější.
+  return 0.0003 * (1 + w.wind * 2.5 + w.rain * 0.6) + shimmer;
 }
 
 /** Dosah dálkoměru [m] podle viditelnosti. */
