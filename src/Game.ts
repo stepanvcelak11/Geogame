@@ -39,6 +39,7 @@ import {
   type EquipId,
 } from './jobs/Equipment';
 import { HelpScreen } from './ui/HelpScreen';
+import { coachSeen, showCoach } from './ui/Coach';
 import { StationDialog } from './ui/StationDialog';
 import { Input } from './input/Input';
 import { TouchControls } from './input/TouchControls';
@@ -297,6 +298,8 @@ export class Game {
   private helperGoal: { x: number; y: number; z: number; label: string; mark?: ControlMark; feature?: FeatureInfo } | null = null;
   private dayEarned = 0;
   private windT = 1;
+  private lowFpsT = 0;
+  private qualityCooldown = 20; // chvíli po startu nehodnotit (načítání)
 
   constructor(
     private readonly root: HTMLElement,
@@ -373,6 +376,10 @@ export class Game {
     this.stationDialog.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
     this.help = new HelpScreen(root);
     this.help.onClose = () => this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    this.help.onCoach = () => {
+      this.help.hide();
+      this.openCoach();
+    };
     this.hud.onHelp = () => {
       if (this.input.pointerLocked) document.exitPointerLock();
       this.help.show(this.helpTopic());
@@ -451,6 +458,9 @@ export class Game {
       }
       this.started = true;
       this.weatherTip();
+      // Při prvním spuštění krátký úvod do ovládání (v automatických testech ne).
+      const testing = (window as unknown as { __GEODET_TEST?: boolean }).__GEODET_TEST;
+      if (!coachSeen() && !testing) setTimeout(() => this.openCoach(), 900);
       this.root.classList.remove('is-intro');
       this.sfx.unlock();
       if (this.touchMode) {
@@ -464,7 +474,7 @@ export class Game {
           this.world.location === 'kancelar'
             ? `Den ${this.career.day}. Zakázky jsou na nástěnce u vchodu, vybavení ve skladu.`
             : this.touchMode
-              ? 'Zakázky čekají v tabletu. Klepni na Mapa.'
+              ? 'Zakázky čekají v tabletu. Klepni na Tablet.'
               : 'Zakázky čekají v tabletu. Otevři ho klávesou M.',
       });
     });
@@ -652,6 +662,7 @@ export class Game {
       this.helperSheet.isOpen ||
       this.bench.isOpen ||
       this.help.isOpen ||
+      this.coachOpen ||
       this.stationDialog.isOpen ||
       this.ctrlScreen.isOpen ||
       this.traveling
@@ -863,7 +874,7 @@ export class Game {
     if (notReady) {
       if (!rig?.receiver) return { verb: 'Sestavit', target: 'rover', available: false, reason: notReady };
       if (rig.controllerOn && this.ctrl.missing().length)
-        return { verb: 'Kontroler', target: 'nastavit', available: true, run: () => this.openController() };
+        return { verb: 'Nastavit', target: 'kontroler', available: true, run: () => this.openController() };
       return { verb: 'Změřit', target: 'bod', available: false, reason: notReady };
     }
     if (this.obs) return { verb: 'Měřím', target: `${Math.floor(this.obs.t)} / ${this.obs.need} s`, available: false, reason: 'Stůj a drž bublinu v kroužku' };
@@ -2201,6 +2212,36 @@ export class Game {
     this.refreshHands();
   }
 
+  /**
+   * Když hra dlouho běží pod ~22 FPS, sníží náročnost o jeden krok (AO → stíny → tráva)
+   * a řekne to hráči. Nastavení se uloží, v Nastavení jde vrátit.
+   */
+  private autoQuality(dt: number): void {
+    if (!this.started || this.traveling || this.modalOpen) return;
+    this.lowFpsT = this.gfx.fps < 22 ? this.lowFpsT + dt : Math.max(0, this.lowFpsT - dt * 2);
+    this.qualityCooldown -= dt;
+    if (this.lowFpsT < 10 || this.qualityCooldown > 0) return;
+    this.lowFpsT = 0;
+    this.qualityCooldown = 25;
+    const s = { ...this.settings };
+    let what = '';
+    if (s.gfx === 2) {
+      s.gfx = 1;
+      what = 'vypnul zastínění (AO)';
+    } else if (s.shadows) {
+      s.shadows = false;
+      what = 'vypnul stíny';
+    } else if (s.grass > 0) {
+      s.grass = 0;
+      what = 'vypnul trávu';
+    } else if (!s.saver) {
+      s.saver = true;
+      what = 'zapnul úsporné rozlišení';
+    } else return;
+    this.applySettings(s);
+    this.bus.emit('toast', { text: `Hra se sekala, tak jsem ${what}. Vrátíš to v Nastavení (⚙).` });
+  }
+
   // ================================================================ stav vybavení
 
   private cond(id: EquipId): number {
@@ -2292,6 +2333,18 @@ export class Game {
     }
   }
 
+  private coachOpen = false;
+
+  private openCoach(): void {
+    if (this.coachOpen) return;
+    if (this.input.pointerLocked) document.exitPointerLock();
+    this.coachOpen = true;
+    showCoach(this.root, this.touchMode, () => {
+      this.coachOpen = false;
+      this.hud.setLockHint(!this.touchMode && !this.input.pointerLocked);
+    });
+  }
+
   /** Kapitola příručky podle toho, co hráč právě dělá. */
   private helpTopic(): string {
     const active = this.activeItem();
@@ -2377,6 +2430,7 @@ export class Game {
         battery: clamp(100 - (this.clockMin - (7 * 60 + 30)) / 5.5, 5, 100),
       },
       job: job ? { name: job.name, crs: CRS_OPTIONS.find((o) => o.id === job.crs)?.label ?? job.crs } : null,
+      next: this.controllerNext(),
       jobs: c.jobs.filter((j) => j.location === this.world.location).map((j) => j.name),
       suggestedName: `${LOCATIONS[this.world.location].short.replace(/\s+/g, '')}_den${this.career.day}`,
       crs: CRS_OPTIONS,
@@ -2428,6 +2482,25 @@ export class Game {
           check: p.dev && job?.imported.includes(`bp-${this.world.location}`) ? `kontrola ${p.markNumber}: ΔY ${mm(p.dev.dY)} ΔX ${mm(p.dev.dX)} ΔH ${mm(p.dev.dH)} mm` : undefined,
         })),
     };
+  }
+
+  /** Průvodce kontrolerem: další krok a dlaždice, na kterou ťuknout. */
+  private controllerNext(): { page: string; text: string } | null {
+    const c = this.ctrl;
+    const run = this.activeRun();
+    const job = c.job;
+    const miss = c.missing();
+    if (!job) return { page: 'job', text: 'Založ zakázku a vyber souřadnicový systém S-JTSK (EPSG:5513) + Bpv.' };
+    if (!job.imported.includes(`bp-${this.world.location}`)) return { page: 'import', text: 'Nahraj bodové pole – kontroler pak ukáže odchylky na kontrolním bodě.' };
+    if (miss.includes('bluetooth')) return { page: 'bt', text: 'Spáruj přijímač přes Bluetooth.' };
+    if (miss.includes('antenna')) return { page: 'antenna', text: 'Zadej typ antény a výšku, kterou jsi odečetl na výtyčce.' };
+    if (miss.includes('ntrip')) return { page: 'ntrip', text: 'Připoj korekce CZEPOS: načti tabulku zdrojů a vyber VRS3-GG.' };
+    if (this.gnss.solution !== 'fix') return { page: 'ntrip', text: 'Čekej na FIX (zelený stav nahoře). U zdí a pod stromy nepřijde – popojdi na volno.' };
+    if (run && run.spec.kit.includes('gnssRover') && run.spec.type !== 'rekognoskace' && !run.check)
+      return { page: 'measure', text: 'Nejdřív změř kontrolu: hrot na bod bodového pole, Měřit. Odchylky do 2–3 cm jsou v pořádku.' };
+    if (run?.spec.stake && !job.imported.includes(`stake-${run.spec.id}`)) return { page: 'import', text: 'Nahraj souřadnice bodů k vytyčení (soubor zakázky).' };
+    if (run?.spec.stake) return { page: 'stake', text: 'Vyber bod k vytyčení a jdi podle navigace.' };
+    return { page: 'measure', text: 'Měř body: vyber kód, postav hrot a změř.' };
   }
 
   private controllerAction(id: string, value?: string): void {
@@ -2872,7 +2945,7 @@ export class Game {
         tone,
         badge: locked ? `od stupně ${rankFor(spec.difficulty).name}` : spec.id === urgent ? 'Spěchá +30 %' : undefined,
       };
-    });
+    }).sort((a, b) => Number(a.tone === 'locked') - Number(b.tone === 'locked') || Number(b.id === urgent) - Number(a.id === urgent));
     const spec = JOBS.find((j) => j.id === this.officeSel);
     let detail: OfficeView['detail'] = null;
     if (spec) {
@@ -3288,7 +3361,7 @@ export class Game {
       return {
         title: 'Zakázky',
         brief: this.driving ? 'Jsi v dodávce. Odjet můžeš tlačítkem dole.' : 'Převezmi zakázku. Do jiné lokality dojedeš dodávkou.',
-        rows: JOBS.map((spec) => {
+        rows: [...JOBS].sort((a, b) => Number(!this.jobUnlocked(a)) - Number(!this.jobUnlocked(b))).map((spec) => {
           const r = this.jobs.get(spec.id) as JobRun;
           const far = spec.location !== here ? `, jízda ${travelMinutes(here, spec.location)} min` : ', tady';
           const locked = !this.jobUnlocked(spec) && r.status !== 'aktivni';
@@ -3827,6 +3900,7 @@ export class Game {
     else this.marker.hide();
 
     this.gfx.adapt(dt);
+    this.autoQuality(dt);
     this.gfx.render();
 
     if (!this.driving && this.player.stepCount !== this.lastStep) {

@@ -755,7 +755,9 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .panel.pos .gnss-detail { font-size: 12px; margin: 2px 0 0; }
 .panel.pos .code-chip { min-height: 32px; font-size: 13px; }
 .goal { top: calc(8px + var(--inset-t)) !important; max-width: min(44vw, 440px) !important; padding: 6px 12px !important; gap: 6px !important; align-items: center !important; }
-.has-ctrl .goal { top: calc(56px + var(--inset-t)) !important; }
+.is-touch .topbtns button { min-width: 44px; padding: 0 10px !important; font-size: 14px !important; }
+/* Když se tlačítka nevejdou vedle „Co dál“ (úzký displej), řádek uhne pod ně. */
+.goal-below .goal { top: calc(56px + var(--inset-t)) !important; left: calc(180px + var(--inset-l)) !important; right: calc(232px + var(--inset-r)) !important; }
 .goal-t { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .goal.is-min .goal-t { display: none; }
 .goal-arrow { flex: none; display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; background: var(--survey); color: var(--ink); font-weight: 900; font-size: 15px; }
@@ -786,7 +788,7 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
   .tb-action { width: 82px !important; height: 82px !important; }
   .vial { width: 80px !important; height: 80px !important; right: calc(106px + var(--inset-r)) !important; }
 }
-.goal { left: calc(214px + var(--inset-l)) !important; right: calc(232px + var(--inset-r)) !important; transform: none !important; max-width: none !important; width: auto !important; justify-content: flex-start; }
+.goal { left: calc(var(--top-w, 214px) + 18px + var(--inset-l)) !important; right: calc(232px + var(--inset-r)) !important; transform: none !important; max-width: none !important; width: auto !important; justify-content: flex-start; }
 .panel.hands { width: 218px; }
 .panel.hands .hand { flex: 1 1 0; min-width: 0; }
 .vial { right: calc(200px + var(--inset-r)) !important; }
@@ -894,12 +896,17 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .bench-steps { position: absolute; right: calc(8px + var(--inset-r)); top: calc(50px + var(--inset-t)); margin: 0; padding: 8px 12px 8px 30px; border-radius: 8px; background: rgba(31, 36, 40, 0.7); font-size: 13px; line-height: 1.5; color: var(--muted); }
 .bench-steps .is-done { color: #7fd489; }
 .bench-steps .is-cur { color: var(--paper); font-weight: 700; }
+.bench-ring { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; border: 3px dashed rgba(242, 183, 5, 0.85); pointer-events: none; animation: bench-spin 3s linear infinite; }
+.bench-ring.is-ccw { animation-direction: reverse; }
+.bench-ring span { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 26px; color: var(--survey); text-shadow: 0 1px 3px #000; }
+@keyframes bench-spin { to { transform: rotate(360deg); } }
 .bench-loupe { position: absolute; right: calc(14px + var(--inset-r)); top: calc(50px + var(--inset-t)); margin: 0; padding: 6px; border-radius: 10px; background: rgba(31, 36, 40, 0.8); text-align: center; }
 .bench-loupe canvas { display: block; width: 110px; height: 220px; border-radius: 6px; }
 .bench-loupe figcaption { font-size: 12px; color: var(--muted); margin-top: 3px; }
 .bench-loupe:not([hidden]) ~ .bench-steps { display: none; }
-.bench-hold { position: absolute; left: calc(14px + var(--inset-l)); bottom: calc(18px + var(--inset-b)); width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(238, 241, 234, 0.6); background: rgba(31, 36, 40, 0.55); color: var(--paper); font-size: 30px; pointer-events: auto; touch-action: none; user-select: none; cursor: pointer; display: grid; place-content: center; line-height: 1.1; }
+.bench-hold { position: absolute; left: calc(14px + var(--inset-l)); bottom: calc(26px + var(--inset-b)); width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(238, 241, 234, 0.6); background: rgba(31, 36, 40, 0.55); color: var(--paper); font-size: 30px; pointer-events: auto; touch-action: none; user-select: none; cursor: pointer; display: grid; place-content: center; line-height: 1.1; }
 .bench-hold span { font-size: 13px; font-weight: 700; }
+.bench-hold.is-locked::after { content: 'zamčeno – ťukni pro puštění'; position: absolute; bottom: 100%; left: 0; margin-bottom: 4px; white-space: nowrap; font-size: 11px; color: var(--paper); text-shadow: 0 1px 2px #000; }
 .bench-hold.is-on { background: rgba(242, 183, 5, 0.85); color: var(--ink); border-color: var(--survey); }
 .bench-actions { position: absolute; right: calc(14px + var(--inset-r)); bottom: calc(18px + var(--inset-b)); display: flex; gap: 8px; pointer-events: auto; }
 .bench-actions button { min-height: 48px; padding: 0 18px; border-radius: 8px; border: 0; background: var(--survey); color: var(--ink); font-weight: 700; font-size: 16px; cursor: pointer; }
@@ -932,6 +939,9 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .cp-tiles { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px 12px 12px; }
 .cp-tiles button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 10px; border: 1px solid #c9d1ca; background: #fff; color: #1d3b53; font-weight: 700; font-size: 15px; cursor: pointer; min-height: 64px; }
 .cp-tiles button span { font-size: 24px; line-height: 1; }
+.cp-next { margin: 6px 12px 0; padding: 6px 10px; border-radius: 6px; background: #fff3cc; border-left: 4px solid #e0a526; font-size: 14px; line-height: 1.3; }
+.cp-tiles button.is-next { border: 3px solid #e0a526; background: #fffaf0; animation: cp-pulse 1.4s ease-in-out infinite; }
+@keyframes cp-pulse { 50% { box-shadow: 0 0 0 5px rgba(224, 165, 38, 0.35); } }
 .ctrl button { font-family: inherit; }
 .cp-scroll > button, .cp-list button, .cp-chips button { min-height: 42px; padding: 4px 12px; border-radius: 6px; border: 1px solid #b9c2bb; background: #fff; color: #1f2428; font-size: 15px; text-align: left; cursor: pointer; }
 .cp-scroll > button:disabled { opacity: 0.5; cursor: default; }
@@ -1002,3 +1012,16 @@ button:focus-visible { outline: 2px solid var(--survey); outline-offset: 2px; }
 .stn-actions { display: flex; gap: 6px; }
 .stn-actions button { flex: 1; min-height: 40px; border-radius: 4px; border: 0; background: #1b2a1b; color: #c9d6c2; font: 700 15px var(--font); cursor: pointer; }
 .stn-actions .stn-cancel { background: transparent; color: #1b2a1b; border: 2px solid #1b2a1b; }
+
+/* ---------- Úvod do ovládání ---------- */
+.coach { position: absolute; inset: 0; z-index: 20; }
+.coach-hole { position: absolute; border-radius: 12px; border: 3px solid var(--survey); box-shadow: 0 0 0 9999px rgba(10, 12, 14, 0.72); pointer-events: none; transition: all 0.25s; }
+.coach-card { position: absolute; width: min(340px, calc(100vw - 24px)); padding: 12px 14px; border-radius: 12px; background: #f4f1e8; color: #1f2428; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
+.coach-card h3 { margin: 0 0 4px; font-size: 18px; }
+.coach-card p { margin: 0; font-size: 15px; line-height: 1.35; }
+.coach-n { font-size: 12px !important; color: #5d6a70; }
+.coach-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.coach-actions button { min-height: 42px; padding: 0 14px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; }
+.coach-skip { border: 1px solid #b9c2bb; background: transparent; color: #1f2428; }
+.coach-next { border: 0; background: var(--survey); color: var(--ink); flex: 1; }
+.help-coach { min-height: 36px; margin-right: 8px; padding: 0 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.5); background: transparent; color: #fff; font-weight: 700; cursor: pointer; }

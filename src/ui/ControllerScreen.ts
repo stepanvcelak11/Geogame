@@ -18,6 +18,7 @@ export interface ControllerView {
     battery: number;
   };
   job: { name: string; crs: string } | null;
+  next: { page: string; text: string } | null; // co udělat teď (zvýrazní dlaždici)
   jobs: string[];
   suggestedName: string;
   crs: { id: string; label: string; detail: string }[];
@@ -207,7 +208,8 @@ export class ControllerScreen {
         const warn = !v.job ? 'Není otevřená žádná zakázka.' : '';
         return `${this.header('GeoTerén', false)}
           <p class="cp-job">${v.job ? `Zakázka <b>${esc(v.job.name)}</b> · ${esc(v.job.crs)}` : `<span class="cp-warn">${warn}</span>`}</p>
-          <div class="cp-tiles">${TILES.map((t) => `<button data-c="go:${t.page}"><span>${t.icon}</span>${t.label}</button>`).join('')}</div>`;
+          ${v.next ? `<p class="cp-next"><b>Další krok:</b> ${esc(v.next.text)}</p>` : ''}
+          <div class="cp-tiles">${TILES.map((t) => `<button data-c="go:${t.page}" class="${v.next?.page === t.page ? 'is-next' : ''}"><span>${t.icon}</span>${t.label}</button>`).join('')}</div>`;
       }
       case 'job':
         return `${this.header('Zakázka')}
