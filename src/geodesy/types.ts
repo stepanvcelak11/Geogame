@@ -11,7 +11,8 @@ export type FeatureCode =
   | 'TERENNI_BOD'
   | 'PEVNY_BOD'
   | 'PROPUSTEK'
-  | 'STUDANKA';
+  | 'STUDANKA'
+  | 'VODOVOD';
 
 export type MeasurementMethod = 'polarni' | 'gnss_rtk' | 'nivelace' | 'katalog';
 

@@ -68,7 +68,7 @@ export const MANUAL: ManualChapter[] = [
       { do: 'U každého bodu vyber kód (Vpust, Roh budovy…) a změř.', why: 'Kód říká kreslíři, co bod znamená. Špatný kód = bod se nezapočítá.' },
       { do: 'Během observace (5 s) stůj a drž bublinu v kroužku.', why: 'Náklon výtyčky posune anténu: bublina na okraji ≈ 1 cm chyby.' },
     ],
-    tips: ['Dvojnožka (tlačítko nad libelou) výtyčku opře a drží svisle.', 'Na louce je slabý signál – když vypadnou korekce, počkej, FIX se vrátí.'],
+    tips: ['Zaměření skutečného provedení sítí (přípojky) se dělá v otevřeném výkopu, hrot na vrch trubky. Po zásypu už to nejde – hlídej čas.', 'Dvojnožka (tlačítko nad libelou) výtyčku opře a drží svisle.', 'Na louce je slabý signál – když vypadnou korekce, počkej, FIX se vrátí.'],
   },
   {
     id: 'stakeout',
