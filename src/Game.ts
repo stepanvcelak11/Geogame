@@ -55,7 +55,7 @@ import { MappingTask } from './jobs/MappingTask';
 import { ReconTask, REPORT_RADIUS } from './jobs/ReconTask';
 import { StakeoutTask, type StakeTarget } from './jobs/StakeoutTask';
 import { HandInventory } from './player/HandInventory';
-import { Helper } from './npc/Helper';
+import { Helper, type HelperPurpose } from './npc/Helper';
 import { Birds } from './render/Birds';
 import { Clouds } from './render/Clouds';
 import { Horizon } from './render/Horizon';
@@ -63,7 +63,8 @@ import { daylight, weatherize } from './render/DayCycle';
 import { Rain } from './render/Rain';
 import { Beacon } from './render/Beacon';
 import { levelNoise, poleTremor, stationRanges, weatherForDay, weatherText, type Weather } from './world/Weather';
-import { HelperView } from './render/HelperView';
+import { HelperView, type HelperPose } from './render/HelperView';
+import { chapter } from './help/manual';
 import { HelperSheet, type HelperMenu } from './ui/HelperSheet';
 import { BUBBLE_LIMIT, MAX_TILT, PoleBalance } from './player/PoleBalance';
 import { PlayerController, type MoveIntent } from './player/PlayerController';
@@ -3293,7 +3294,22 @@ export class Game {
         disabled: d > 3.5 || !this.hands.freeHand(),
         hint: d > 3.5 ? 'Musí stát u tebe' : !this.hands.freeHand() ? 'Máš plné ruce' : undefined,
       });
+    // Rychlý povel pro orientaci stanice: vezme si výtyčku a postaví ji na orientační bod.
+    const orientMark = this.orientationMark();
+    if (orientMark && !carry && active?.kind === 'prismPole')
+      actions.unshift({ id: `orient:${orientMark.id}`, label: `Postav hranol na ${orientMark.number} (orientace)`, disabled: d > 3.5, hint: d > 3.5 ? 'Musí stát u tebe, ať ti výtyčku vezme' : 'Vezme si tvou výtyčku a dojde tam' });
     actions.push({ id: 'goto:here', label: 'Jdi tam, kam se dívám', hint: carry ? `s ${ITEM_DEFS[carry.kind].nameAcc}` : undefined });
+    const v = this.world.vehicle;
+    const vanHere = !this.traveling;
+    if (vanHere && !carry) {
+      for (const it of this.items.filter((i) => i.state === 'stored'))
+        actions.push({ id: `fetch:${it.id}`, label: `Přines z auta ${ITEM_DEFS[it.kind].nameAcc}` });
+      if (active && active.kind !== 'prismPole' && active.kind !== 'rod')
+        actions.push({ id: 'stow', label: `Odnes do auta ${ITEM_DEFS[active.kind].nameAcc}`, disabled: d > 3.5, hint: d > 3.5 ? 'Musí stát u tebe' : undefined });
+      const vd = Math.hypot(v.x - this.player.pos.x, v.z - this.player.pos.z);
+      if (vd > 25) actions.push({ id: 'van', label: 'Přijeď sem s dodávkou', hint: `auto stojí ${Math.round(vd)} m odtud` });
+    }
+    actions.push({ id: 'advice', label: 'Poraď, co teď' });
     for (const inst of this.instruments())
       actions.push({
         id: `instrument:${inst.id}`,
@@ -3371,7 +3387,139 @@ export class Game {
       }
       case 'measure':
         return this.helperMeasure();
+      case 'orient': {
+        const m = this.world.marks.find((x) => x.id === arg);
+        const it = this.activeItem();
+        if (!m || it?.kind !== 'prismPole' || this.helperDist() > 3.5) return;
+        this.helperCommand('give');
+        this.helperGoal = { x: m.pos.x, y: m.pos.y, z: m.pos.z, label: `bod ${m.number}`, mark: m };
+        h.goTo(m.pos.x, m.pos.z, 'hold');
+        return this.say(`Beru výtyčku a jdu s ní na ${m.number}. Až tam budu, zamiř na hranol a orientuj.`);
+      }
+      case 'fetch': {
+        const it = this.items.find((i) => i.id === arg && i.state === 'stored');
+        if (!it) return;
+        this.helperErrandItem = it.id;
+        const back = vanLocal(this.world.vehicle, 3.1, 0, 0);
+        h.goTo(back.x, back.z, 'fetch');
+        return this.say(`Dojdu pro ${ITEM_DEFS[it.kind].nameAcc} do auta.`);
+      }
+      case 'stow': {
+        const it = this.activeItem();
+        if (!it || this.helperDist() > 3.5) return;
+        if (it.hand) this.hands.release(it.hand);
+        it.hand = null;
+        it.state = 'ground';
+        it.location = this.world.location;
+        h.carryId = it.id;
+        this.helperErrandItem = it.id;
+        this.refreshHands();
+        const back = vanLocal(this.world.vehicle, 3.1, 0, 0);
+        h.goTo(back.x, back.z, 'stow');
+        return this.say(`Odnesu ${ITEM_DEFS[it.kind].nameAcc} do auta.`);
+      }
+      case 'van': {
+        const drv = vanLocal(this.world.vehicle, -1.3, 0, 1.7);
+        h.goTo(drv.x, drv.z, 'van');
+        return this.say('Dojdu pro auto a přijedu k tobě.');
+      }
+      case 'advice':
+        return this.helperAdvice();
     }
+  }
+
+  /** Známý bod, na který se má stanice právě orientovat (nebo null). */
+  private orientationMark(): ControlMark | null {
+    const c = this.connected();
+    if (!c || !c.ts.station || c.ts.orientation !== null) return null;
+    const run = this.activeRun();
+    const id = run?.spec.requireStation ? this.stationPhase(run.spec).on : undefined;
+    const m = id ? this.world.marks.find((x) => x.id === id) : undefined;
+    if (m) return m;
+    // Jinak nejbližší jiný známý bod (5–250 m od stanice).
+    const st = c.tripod.overMarkId;
+    return (
+      this.world.marks
+        .filter((x) => x.condition === 'ok' && x.type !== 'NZ' && x.id !== st)
+        .map((x) => ({ x, d: Math.hypot(x.pos.x - c.tripod.pos.x, x.pos.z - c.tripod.pos.z) }))
+        .filter((q) => q.d > 5 && q.d < 250)
+        .sort((a, b) => a.d - b.d)[0]?.x ?? null
+    );
+  }
+
+  private helperErrandItem: string | null = null;
+
+  /** Pochůzky: vzít z auta, donést, uložit do auta, přivézt dodávku. */
+  private helperErrand(purpose: 'fetch' | 'deliver' | 'stow' | 'van'): void {
+    const h = this.helper;
+    const it = this.helperErrandItem ? this.items.find((i) => i.id === this.helperErrandItem) : undefined;
+    if (purpose === 'fetch') {
+      if (!it || it.state !== 'stored') return this.say('V autě to není.', 'warn');
+      it.state = 'ground';
+      it.location = this.world.location;
+      h.carryId = it.id;
+      h.goTo(this.player.pos.x, this.player.pos.z, 'deliver');
+      return this.say(`Mám ${ITEM_DEFS[it.kind].nameAcc}, nesu ti to.`);
+    }
+    if (purpose === 'deliver') {
+      h.carryId = null;
+      this.helperErrandItem = null;
+      if (it) {
+        const p = h.pos;
+        const f = lookDirection(h.body.yaw, 0);
+        const x = p.x + f.x * 0.7;
+        const z = p.z + f.z * 0.7;
+        it.pos = { x, y: this.world.heightmap.heightAt(x, z), z };
+        it.state = 'ground';
+      }
+      h.follow();
+      return this.say(it ? `Tady máš ${ITEM_DEFS[it.kind].nameAcc}, položil jsem to k tobě.` : 'Tady jsem.');
+    }
+    if (purpose === 'stow') {
+      if (it && h.carryId === it.id) {
+        it.state = 'stored';
+        h.carryId = null;
+      }
+      this.helperErrandItem = null;
+      h.follow();
+      return this.say('Uloženo v autě.');
+    }
+    // Přivézt dodávku: najde volné místo pár metrů od hráče.
+    const v = this.world.vehicle;
+    const pp = this.player.pos;
+    const hm = this.world.heightmap;
+    for (let k = 0; k < 16; k++) {
+      const a = this.player.yaw + Math.PI / 2 + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4;
+      const x = pp.x + Math.cos(a) * 7;
+      const z = pp.z + Math.sin(a) * 7;
+      if (hm.slopeAt(x, z) > 0.18 || this.world.water.some((w) => ((x - w.x) / w.rx) ** 2 + ((z - w.z) / w.rz) ** 2 < 1.4)) continue;
+      const probe = { x, z };
+      const gy = hm.heightAt(x, z);
+      const saved = { x: v.x, z: v.z };
+      v.x = 1e6; // vlastní auto nesmí překážet samo sobě
+      const hit = this.world.resolveCircle(probe, 2.7, gy + 0.2, gy + 2.2).hit;
+      v.x = saved.x;
+      if (hit) continue;
+      Object.assign(v, { x, z, yaw: Math.atan2(-(pp.x - x), -(pp.z - z)) + Math.PI / 2, speed: 0, groundY: gy });
+      const side = vanLocal(v, -1.3, 0, 1.9);
+      h.teleport(side.x, side.z, this.world);
+      h.follow();
+      this.sfx.setEngine(null);
+      return this.say('Auto stojí vedle tebe.');
+    }
+    h.follow();
+    this.say('Blíž k tobě se s autem nedostanu.', 'warn');
+  }
+
+  private adviceIdx = 0;
+
+  /** Pepa poradí další krok a proč se to tak dělá. */
+  private helperAdvice(): void {
+    const goal = this.goalText() ?? 'Vyber si zakázku.';
+    const ch = chapter(this.helpTopic());
+    const whys = ch.steps.filter((s) => s.why).map((s) => s.why as string).concat(ch.tips ?? []);
+    const why = whys.length ? whys[this.adviceIdx++ % whys.length] : '';
+    this.say(`${goal}${why ? ` Víš proč? ${why}` : ''}`);
   }
 
   /** Bod podle ID i mimo nejbližších deset. */
@@ -3389,9 +3537,10 @@ export class Game {
   }
 
   /** Pepa došel. S výtyčkou / latí ji postaví svisle na bod. */
-  private helperArrived(purpose: 'hold' | 'instrument'): void {
+  private helperArrived(purpose: HelperPurpose): void {
     const h = this.helper;
     if (purpose === 'instrument') return this.say('Jsem u přístroje. Řekni, až mám měřit.');
+    if (purpose === 'fetch' || purpose === 'stow' || purpose === 'van' || purpose === 'deliver') return this.helperErrand(purpose);
     const g = this.helperGoal;
     const carry = h.carryId ? this.items.find((i) => i.id === h.carryId) : undefined;
     if (!g) return;
@@ -3447,11 +3596,21 @@ export class Game {
     const h = this.helper;
     const it = h.carryId ? this.items.find((i) => i.id === h.carryId) : undefined;
     if (!it) return;
-    if (it.state !== 'deployed') {
-      h.carryId = null;
+    if (it.state === 'held' || it.state === 'stored') {
+      h.carryId = null; // vzal sis to od něj, nebo už je v autě
       return;
     }
     it.location = this.world.location;
+    if (it.state === 'ground') {
+      // Nese kufr v ruce u boku, stativ a výtyčky na rameni.
+      const p = h.pos;
+      const r = { x: Math.cos(h.body.yaw), z: -Math.sin(h.body.yaw) };
+      const long = it.kind === 'tripod' || it.kind === 'gnssRover' || it.kind === 'level';
+      const off = long ? 0.18 : 0.3;
+      it.pos = { x: p.x + r.x * off, y: p.y + (long ? 1.52 : 0.46), z: p.z + r.z * off };
+      it.yaw = h.body.yaw + (long ? Math.PI / 2 : 0);
+      return;
+    }
     if (h.state === 'hold' && this.helperGoal) {
       it.pos = { x: this.helperGoal.x, y: this.helperGoal.y, z: this.helperGoal.z };
       return;
@@ -4537,6 +4696,8 @@ export class Game {
     if (this.started) this.checkDeadlines();
     if (this.started && !this.traveling) this.windCheck(dt);
     if (this.started && !this.traveling && !this.helper.inVan) {
+      // Když Pepa něco nese k tobě, míří tam, kde zrovna stojíš.
+      if (this.helper.state === 'goto' && this.helper.purpose === 'deliver') this.helper.target = { x: this.player.pos.x, z: this.player.pos.z };
       const ev = this.helper.update(dt, this.world, this.player.pos);
       if (ev?.kind === 'arrived') this.helperArrived(ev.purpose);
     }
@@ -4608,7 +4769,24 @@ export class Game {
     this.birds.update(dt, this.eye, this.night < 0.5 && this.weather.rain === 0 && !this.scope);
     this.clouds.update(dt, this.eye, this.gfx.quality.drawDistance * 0.9);
     const hp = this.helper.pos;
-    this.helperView.sync(hp, this.helper.body.yaw, this.helper.walkPhase, !this.helper.inVan, this.world.location === 'stavba', !!this.helper.carryId);
+    {
+      const h = this.helper;
+      const moving = Math.hypot(h.body.vel.x, h.body.vel.z) > 0.25;
+      const carried = h.carryId ? this.items.find((i) => i.id === h.carryId) : undefined;
+      const pose: HelperPose =
+        h.state === 'instrument'
+          ? 'instrument'
+          : carried && (carried.kind === 'prismPole' || carried.kind === 'rod')
+            ? 'hold'
+            : carried && (carried.kind === 'tripod' || carried.kind === 'gnssRover' || carried.kind === 'level')
+              ? 'shoulder'
+              : carried
+                ? 'carry'
+                : moving
+                  ? 'walk'
+                  : 'idle';
+      this.helperView.sync(hp, h.body.yaw, h.walkPhase, !h.inVan, this.world.location === 'stavba', pose, moving, dt);
+    }
     this.grass.update(this.eye.x, this.eye.z);
     this.terrain?.update(dt, this.eye);
     // Stíny mraků plují s větrem; nejvýraznější při polojasnu, v noci a pod souvislou oblačností mizí.

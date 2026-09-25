@@ -22,7 +22,7 @@ export const MANUAL: ManualChapter[] = [
       { do: 'V tabletu (Mapa) dej Odjet a vyber lokalitu.' },
       { do: 'Na místě vyndej vybavení zadními dveřmi a pusť se do práce.' },
     ],
-    tips: ['Řádek „Co dál?“ nahoře vždy radí další krok a šipka ukazuje směr.', 'Pepa (oranžové tlačítko) ti podrží výtyčku nebo lať, přečte přístroj a nosí věci.'],
+    tips: ['Řádek „Co dál?“ nahoře vždy radí další krok a šipka ukazuje směr.', 'Pepa (oranžové tlačítko) ti podrží výtyčku nebo lať, přečte přístroj, donese věci z auta i je tam odnese, přiveze dodávku a poradí, co dál a proč.', 'U stanice stačí povel „Postav hranol na … (orientace)“ – Pepa si vezme tvou výtyčku a dojde s ní na orientační bod.'],
   },
   {
     id: 'gnss-rig',
