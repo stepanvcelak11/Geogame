@@ -22,6 +22,8 @@ export interface TsShot {
   prism: Prism | null;
   hit: Vec3; // skutečný bod dopadu (střed hranolu / místo na povrchu)
   hitKind: string;
+  /** Měřeno ve dvou polohách: rozdíl I − II (2c ve Hz, 2i ve V) [rad]. */
+  faces?: { dHz: number; dZen: number };
 }
 
 export type ShotResult = { ok: true; shot: TsShot } | { ok: false; reason: string };
@@ -48,7 +50,11 @@ export class TotalStation {
   orientedOn: string | null = null;
   /** Stav přístroje: 1 = šum podle výrobce, víc = opotřebený (násobí šum). */
   wear = 1;
-  /** Soustavná chyba úhlů poškozeného přístroje (kolimace) [rad]. */
+  /**
+   * Kolimační chyba c poškozeného přístroje [rad]. Ve Hz působí c / sin z, indexová chyba
+   * výškového kruhu je i = c / 2. V II. poloze dalekohledu mají obě opačné znaménko,
+   * takže průměr obou poloh je vyruší.
+   */
   bias = 0;
 
   constructor(
@@ -65,13 +71,34 @@ export class TotalStation {
     return { hz: norm(bearingOf(dir) - this.circleZero), zen: Math.acos(Math.max(-1, Math.min(1, dir.y))) };
   }
 
-  shoot(dir: Vec3, world: World, prisms: readonly Prism[], mode: TsMode, range: { prism: number; reflectorless: number } = RANGE): ShotResult {
+  /**
+   * Měření ve dvou polohách dalekohledu: I. poloha, proložení dalekohledu, II. poloha a průměr.
+   * Úhly jsou vrácené v konvenci I. polohy; rozdíl poloh prozradí chybu přístroje.
+   */
+  shootBoth(dir: Vec3, world: World, prisms: readonly Prism[], mode: TsMode, range: { prism: number; reflectorless: number } = RANGE): ShotResult {
+    const a = this.shoot(dir, world, prisms, mode, range, 1);
+    if (!a.ok) return a;
+    const b = this.shoot(dir, world, prisms, mode, range, 2);
+    if (!b.ok) return b;
+    let dHz = a.shot.hz - b.shot.hz;
+    if (dHz > Math.PI) dHz -= TAU;
+    if (dHz < -Math.PI) dHz += TAU;
+    const dZen = a.shot.zen - b.shot.zen;
+    return {
+      ok: true,
+      shot: { ...a.shot, hz: norm(b.shot.hz + dHz / 2), zen: b.shot.zen + dZen / 2, sd: (a.shot.sd + b.shot.sd) / 2, faces: { dHz, dZen } },
+    };
+  }
+
+  shoot(dir: Vec3, world: World, prisms: readonly Prism[], mode: TsMode, range: { prism: number; reflectorless: number } = RANGE, face: 1 | 2 = 1): ShotResult {
     const o = this.center;
     const obstacle = world.raycast(o, dir, range[mode]);
     const n = (): number => this.rng.gaussian();
     const angles = (): { hz: number; zen: number } => {
       const r = this.reading(dir);
-      return { hz: norm(r.hz + this.bias + n() * ARCSEC * this.wear), zen: r.zen + this.bias * 0.5 + n() * ARCSEC * this.wear };
+      const f = face === 1 ? 1 : -1;
+      const c = (this.bias * f) / Math.max(0.2, Math.sin(r.zen));
+      return { hz: norm(r.hz + c + n() * ARCSEC * this.wear), zen: r.zen + this.bias * 0.5 * f + n() * ARCSEC * this.wear };
     };
     if (mode === 'prism') {
       let best: { p: Prism; t: number } | null = null;
